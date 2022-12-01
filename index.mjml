@@ -24,8 +24,7 @@
             </mj-column>
         </mj-section>
         <mj-section background-color="#ffffff" padding="5px 20px 5px 20px">
-            <mj-group>
-            <mj-column background-color="#f5f5fa" width="10%" padding="13px">
+            <mj-column background-color="#f5f5fa" width="10%" padding="13px 0px">
                 <mj-image align="center" width="10px" href="#" src="https://ci4.googleusercontent.com/proxy/HdPRit016gFZ5uuFCGCzO2Cm4z11vgAE648V9SMtsRfV7TzjE7Q6FWG0Tg1-dFE_BRn8R0BpuZUDDsuLIINqBApcJTsPxcyt3pQV2VszL0oqsO3Tbo27w2OrkruMPVrJwZOaLpCDArNJ9-gMOhALCOax9StJ=s0-d-e1-ft#https://image.e.taxact.com/lib/fe2d1171716404757d1577/m/1/6756d6d2-3f94-4827-b901-82428a4fde3b.png" alt="lock" />
             </mj-column>
             <mj-column background-color="#f5f5fa" width="80%">
@@ -36,7 +35,6 @@
             <mj-column width="10%">
                 <mj-image align="left" padding="2px 5px 0px 5px" width="30px" href="#" src="https://downloadfreesvgicons.com/icons/arrow-icons/svg-green-circle-right-arrow-icon-1/svg-green-circle-right-arrow-icon-1.svg" alt="arrow" />
             </mj-column>
-            </mj-group>
         </mj-section>
         </mj-wrapper>
         <!--SPACER-->
