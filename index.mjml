@@ -1,7 +1,7 @@
 <mjml>
    <!--HEAD-->
     <mj-head>
-        <mj-breakpoint width="480px" />
+        <mj-breakpoint width="290px" />
         <mj-attributes>
             <mj-all font-family="Arial" />
             <mj-all padding="0" />    
@@ -151,8 +151,7 @@
         </mj-section>
         <!--FOOTER-->
         <!--SOCIAL-->
-        <mj-section padding="60px 200px 20px">
-            <mj-group>
+        <mj-section padding="60px">
             <mj-column><mj-image width="25px" src="https://ci5.googleusercontent.com/proxy/QVHs3u6bvGUWXBg07HuWP7ldHO2dIFyJ4WZAVIDVYWRcZhnVipZYZxR5EbnxXhDY3Rv32akFYhfPoe6gcWUdaP54NOeqGaONR0kOE2b-1BcFKpwiAMl5aEfjBw-zrIfBDO98lVkqLyGl6w=s0-d-e1-ft#https://image.e.taxact.com/lib/fe2d1171716404757d1577/m/2/social_Facebook_icon_27px.png" alt="" /></mj-column>
             <mj-column><mj-spacer height="20px" padding="0px 25px"/></mj-column>
             <mj-column><mj-image width="25px" src="https://ci3.googleusercontent.com/proxy/Mc4W54CSS0bNdhFH89gBZh6z6UIEowNfj2PKMGzlqGifKKn1evK_zi07-zYJxJby8LGroiNOXfZfBSy9o2Y5XbErOZw5crcefR0RzS82GqyhjZbD8yBhpS4jBnRsAJ9SgDMAoy7Dx9OV=s0-d-e1-ft#https://image.e.taxact.com/lib/fe2d1171716404757d1577/m/2/social_Twitter_icon_27px.png" alt="" /></mj-column>
@@ -160,7 +159,6 @@
             <mj-column><mj-image width="25px" src="https://ci5.googleusercontent.com/proxy/5UNmM2rUTLgdjg2TcMutwI3gdJyMLRj_Hy_GqofJ9so3idoEY3lGLJKgV2cgJBGS13L2fZSIp_MtdB_H6emEE7F6ko9P5krqvUW7UFdnjhFbhFaZPLkiwzhNrH5gFtBu-0pNWtRl=s0-d-e1-ft#https://image.e.taxact.com/lib/fe2d1171716404757d1577/m/2/social_Blog_icon_27px.png" alt="" /></mj-column>
             <mj-column><mj-spacer height="20px" padding="0px 25px"/></mj-column>
             <mj-column><mj-image width="25px" src="https://ci4.googleusercontent.com/proxy/wMsE1cubFv-G66CaPfqPXb2femkk3LzYMkZMK8LK9zTyNse9J6y1GTFRO_OwfkYF6JxHFcj_PIkqfQouFTehnlqO2G62zrkg30bKVTPNGdWGNt49YwqjXaW9eA5wHGkBOkdg6cBPmrtKNcg=s0-d-e1-ft#https://image.e.taxact.com/lib/fe2d1171716404757d1577/m/2/social_Instagram_icon_27px.png" alt="" /></mj-column>
-            </mj-group>
         </mj-section>
         <!--APP STORE-->
         <mj-section>
@@ -169,29 +167,27 @@
             </mj-column>
         </mj-section>
         <!--LINKS-->
-        <mj-section padding="20px 100px" text-align="center">
-            <mj-group>
+        <mj-section padding="20px 40px" text-align="center">
             <mj-column>
-                <mj-text font-size="11px">
+                <mj-text font-size="8px">
                     <p><a href="#" style="text-decoration:none;color:#171138">Contact Us</a></p>
                 </mj-text>
             </mj-column>
             <mj-column>
-                <mj-text font-size="11px">
+                <mj-text font-size="8px">
                     <p><a href="#" style="text-decoration:none;color:#171138">My Account</a></p>
                 </mj-text>
             </mj-column>
             <mj-column>
-                <mj-text font-size="11px">
+                <mj-text font-size="8px">
                     <p><a href="#" style="text-decoration:none;color:#171138">Privacy Policy</a></p>
                 </mj-text>
             </mj-column>
             <mj-column>
-                <mj-text font-size="11px">
+                <mj-text font-size="8px">
                     <p><a href="#" style="text-decoration:none;color:#171138">Security Center</a></p>
                 </mj-text>
             </mj-column>
-            </mj-group>
         </mj-section>
         <!--FINEPRINT-->
         <mj-section padding="20px 40px 0px 40px">
