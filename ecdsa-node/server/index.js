@@ -2,15 +2,17 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const port = 3042;
+const fs = require("fs");
 
 app.use(cors());
 app.use(express.json());
 
-const balances = {
-  "74ea639e9199644957f048c93980721927ddecb6": 100,
-  "20c48fdbebfadd50179c268b010cd0f751c80d41": 50,
-  f6112554c545c213fe956460c06569382d94c41a: 75,
-};
+let balances = {};
+if (fs.existsSync("balances.json")) {
+  balances = JSON.parse(fs.readFileSync("balances.json"));
+} else {
+  fs.writeFileSync("balances.json", JSON.stringify(balances));
+}
 
 app.get("/balance/:address", (req, res) => {
   const { address } = req.params;
@@ -31,6 +33,13 @@ app.post("/send", (req, res) => {
     balances[recipient] += amount;
     res.send({ balance: balances[sender] });
   }
+});
+
+app.post("/balances", (req, res) => {
+  const { address, balance } = req.body;
+  balances[address] = balance;
+  console.log("got it");
+  res.send({ message: "Balance set successfully" });
 });
 
 app.listen(port, () => {

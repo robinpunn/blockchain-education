@@ -1,9 +1,13 @@
-import Wallet from "./Wallet";
-import Transfer from "./Transfer";
+import Wallet from "./components/Wallet";
+import Transfer from "./components/Transfer";
+import AddNewWallet from "./components/AddNewWallet";
 import "./App.scss";
 import { useState } from "react";
 
 function App() {
+  const [wallets, setWallets] = useState(
+    JSON.parse(localStorage.getItem("wallets")) || []
+  );
   const [balance, setBalance] = useState(0);
   const [address, setAddress] = useState("");
   const [privateKey, setPrivateKey] = useState("");
@@ -23,6 +27,7 @@ function App() {
         setAddress={setAddress}
       />
       <Transfer setBalance={setBalance} address={address} />
+      <AddNewWallet wallets={wallets} setWallets={setWallets} />
     </div>
   );
 }

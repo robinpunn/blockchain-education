@@ -1,5 +1,5 @@
 import { useState } from "react";
-import server from "./server";
+import server from "../server";
 
 function Transfer({ address, setBalance }) {
   const [sendAmount, setSendAmount] = useState("");
