@@ -84,3 +84,25 @@ input {
   display: flex;
   flex-direction: column;
 }
+
+.scroll {
+  overflow-y: scroll;
+  height: 10rem;
+  padding: 0 1rem;
+  margin-top: 1rem;
+  scrollbar-width: none;
+}
+
+.wallets {
+  display: flex;
+  flex-direction: column;
+  border: 5px solid #222;
+}
+.wallets > p {
+  margin: 0;
+  padding: 0;
+  background-color: #f4f6f8;
+  text-transform: uppercase;
+  font-weight: 400;
+  font-size: .75em;
+}

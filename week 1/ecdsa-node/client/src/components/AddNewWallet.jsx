@@ -46,7 +46,9 @@ const AddNewWallet = ({ wallets, setWallets }) => {
   return (
     <div className="container create">
       <h1>Create a Wallet</h1>
-      <button onClick={onClick}>CREATE</button>
+      <button className="button" onClick={onClick}>
+        CREATE
+      </button>
     </div>
   );
 };

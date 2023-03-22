@@ -1,6 +1,7 @@
 import Wallet from "./components/Wallet";
 import Transfer from "./components/Transfer";
 import AddNewWallet from "./components/AddNewWallet";
+import DisplayWallets from "./components/DisplayWallets";
 import "./App.scss";
 import { useState } from "react";
 
@@ -21,6 +22,7 @@ function App() {
       />
       <Transfer setBalance={setBalance} address={address} wallets={wallets} />
       <AddNewWallet wallets={wallets} setWallets={setWallets} />
+      <DisplayWallets wallets={wallets} />
     </div>
   );
 }
