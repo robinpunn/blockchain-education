@@ -8,11 +8,6 @@ const AddNewWallet = ({ wallets, setWallets }) => {
   const [walletCount, setWalletCount] = useState(wallets?.length ?? 0);
   console.log(wallets);
 
-  const findPrivateKey = (address) => {
-    const wallet = wallets.find((wallet) => wallet.address === address);
-    return wallet.private;
-  };
-
   const onClick = async () => {
     const privateKey = secp.utils.randomPrivateKey();
     const publicKey = secp.getPublicKey(privateKey);
@@ -29,10 +24,6 @@ const AddNewWallet = ({ wallets, setWallets }) => {
     // wallets[walletName] = newWallet;
     setWallets([...wallets, (wallets[walletName] = newWallet)]);
     setWalletCount(walletCount + 1);
-    localStorage.setItem(
-      "wallets",
-      JSON.stringify([...wallets, (wallets[walletName] = newWallet)])
-    );
 
     try {
       // Make a POST request to set the initial balance to 10 for the new wallet

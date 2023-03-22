@@ -3,16 +3,32 @@ const app = express();
 const cors = require("cors");
 const port = 3042;
 const fs = require("fs");
+const secp = require("ethereum-cryptography/secp256k1");
+const { toHex } = require("ethereum-cryptography/utils");
+const { keccak256 } = require("ethereum-cryptography/keccak");
 
 app.use(cors());
 app.use(express.json());
 
 let balances = {};
-if (fs.existsSync("balances.json")) {
-  balances = JSON.parse(fs.readFileSync("balances.json"));
-} else {
-  fs.writeFileSync("balances.json", JSON.stringify(balances));
-}
+// if (fs.existsSync("balances.json")) {
+//   balances = JSON.parse(fs.readFileSync("balances.json"));
+// } else {
+//   fs.writeFileSync("balances.json", JSON.stringify(balances));
+// }
+
+const recoverKey = async (message, signature, recoveryId) => {
+  const sign = await signature;
+  const recoveredPublicKey = await secp.recoverPublicKey(
+    message,
+    signature,
+    recoveryId
+  );
+  return recoveredPublicKey;
+};
+
+const getAddress = (publicKey) =>
+  toHex(keccak256(publicKey.slice(1)).slice(-20));
 
 app.get("/balance/:address", (req, res) => {
   const { address } = req.params;
@@ -20,25 +36,37 @@ app.get("/balance/:address", (req, res) => {
   res.send({ balance });
 });
 
-app.post("/send", (req, res) => {
-  const { sender, recipient, amount } = req.body;
+app.post("/send", async (req, res) => {
+  const { sender, recipient, amount, message, signature, recoveryId } =
+    req.body;
 
-  setInitialBalance(sender);
-  setInitialBalance(recipient);
+  const publicKeyRecovered = await recoverKey(message, signature, recoveryId);
+  const addressRecovered = getAddress(publicKeyRecovered);
 
-  if (balances[sender] < amount) {
-    res.status(400).send({ message: "Not enough funds!" });
+  // if recoverPublicKey turned into an address matches the sender address
+  if (addressRecovered === sender) {
+    setInitialBalance(sender);
+    setInitialBalance(recipient);
+
+    if (balances[sender] < amount) {
+      res.status(400).send({ message: "Not enough funds!" });
+    } else {
+      balances[sender] -= amount;
+      balances[recipient] += amount;
+      res.send({ balance: balances[sender] });
+    }
   } else {
-    balances[sender] -= amount;
-    balances[recipient] += amount;
-    res.send({ balance: balances[sender] });
+    res.send({ message: "signature failed" });
   }
 });
 
 app.post("/balances", (req, res) => {
   const { address, balance } = req.body;
+  Object.keys(balances).forEach((key) => {
+    balances[key] += 10;
+  });
   balances[address] = balance;
-  console.log("got it");
+  console.log(balances);
   res.send({ message: "Balance set successfully" });
 });
 

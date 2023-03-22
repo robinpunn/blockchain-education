@@ -5,28 +5,21 @@ import "./App.scss";
 import { useState } from "react";
 
 function App() {
-  const [wallets, setWallets] = useState(
-    JSON.parse(localStorage.getItem("wallets")) || []
-  );
+  const [wallets, setWallets] = useState([]);
   const [balance, setBalance] = useState(0);
   const [address, setAddress] = useState("");
-  const [privateKey, setPrivateKey] = useState("");
-  const [message, setMessage] = useState("");
-  const [signature, setSignature] = useState("");
-  const [verified, setVerified] = useState(false);
-  const [recovery, setRecovery] = useState("");
+  console.log("app:", wallets);
+  console.log(address);
 
   return (
     <div className="app">
       <Wallet
         balance={balance}
-        privateKey={privateKey}
-        setPrivateKey={setPrivateKey}
         setBalance={setBalance}
         address={address}
         setAddress={setAddress}
       />
-      <Transfer setBalance={setBalance} address={address} />
+      <Transfer setBalance={setBalance} address={address} wallets={wallets} />
       <AddNewWallet wallets={wallets} setWallets={setWallets} />
     </div>
   );
