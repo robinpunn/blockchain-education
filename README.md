@@ -1,7 +1,12 @@
 # ALCHEMY UNIVERSITY ETHEREUM BOOTCAMP
 
-### Week 1: ECDSA Node
-+ Week 1 starts with The First Primitve: Cryptographic Hashes.
-+ Next digital signatures are taught through the concept of public key cryptography.
-+ Proof of work is the next topic
-+ The final topic before the ECDSA assignment is Blockchain Structure
+### Week 1: Blochain Cryptography
++ The First Primitve: Cryptographic Hashes.
++ Digital signatures: Public key cryptography.
++ Proof of Work: Hashing and Mining
++ Blockchain Network: Blockchain Data Structure
++ Week 1 Assignment: ECDSA NODE
+
+### Week 2: Blockchain Storage
++ Keeping Track of Blockchain User State: UTXO and Account Models
++ Tree Data Structures: Basic Tree Data Structures and Merkle Trees
