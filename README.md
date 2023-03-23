@@ -10,3 +10,4 @@
 ### Week 2: Blockchain Storage
 + Keeping Track of Blockchain User State: UTXO and Account Models
 + Tree Data Structures: Basic Tree Data Structures and Merkle Trees
++ Blockchain Data Storage: Merkle Trees and Ethereum Tries
