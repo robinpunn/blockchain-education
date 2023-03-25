@@ -12,3 +12,6 @@
 + Tree Data Structures: Basic Tree Data Structures and Merkle Trees
 + Blockchain Data Storage: Merkle Trees and Ethereum Tries
 + Week 2 Assignment: Merkle Tree Gift List
+
+### Week 3: Ethereum
++ Ethereum Features

@@ -84,7 +84,7 @@
 
     - These inputs get larger from top to bottom but they always map to an output of 32 bytes. There are many different [algorithms for hash functions](https://en.wikipedia.org/wiki/Hash_function#Hashing_integer_data_types) which could take these inputs and create outputs of fixed sizes.
 2. Cryptographic hash functions need five specific properties:
-    -  **Deterministic** - One specific input always maps to the same specific output
+    - **Deterministic** - One specific input always maps to the same specific output
     - **Pseudorandom** - It is not possible to guess the output based on the output of similar inputs
     - **One-way** - If someone gives you a new output, you could not determine an input without guessing
     - **Fast to Compute** - It must be a quick calculation for a computer
