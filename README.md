@@ -15,3 +15,4 @@
 
 ### Week 3: Ethereum
 + Ethereum Features
++ Reading Data From Ethereum: JSON-RPC Requests

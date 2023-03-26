@@ -496,3 +496,126 @@ Here is a table with the relevant denominations for ether and their common use c
     - [Patricia Trie Specification](https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/)
     - [Design rationale of Ethereum](https://ethereumbuilders.gitbooks.io/guide/content/en/design_rationale.html)
     - Andreas Antonopoulos' [Ethereum Book](https://github.com/ethereumbook/ethereumbook)
+
+---
+## Reading Data from Ethereum
+---
+---
+### Intro to JSON-RPC
+---
+
+#### Introduction
+- Ethereum is simply a computer for all intents and purposes.
+- The main difference is that this single computer is spread out over thousands of nodes worldwide.
+- The Ethereum computer is built in such a way that it does not matter which of these nodes you communicate with, you are ultimately only affecting one single instance: the Ethereum world state trie singleton.
+- Conceptually, that's all fine and well. But how do we actually communicate with the Ethereum computer? The answer is: **JSON-RPC**.
+
+#### What We Are Ultimately Trying To Build
+![Dapp](https://res.cloudinary.com/divzjiip8/image/upload/v1670367843/alchemyu/Screen_Shot_2022-12-06_at_3.03.59_PM.png)
+- The above image is a super simplified view of what we will learn today: JSON-RPC is the bridge we use to connect any dApp we use/build to an Ethereum node, and thus the greater Ethereum network.
+> Keep this diagram in mind as we further learn about communicating data via JSON-RPC!
+
+#### Core Concept: Ethereum Clients
+- [To run an Ethereum node, you must run one of the various Ethereum client implementations](https://ethernodes.org/). You will see, there are quite a few including:
+- [geth](https://github.com/ethereum/go-ethereum): Ethereum client written in Go
+- [erigon](https://github.com/ledgerwatch/erigon): Etheruem client also written in Go
+- [nethermind](https://github.com/NethermindEth/nethermind): Ethereum client written in .NET
+- [Here is some more information on Ethereum nodes and clients](https://ethereum.org/en/developers/docs/nodes-and-clients/).
+- The main takeaway at this point is: in order to run a node, you must download, install and run an Ethereum client implementation.
+- These Ethereum clients use JSON-RPC, and thus define methods like ``eth_getBlockByNumber`` that are by-default queryable by any JSON-RPC compatible Request. More below...
+
+#### Core Concept: JSON-RPC
+- [JSON-RPC](https://www.jsonrpc.org/) is a remote procedure call (RPC) protocol that uses JSON to encode messages. In other words, JSON-RPC is simply another API standard.
+> JSON-RPC is a similar API standard to [REST](https://www.redhat.com/en/topics/api/what-is-a-rest-api), typically considered useful for [CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete).
+- JSON-RPC deals exclusively with transporting data in the syntax form of JSON.
+- RPC (remote procedure call) on the right hand side of the term simply gives us more clues that this is a communication protocol.
+- Whenever you see "RPC", think: "there is a server out there and I want to call a method on it by executing a remote procedure call".
+- All Ethereum nodes contain a [JSON-RPC interface](https://ethereum.org/en/developers/docs/apis/json-rpc/). This means that some of the following methods are directly queryable to an Ethereum node:
+    - ``[eth_blockNumber](https://docs.alchemy.com/reference/eth-blocknumber)``
+    - ``[eth_getBalance](https://docs.alchemy.com/reference/eth-getbalance)``
+    - ``[eth_getBlockByNumber](https://docs.alchemy.com/reference/eth-getblockbynumber)``
+    - ``[eth_sendRawTransaction](https://docs.alchemy.com/reference/eth-sendrawtransaction)`` (covered in the next module)
+- Here's a [more complete documentation of all the methods](https://docs.alchemy.com/reference/ethereum-api-endpoints) that are contained in the Ethereum JSON-RPC interface, ready to be pinged at any moment by the dApps we will build!
+
+#### Visualization of API Standards: REST and JSON-RPC
+- REST is a very popular API standard. If you've ever worked with databases and record-keeping, chances are you've used the REST API standard. This is what that flow looks like:
+![REST](https://www.seobility.net/en/wiki/images/f/f1/Rest-API.png)
+**REST flow:**
+    1. You have some client application (ie. Twitter)
+    2. The client application sends a request, for example: ``DELETE_TWEET``
+    3. The database, loaded with a REST API standard interface, accepts the request, updates the resource (deletes a tweet) and sends back a response, either success or fail
+- JSON-RPC is a very similar flow, in the sense that you are sending Requests and getting back Responses to a server - in our case, an Ethereum node acting as a listening server!
+![JSON-RPC](https://res.cloudinary.com/divzjiip8/image/upload/v1670369945/alchemyu/Untitled_1.png)
+**JSON-RPC flow:**
+    1. On the client side, formulate a JSON-RPC request. Typically, this would be you or a user clicking a button that initiates some action to the Ethereum computer, for example, a button that is rigged to make a ``eth_blockNumber`` request to the provider
+    2. Your web3 wallet, acting as a provider, will route the ``Request`` to the Ethereum node it is connected to
+    3. The Ethereum node will receive the ``Request``, run the eth_blockNumber method in the request and send back a Response containing the latest block # on Ethereum
+>Remember, ``provider`` is just a fancy term for something representing a connection to an Ethereum node!
+
+#### JSON-RPC Request
+![JSON-RPC Request](https://res.cloudinary.com/divzjiip8/image/upload/v1670370933/alchemyu/Screen_Shot_2022-12-06_at_3.55.15_PM.png)
+- The above is what a JSON-RPC ``[Request](https://www.jsonrpc.org/specification#request_object)`` that asks for the account balance of an address looks like. It specifies:
+1. The ``jsonrpc`` version, which is **always** ``2.0``
+2. The specific ``method`` that you would like to call (must be a method in the interface!)
+3. Any ``params`` relevant to the ``method`` called
+4. The ``id`` of the request is any arbitrary number you choose. The ``id`` property is only relevant when you are batching requests, if you are making stand-alone requests you can just use ``0``.
+
+#### JSON-RPC Response
+![JSON-RPC Response](https://res.cloudinary.com/divzjiip8/image/upload/v1670371227/alchemyu/Screen_Shot_2022-12-06_at_4.00.23_PM.png)
+- The above is what a JSON-RPC ``[Response](https://www.jsonrpc.org/specification#response_object)`` looks like, in particular the response to the ``eth_getBalance`` request made above.
+- The ``Response`` contains:
+1. The ``jsonrpc`` version just mirrored back, always ``2.0``
+2. The ``result`` of the ``eth_getBalance`` query, in this case ``0x7cf7d42bb6a906``, which is the hexadecimal representation of ``35175387750639880 wei`` which is simply ``0.03517538775063988 ETH`` worth of an account balance
+> We used this converter: https://www.alchemy.com/gwei-calculator to convert from ``wei`` to ``ether``
+3. The id of the single request
+
+#### JSON-RPC Tools
+- Try using the [Alchemy Composer](https://dashboard.alchemy.com/composer) to make JSON-RPC requests in an instant! Try a few different methods!
+
+#### Suggested Reading
+- [Why is Ethereum using hexadecimal for numbers?](https://ethereum.stackexchange.com/questions/26710/why-is-ethereum-json-rpc-using-hexidecimal-for-numbers)
+
+#### Conclusion
+- Thanks to every [Ethereum node containing a JSON-RPC interface](https://ethereum.github.io/execution-apis/api-documentation/), we can communicate with the Ethereum blockchain in an instant.
+- We can make important READ requests like ``eth_getBlockByNumber`` and ``eth_getBalance`` to the Ethereum blockchain at any time.
+- In this section, we learned how to manage basic **read** requests from Ethereum.
+- What if we want to **write** to the Ethereum computer?
+- As in, actually make a change of state!
+- Anyone can ask for information any time (did you try the Alchemy Composer?), but what about requests to write information to Ethereum?
+- These write requests can be contract interactions or even a simple Ethereum transfer.
+- The next section covers signed JSON-RPC requests, in other words: **transactions**.
+
+---
+### Ethereum Nodes
+---
+- Ethereum nodes are what maintain the integrity and data on the network. There are several different [types of Ethereum nodes](https://www.alchemy.com/overviews/full-vs-light-vs-archive-nodes) that are participating in the network and are used depending on what type of data is needed.
+- **Full nodes** store and validate all blocks and transactions over the entire blockchain locally.
+    - When a smart contract transaction is executed, Ethereum full nodes execute all of the instructions in the smart contract.
+    - Together, full nodes determine whether the smart contract execution is producing the desired result.
+    - However, running [full Ethereum nodes](https://www.alchemy.com/overviews/running-your-own-node) is expensive to and can consume a great deal of energy.
+- Luckily, Alchemy provides access to all archive data (from block 0) and latest data (from the most recent and pending blocks) completely for free.
+
+#### Understanding Ethereum Nodes
+- In the below video we will break down how nodes work, why they can be extremely challenging for applications at scale, and how to solve data consistency issues.
+
+#### Bonus Material: Data Storage
+- We've talked about Ethereum Nodes storing information locally, although we haven't really talked about how they store the data locally. Let's take a closer look.
+- Ethereum stores data in Merkle Patricia Tries. . We already know this from week 2 content on tries
+> The term "trie" seems to have originated from the term "retrieval". It is used quite interchangeably with the word "tree" and is often pronounced the same way.
+- **Merkle Patricia Tries retain the properties of the Merkle Tree**.
+    - The root hash of the trie represents the entirety of its contents (if any data changes, the root is completely different).
+    - Also, data can be proven to be part of a Merkle Patricia Trie without providing all of the data.
+- In addition to the Merkle Tree properties, the Merkle Patricia Trie has some major performance benefits for storing large amounts of data.
+    - You can find the full specification of the Patricia Tree [here](https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/) as well as the design rationale [here](https://ethereumbuilders.gitbooks.io/guide/content/en/design_rationale.html).
+- There are four types of tries used to store data in **Ethereum**:
+    - **State Trie** - This is the global state of the Ethereum network. There is only one state trie and it is constantly being updated by transactions when they are mined into the blockchain.
+    - **Storage Trie** - Each account has its own storage trie. This keeps track of all persistent variables within a contract account, also known as its storage.
+    - **Transactions Trie** - There is one transactions trie per block and it contains all of the transactions in a specific order determined by the miner.
+    - **Receipts Trie** - For each transaction, a receipt is stored that contains logs, gas used and post-transaction state. This receipts trie stores all of that data.
+- Don't worry about memorizing this information; you will likely never need to interface with these tries directly.
+- Either you'll invoke an opcode on the EVM when you write a Smart Contract or you'll use the JSON-RPC API (often with the assistance of a library) to interact with an Ethereum Node on a much higher-level.
+
+#### Wrap Up
+- We discussed the potential issues you might run into with Ethereum nodes and how data is stored on full nodes, which is admittedly pretty intense!
+- Much of the Ethereum system is designed around incentives on how these nodes are able to store and validate transactions, so this is an important thing to keep in mind!
+- In upcoming lessons we'll be moving more high-level. We'll start to interact with these nodes using our Alchemy endpoint and learn to use libraries to make our lives easier as developers
