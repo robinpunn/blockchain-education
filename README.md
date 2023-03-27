@@ -17,3 +17,4 @@
 + Ethereum Features
 + Reading Data From Ethereum: JSON-RPC Requests
 + Ethereum Transactions
++ Frontend Libraries: Ethers.js
