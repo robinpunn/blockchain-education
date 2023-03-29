@@ -11,6 +11,9 @@ const alchemy = new Alchemy(settings);
 
 let wallet = new Wallet(TEST_PRIVATE_KEY);
 
+let mine = "0x7814b4cee7fb171d08686d86a18fecce39eea573";
+let gasLimit = "21000";
+
 async function main() {
   const nonce = await alchemy.core.getTransactionCount(
     wallet.address,
@@ -18,9 +21,9 @@ async function main() {
   );
 
   let transaction = {
-    to: "0x7814b4cee7fb171d08686d86a18fecce39eea573",
-    value: Utils.parseEther("0.5"), // 0.001 worth of ETH being sent
-    gasLimit: "21000",
+    to: "0x189fEC77aD177d9463CB6B186b8dc1607EbD07AB",
+    value: Utils.parseEther("0.25"), // 0.001 worth of ETH being sent
+    gasLimit: "84000",
     maxPriorityFeePerGas: Utils.parseUnits("5", "gwei"),
     maxFeePerGas: Utils.parseUnits("20", "gwei"),
     nonce: nonce,

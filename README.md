@@ -18,3 +18,4 @@
 + Reading Data From Ethereum: JSON-RPC Requests
 + Ethereum Transactions
 + Frontend Libraries: Ethers.js
++ Week 3 Assignment: Block Explorer
