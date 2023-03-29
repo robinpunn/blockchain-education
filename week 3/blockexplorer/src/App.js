@@ -2,6 +2,7 @@ import { Alchemy, Network, AlchemySubscription } from "alchemy-sdk";
 import { useEffect, useState } from "react";
 import BlockNumber from "./components/BlockNumber";
 import Transactions from "./components/Transactions";
+import Blocks from "./components/Blocks";
 import Gas from "./components/Gas";
 
 import "./App.css";
@@ -25,6 +26,25 @@ function App() {
   const [blockNumber, setBlockNumber] = useState();
   const [gas, setGas] = useState();
   const [transactions, setTransactions] = useState([]);
+  const [blocks, setBlocks] = useState([]);
+
+  async function fetchBlocks() {
+    const result = await alchemy.core.getBlockNumber().then((latestBlock) => {
+      const blockPromises = [];
+      for (let i = 0; i < 10; i++) {
+        const blockNumber = latestBlock - i;
+        const blockPromise = alchemy.core.getBlock(blockNumber);
+        blockPromises.push(blockPromise);
+      }
+      return Promise.all(blockPromises);
+    });
+    setBlocks(result);
+    console.log("blocks", blocks);
+  }
+
+  useEffect(() => {
+    fetchBlocks();
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
@@ -43,10 +63,11 @@ function App() {
     async function getBlockTxNum() {
       if (blockNumber) {
         const block = await alchemy.core.getBlockWithTransactions(blockNumber);
+        // console.log(block);
         setTransactions(block.transactions);
       }
     }
-    console.log(transactions);
+    // console.log(transactions);
     getBlockTxNum();
   }, [blockNumber]);
 
@@ -54,6 +75,7 @@ function App() {
     <div className="App">
       <BlockNumber blockNumber={blockNumber} />
       <Gas gas={gas} />
+      <Blocks blocks={blocks} />
       <Transactions transactions={transactions} />
     </div>
   );
