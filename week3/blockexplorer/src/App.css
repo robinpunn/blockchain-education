@@ -169,6 +169,8 @@
   }
   .final-safe {
     border-bottom: none;
+    margin-left: 5.5rem;
+    text-align: left;
   }
   .blocks-container,
   .transactions-container {
