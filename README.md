@@ -22,3 +22,6 @@
 
 ### Week 4: Smart Contract Basics
 + Solidity Syntax
++ Functions
++ Smart Contract Communication
++ Intro to Hardhat

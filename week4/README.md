@@ -881,3 +881,288 @@ const myContractInstance = await contract.deploy('0x38cE03CF394C349508fBcECf8e2c
 - As you can see in the diagram above, if you want to interact with the Ethereum computer in one of a few ways, you must have some important artifacts with you.
 - If you are writing contracts TO Ethereum (ie. deploying), the contract compilation produces what you need: the contract's bytecode.
 - If you are reading contracts FROM Ethereum, the contract compilation produces what you need here as well: the contract's ABI.
+
+## Intor to Hardhat
+### Hardhat
+![Hardhat](https://hardhat.org/card.jpg)
+#### Intro
+- You might be wondering, what the heck is Hardhat!?
+    - We'll define that shortly, but the important concept to know is that we've made it to the most powerful Ethereum smart contract development tool. 🔨
+- We started at the low-level and have slowly moved our way up to the high-level.
+    - This is the flow the AU Ethereum Developer Bootcamp has taken:
+        1. Blockchain and Cryptography Fundamentals
+        1. Blockchain Account Tracking and Blockchain Storage
+        1. Ethereum Introduction and Using JSON-RPC to Read, Signed JSON-RPC to Write, Ethers.js & Alchemy SDK for Higher Developer Abstraction
+        1. Solidity Syntax, Smart Contracts and Hardhat (we are here!!)
+- Hardhat is an extremely powerful tool for any developer in web3. Let's dive in...
+#### What is [Hardhat](https://hardhat.org/)?
+- [Hardhat](https://hardhat.org/) is a development environment to compile, deploy, test, and debug Ethereum smart contracts.
+#### Why Hardhat?
+- It helps developers manage and automate the recurring tasks that are inherent to the process of building smart contracts and dApps, as well as easily introducing more functionality around this workflow
+- Hardhat Features
+- Hardhat facilitates common development flows for smart contracts with the following features:
+    - Local testing, including local Hardhat Network (super useful!!)
+    - Solidity compilation and error-checking
+    - Flexible combination with other tooling/plugins (ie, Ethers.js)
+    - Easy deployment of and interaction with smart contracts
+- Hardhat Project Structure
+- When you initialize a Hardhat project in your local environment, the structure includes the following important files/folders:
+    1.``**/scripts**``: .js files for running scripts
+    1. ``**/artifacts**``: artifacts produced out of the contract compilation
+    1. ``**/test**``: .js files for using testing libraries
+    1. ``**hardhat.config.js**``: file with project configurations (very important!!!!)
+- Important Hardhat Concepts
+- The ``hardhat.config.js`` file is the most important file in your project!
+> ⚠️ If you have a bug/issue, this is first file to look at! 👀
+- Also, when you compile a contract, its artifacts (the ABI and bytecode) will be stored in a newly created ``/artifacts`` folder
+#### AU Suggested Hardhat Flow
+- Want to get up and running with a Hardhat project? 🏇 Just follow this flow:
+    1. Open a terminal
+    1. Run ``cd Desktop``, then create a new folder via ``mkdir au-hardhat-practice``, then move into that newly-created folder by running ``cd au-hardhat-practice``
+    1. Once you are in the ``au-hardhat-practice`` folder, in your terminal run ``npm init -y`` to initialize a ``package.json``
+    1. Run ``npm i hardhat``
+    1. Run ``npm i dotenv``
+    1. Run ``touch .env`` in order to create a ``.env`` file at the root-level of your project, then populate it with important data and save
+    1. Run ``npx hardhat`` which will initialize a brand new Hardhat project
+    1. We recommend the following flow: Choose the current root > ``YES`` to the ``.gitignore`` > ``YES`` to install the sample project's dependencies
+    1. Add ``require(‘dotenv’).config()`` at the top of your ``hardhat.config.js`` file
+    1. Add ``networks`` flag to ``hardhat.config.js``, add your Alchemy RPC URL under ``url`` and your testnet private key under ``accounts``
+    1. Set up your scripts and contracts, then deploy in a flash! ⚡️
+#### Conclusion
+- Hardhat is one of the ultimate web3 developer tools.
+    - It is specifically built to cover the entire smart contract developer flow end-to-end.
+        - Master it, and thou shalt become a Web3 Master. 🧙‍♂
+
+---
+## Activity: Deploy a Contract with Ethers.js + Hardhat
+---
+- In this activity, we'll run through deploying a contract to the Göerli test network.
+    - We will deploy a live ether faucet on Göerli - you can choose to deploy any contract you'd like or customize the one below however you like!
+- It's great to get some practice in with leading web3 development like Hardhat, let's jump in!
+> These activities are meant to teach you how to work more on your local. Setting up a local development environment is something that becomes extremely easy with a lot of practice!
+### Activity Requirements
+- [Apex](https://apexwallet.xyz/): Browser extension wallet that provides key storage and secure account log-in as well as acts as a JSON-RPC gateway.
+- [Alchemy](https://www.alchemy.com/): Alchemy is a blockchain development platform from which we will use some APIs to help query the Ethereum blockchain.
+- [Hardhat](https://hardhat.org/): Ethereum developer suite full of tools that make the developer experience more efficient.
+
+#### Setup
+#### 1. Acquire Göerli ETH
+- You can get some testnet ether at https://goerlifaucet.com/
+
+#### Instructions
+#### 1. Create Project Structure
+1. Open up a generic terminal
+1. In your preferred root folder, run ``mkdir au-deployContract && cd au-deployContract``
+1. run ``npm init -y``
+1. run ``npm install --save-dev hardhat``
+1. run ``npm install @nomiclabs/hardhat-waffle ethereum-waffle chai @nomiclabs/hardhat-ethers ethers dotenv``
+
+- As review, the above commands do the following:
+    - ``npm init -y``: sets up an empty package.json
+    - ``npm install ethers``: installs the ethers.js library
+    - ``npm install dotenv``: installs a package that allows us to use sensitive data as environment variables in our project
+    - ``npm install hardhat``: plugs in the ``hre`` global access to our project so that we can use Hardhat features throughout it
+> If you see a bunch of warnings like npm WARN deprecated appear on your terminal when you are installing dependencies, don't worry about them! They are a common part of npm installs and there is little you can do about them.
+#### 2. Add files, .env and run npx hardhat
+1. Run ``touch .env`` (this creates a brand new ``.env`` file in your current directory), then open in and add in your **Göerli** private key as a variable
+1. **This time, also add your Alchemy ``GOERLI_URL`` as a variable in your ``.env`` file!**
+1. Save and close the file
+1. Run ``npx hardhat``
+1. Select ``Create a JavaScript project`` and select ``y`` to everything!
+1. This is labelled below, but remember to add ``require('dotenv').config()`` to the top of your ``hardhat.config.js`` file!
+> This will get you set up with all of the hardhat dependencies that you might need! 🏗🦺
+![image](https://res.cloudinary.com/divzjiip8/image/upload/v1671125715/alchemyu/Screen_Shot_2022-12-15_at_9.34.39_AM.png)
+- You'll now have a basic project structure set up with a contracts and scripts folder and some sample files in them, just like above.
+    - Go ahead and delete only the files in them, we won't be needing them - but we do need the folders, so keep those!
+- Ok, now that we've got a basic Hardhat project structure set up, let's start implementing a contract and a deployment script! 💥
+#### 3. Edit hardhat.config.js
+- In the ``hardhat.config.js`` that Hardhat set up for us, we'll want to make some modifications - for now, just delete everything in it and copy-paste the following:
+    ```javascript
+    require("@nomiclabs/hardhat-waffle");
+    require("dotenv").config();
+
+    module.exports = {
+    solidity: "0.8.4",
+    networks: {
+        goerli: {
+        url: process.env.GOERLI_URL,
+        accounts: [process.env.PRIVATE_KEY]
+        },
+    }
+    };
+    ```
+    - We are setting a compiler version and enabling hardhat to run commands to the Göerli network!
+#### 4. Add A Smart Contract File
+- We'll be deploying a generic faucet contract on Göerli - anyone will be able to send and withdraw some ether, just like the typical faucets we use to acquire Göerli. 🚰
+    1. cd into your contracts folder and run touch Faucet.sol
+    1. Open the Faucet.sol file and copy-paste the following contents:
+        ```solidity
+        //SPDX-License-Identifier: Unlicense
+        pragma solidity ^0.8.0;
+
+        contract Faucet {
+
+        function withdraw(uint _amount) public {
+            // users can only withdraw .1 ETH at a time, feel free to change this!
+            require(_amount <= 100000000000000000);
+            payable(msg.sender).transfer(_amount);
+        }
+
+        // fallback function
+        receive() external payable {}
+        }
+        ```
+    1. Save the file!
+- The Faucet contract is quite simple; it allows anyone to call the withdraw method and specify an amount lower than .1 ETH at a time.
+    - The receive fallback function will handle any ETH deposited into the Faucet and add it to the contract balance.
+#### 5. Add Scripts
+- Now, we need to create a script that will run the methods provided by ethers.js in order to deploy Faucet.sol to the Göerli test network.
+- We will need one script:
+    - deployment script
+- We don't need a whole deployment script anymore! Hardhat does all this work for us now!
+    1. In your ``scripts`` directory, run ``touch deploy.js``
+    1. Open the newly-created file and copy-paste the following:
+    ```js
+    const ethers = require('ethers');
+    require('dotenv').config();
+
+    async function main() {
+
+    const url = process.env.GOERLI_URL;
+
+    let artifacts = await hre.artifacts.readArtifact("Faucet");
+
+    const provider = new ethers.providers.JsonRpcProvider(url);
+
+    let privateKey = process.env.PRIVATE_KEY;
+
+    let wallet = new ethers.Wallet(privateKey, provider);
+
+    // Create an instance of a Faucet Factory
+    let factory = new ethers.ContractFactory(artifacts.abi, artifacts.bytecode, wallet);
+
+    let faucet = await factory.deploy();
+
+    console.log("Faucet address:", faucet.address);
+
+    await faucet.deployed();
+    }
+
+    main()
+    .then(() => process.exit(0))
+    .catch(error => {
+        console.error(error);
+        process.exit(1);
+    });
+    ```
+>  Remember, we are using our Alchemy key as always - but imported from our .env file using process.env
+#### 6. Deploy Your Faucet!
+- **All systems are go! We should now be ready to run the final commands in order to deploy our own faucet to Göerli.**
+- First, compile the ``Faucet.sol`` with Hardhat so that all the necessary artifacts are created...
+    1. Run npx hardhat compile
+        -You should now see an artifacts folder pop up in your project directory - search through it to spot your contracts abi and bytecode!
+    1. To deploy, run npx hardhat run scripts/deploy.js --network goerli
+        - Notice we used the --network flag above? This is where our changes in hardhat.config.js come in, we are telling Hardhat to run this command in our predefined network which is Göerli.
+    1. You should now see your newly-deployed contract address as terminal output - nice!
+    1. Copy-paste that address into https://goerli.etherscan.io/ and check out your contract in live deployment form!
+- Can you think of any extra features to add to your faucet?
+    - How about some sort of way of keeping track of user addresses that have already used it?
+    - Or using timestamps to limit mass withdrawals all at once?
+- Did you notice Hardhat make things easier for us as developers? Or maybe harder?
+
+---
+
+## Hardhat Quick Guide: Modifying State Variables
+
+---
+
+- In this guide, we will set up a simple Hardhat project structure, add a contract with a state variable and a function to modify it.
+    - We will then write a quick test to make sure the function modifies the state variable as expected - let's get to it!
+> Hardhat is one of the ultimate web3 development tools. 🔥 We are creating guides like this in order for you to get some practice using it! Master Hardhat, master web3 development!
+
+#### Step 1: Set Up Project Structure Using Hardhat
+1. In a folder of your choice, run ``mkdir modify-contract-state && cd modify-contract-state``
+1. Run ``npm init -y``
+1. Run ``npm install --save-dev hardhat``
+1. Run ``npm install @nomiclabs/hardhat-waffle ethereum-waffle chai @nomiclabs/hardhat-ethers ethers``
+1. Run ``npx hardhat`` to initiate the Hardhat development environment - it will bring up some yes/no options, use the arrow keys to toggle the options and select ``Create an empty hardhat.config.js``
+![image](https://res.cloudinary.com/divzjiip8/image/upload/v1671126973/alchemyu/Screen_Shot_2022-12-14_at_9.29.17_PM.png)
+1. Your project directory should now contain the following: ``node modules``, ``package.json``, ``package-lock.json`` and the empty ``hardhat.config.js`` you just created - rolling on!
+1. Open your project's ``hardhat.config.js``, delete all of its contents and copy-paste the following:
+    ```solidity
+    require("@nomiclabs/hardhat-ethers");
+
+    module.exports = {
+    solidity: "0.8.4",
+    };
+    ```
+- **Make sure that the solidity compiler version in your project's ``hardhat-config.js`` is set to ``0.8.4`` so that it matches that of the following contract!**
+![image](https://i.imgur.com/L6tSo8C.png)
+#### Step 2: Create Smart Contract
+1. From your project root directory, run ``mkdir contracts && cd contracts``
+1. Run ``touch ModifyVariable.sol`` (creates a new file called ``ModifyVariable.sol`` in the current directory) and open the newly-created contract file
+1. Copy-paste the following:
+    ```solidity
+    //SPDX-License-Identifier: MIT
+    pragma solidity ^0.8.4;
+
+    contract ModifyVariable {
+        uint public x;
+
+        constructor(uint _x) {
+            x = _x;
+        }
+
+        function modifyToLeet() public {
+            x = 1337;
+        }
+
+    }
+    ```
+    - We've implemented a very simple smart contract that contains one state variable ``x`` and a function ``modifyToLeet`` that, when called, changes the state of the variable to be ``1337``.
+1. Go ahead and save your contract - feel free to add more functions!
+
+#### Step 3: Create Test
+1. Make sure to go back to your project root directory by running ``cd`` back from the ``contracts`` directory
+1. In your project root, run ``mkdir test`` to create a new ``/test`` directory that will contain all your testing files!
+1. In the ``/test`` directory, create a file called ``sample-test.js`` and copy-paste the following into it:
+    ```js
+    // import testing libraries: https://www.chaijs.com/guide/styles/
+    const { expect, assert } = require("chai");
+
+    // the `describe` scope encapsulates an entire test called `TestModifyVariable`
+    // the `it` says the behavior that should be expected from the test
+    describe("TestModifyVariable", function () {
+        it("should change x to 1337", async function () {
+            // this line creates an ethers ContractFactory abstraction: https://docs.ethers.org/v5/api/contract/contract-factory/
+            const ModifyVariable = await ethers.getContractFactory("ModifyVariable");
+
+            // we then use the ContractFactory object to deploy an instance of the contract
+            const contract = await ModifyVariable.deploy(10);
+
+            // wait for contract to be deployed and validated!
+            await contract.deployed();
+
+            // modify x from 10 to 1337 via this function!
+            await contract.modifyToLeet();
+            // getter for state variable x
+            const newX = await contract.x();
+            assert.equal(newX.toNumber(), 1337);
+        });
+    });
+    ```
+    - This test, when executed, will deploy a contract instance contract and set x (that instance's state variable) to 10.
+        - It then calls the modifyToLeet() function on the instance which prompts a change to the state variable to 1337 and then uses assert.equal() to verify the change was successful.
+1. Go ahead and save the file - feel free to play around with the values and add more tests!
+
+#### Step 4: Run the Test
+1. In your **project root folder**, run ``npx hardhat test``
+> If you are still in /test in your terminal, just type in cd .. and that will push your directory one back! :)
+1. Your terminal output should look something like this:
+![image](https://i.imgur.com/GS8PwYe.png)
+- You have successfully set up a whole project structure! With the help of Hardhat, you were able to test whether your functions modifying your smart contract's state variables were actually modified - nice job!
+#### Extra Challenges:
+- Create a new type ``string`` state variable and modify it
+- Change the constructor argument
+- Add a new test
+- Create a ``scripts`` directory, deploy your contract and change the contract state
