@@ -1166,3 +1166,173 @@ const myContractInstance = await contract.deploy('0x38cE03CF394C349508fBcECf8e2c
 - Change the constructor argument
 - Add a new test
 - Create a ``scripts`` directory, deploy your contract and change the contract state
+
+---
+
+## Address Interactions
+
+---
+
+### Calling EOAs
+- Let's talk about how to use addresses in Solidity!
+- First off, a bit of review.
+- What are the two types of accounts in Solidity?
+    1. **Externally Owned Accounts** - All transactions originate from an EOA, they are controlled by a private key which signs off on the transaction.
+    1. **Smart Contract** - This is code deployed to the blockchain. It is programmed to respond to different inputs sent by EOAs or other contracts.
+- OK, great! Let's focus on calling EOAs first.
+
+#### EOAs in a Smart Contract
+- Let's imagine we have two authors of a smart contract:
+    ```solidity
+    contract SpecialNumber {
+        address author1;
+        address author2;
+    }
+    ```
+- What's something we can do with EOAs?
+    - We can pay them! Let's do that.
+    - Any time this contract receives ether, let's send half to author1 and half to author2.
+    ```solidity
+    contract SpecialNumber {
+        address author1;
+        address author2;
+
+        receive() external payable {
+            // msg.value is passed to this contract
+            uint totalValue = msg.value;
+
+            // make a call to author1 sending half of the ether
+            (bool success1, ) = author1.call{ value: totalValue / 2 }("");
+            require(success1);
+
+            // make a call to author2 sending half of the ether
+            (bool success2, ) = author2.call{ value: totalValue / 2 }("");
+            require(success2);
+        }
+    }
+    ```
+- A [payable function](https://docs.alchemy.com/docs/solidity-payable-functions) is one that can receive ether.
+    - The ``receive`` function is a special function that will be invoked when a smart contract receives ether.
+    - We'll touch on this further later on.
+- Let's take a look at that call syntax, specifically:
+    ```solidity
+    (bool success1, ) = author1.call{ value: totalValue / 2 }("");
+    require(success1);
+    ```
+- What is happening in these two lines? Let's break this syntax up into four parts:
+1. The ``.call`` method
+1. The curly brace ``{}`` syntax
+1. The empty string argument passed in ``("")``
+1. The return value ``(bool success1, )``
+
+#### Call
+- First let's talk about call.
+    - The call method is something you'll find on every address type when you want to send input data or ether to an address.
+    - When you do this, you'll be making something called a message call.
+    - You'll often hear this terminology used to describe a call to a smart contract.
+    - We differentiate this from a transaction, which is object signed by the EOA sent to the blockchain.
+>  In Solidity you'll have access to two relevant globals: ``msg`` which refers to the **message** describe above and ``tx`` which refers to the original transaction sent by the EOA. You can see this **msg** being used in the ``receive`` function above to get the total ether value passed in, specifically the ether amount is the ``msg.value``.
+
+#### Curly Braces
+- The curly braces which comes after call ``{}`` provides an opportunity to override the ``value`` and ``gas`` parameters on the message call.
+    - The ``gas`` parameter will be relevant when we start calling smart contract addresses.
+    - When you leave it unspecified it will forward along all the gas remaining that the transaction sender designated (through the gasLimit parameter on the front-end, remember?).
+
+#### The Empty String Argument
+- You can see where passing in an empty string here.
+    - If you were trying to target a function on a smart contract this is where your calldata would go.
+    - The calldata will specify the function you're trying to call as well as the arguments you are sending.
+    - In this case, we're just trying to send ether to an EOA, so we pass an ``""`` to indicate there is no calldata.
+
+#### Return Value
+- The (bool success1, ) part probably looks a bit confusing! Remember how in the previous lesson we wrote a contract that can return multiple values?
+    - The call method returns multiple values.
+    - Solidity will warn you if you don't use the first value returned, which indicates if the message call was successful or not.
+    - In most cases, we will want the transaction to fail if a message call fails.
+    - The code require(success1) will do just that. We'll take about require further very shortly!
+
+### Reverting Transactions
+- What does it mean to **revert** a transaction?
+- At the lowest level, ``REVERT`` is an opcode in the Ethereum Virtual Machine.
+    - This means it's a native feature of the VM which we can use through some of the Solidity keywords ``revert``, ``require`` and ``assert``.
+- Let's first talk about what it means to revert a transaction.
+    - When you revert a transaction, you essentially make it like the transaction never happened.
+    - You halt the execution of the transaction and you remove all state changes.
+    - The transaction can still be included in a block, and when it is, the transaction sender will still have to pay for the gas used.
+>  Technically, **message calls** can be reverted and caught in the contract making the message call (the ``msg.sender``). You won't see this used too often, but this is what ``try``/``catch`` is for in Solidity (see the [docs here](https://docs.soliditylang.org/en/v0.8.17/control-structures.html?highlight=try%20catch#try-catch)).
+#### Real World Example
+- Let's take a look at a recently reverted transaction here:
+    - [0x6def53bf56c2eb9dc08c6b87eeaadf90c46c0f4a57aab5ce9ca1481e7ff690d5](https://etherscan.io/tx/0x6def53bf56c2eb9dc08c6b87eeaadf90c46c0f4a57aab5ce9ca1481e7ff690d5)
+    - If you look at the error message, it is an error that is coming from Uniswap saying ``UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT'``.
+        - Often times, when interacting with a decentralized exchange like Uniswap, the conditions will change between when the EOA signs the transaction and when the transaction is included in the block.
+        - It's perfectly possible that when the EOA signed this transaction, the conditions of the market would have allowed for this transaction to happen, however at the time when it was included in the block it failed one of Uniswap's checks.
+    - You'll notice that there still was an associated gas fee, since this transaction did run in an Ethereum block up until that point of the revert.
+        - Since this transaction reverted, the state changes did not go through and no token balances were updated for the user.
+
+### Calling Contract Addresses
+- Okay, so we have taken a look at sending ether to externally owned accounts through the call method. What's next?
+- Now it's time to send data to smart contracts using the call method.
+    - Let's take a look at what this looks like:
+    ```solidity
+    import "hardhat/console.sol";
+
+    contract A {
+        function setValueOnB(address b) external {
+            (bool s, ) = b.call(abi.encodeWithSignature("storeValue(uint256)", 22));
+            require(s);
+        }
+    }
+
+    contract B {
+        uint x;
+
+        function storeValue(uint256 _x) external {
+            x = _x;
+            console.log(x); // 22
+        }
+    }
+    ```
+    - In the above case we're going to call the contract B with calldata that we manually encoded ourselves with ``abi.encodeWithSignature``.
+        - This will create calldata in the same format as the data field we encoded in the transaction through ethers.js.
+- This method can be extremely useful when we need to manually encode calldata like this, however it's not always necessary!
+    - In this example we could have just used the definition of the contract B to make much cleaner. Let's take a look at an example below:
+    ```solidity
+    import "hardhat/console.sol";
+
+    contract A {
+        function setValueOnB(address b) external {
+            B(b).storeValue(22);
+        }
+    }
+
+    contract B {
+        uint x;
+
+        function storeValue(uint256 _x) external {
+            x = _x;
+            console.log(x); // 22
+        }
+    }
+    ```
+- Please compare these first two examples.
+    - It's important to recognize that they're doing the same thing!
+    - Underneath the hood we are making a message call from contract A to contract B passing along calldata to target the storeValue function.
+    - In the case of this second example, all of that is done for us by using the contract definition of B so Solidity knows how to encode the calldata for us! Super helpful.
+- Ok here's the last example, and then we'll get to coding!
+    - What if you didn't have access to the contract B definition in the previous example?
+    - In that case you could use something called an interface.
+    - Let's see what that would look like:
+    ```solidity
+    interface B {
+        function storeValue(uint256) external;
+    }
+
+    contract A {
+        function setValueOnB(address b) external {
+            B(b).storeValue(22);
+        }
+    }
+    ```
+    - From contract A's perspective, this code functions the exact same way as before.
+        - For the definition of an interface, we only need to give Solidity enough information to figure out how to encode the calldata to call the address b.
+        - From contract A's perspective, we don't need the full method definition of storeValue, we simply need to describe how we'd like to interface with contract B. Make sense?

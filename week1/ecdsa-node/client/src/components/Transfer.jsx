@@ -7,8 +7,6 @@ import { keccak256 } from "ethereum-cryptography/keccak";
 function Transfer({ address, setBalance, wallets }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
-  const [signature, setSignature] = useState("");
-  console.log("transfer:", wallets);
 
   const setValue = (setter) => (evt) => setter(evt.target.value);
 
@@ -28,14 +26,14 @@ function Transfer({ address, setBalance, wallets }) {
     const signed = await secp.sign(message, privateKey, { recovered: true });
     const signature = toHex(signed[0]);
     const recoveryId = signed[1];
-    return { signature, recoveryId };
+    return [signature, recoveryId];
   };
 
   // if veri
   async function transfer(evt) {
     evt.preventDefault();
     const message = createMessageHash(address, sendAmount, recipient);
-    const { signature, recoveryId } = await sign(address, message);
+    const [signature, recoveryId] = await sign(address, message);
     try {
       const {
         data: { balance },

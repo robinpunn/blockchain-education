@@ -18,7 +18,7 @@ let balances = {};
 // }
 
 const recoverKey = async (message, signature, recoveryId) => {
-  const sign = await signature;
+  // const sign = await signature;
   const recoveredPublicKey = await secp.recoverPublicKey(
     message,
     signature,
