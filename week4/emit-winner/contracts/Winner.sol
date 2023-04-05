@@ -1,11 +1,18 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-contract Contract {
-    event Winner(address);
+interface ContractWinner {
+    function attempt() external;
+}
+
+contract WinnerInterface {
+    ContractWinner private _contract;
+
+    constructor(address contractAddress) {
+        _contract = ContractWinner(contractAddress);
+    }
 
     function attempt() external {
-        require(msg.sender != tx.origin, "msg.sender is equal to tx.origin");
-        emit Winner(msg.sender);
+        _contract.attempt();
     }
 }
