@@ -5,6 +5,49 @@
 
 ---
 
+### Table of Contents
+1. [The First Primitive](#the-first-primitive)
+    - [Blockchain and Crypto](#blockchain-and-crypto)
+        - [Blockchains](#blockchains)
+        - [Why is blockchain needed for cryptocurrency?](#why-is-blockchain-needed-for-cryptocurrency)
+        - [Smart Contract Blockchains](#smart-contract-blockchains)
+        - [Cryptographic Hash Functions](#cryptographic-hash-functions)
+2. [Digital Signatures](#digital-signatures)
+    - [Public Key Cryptography](#public-key-cryptography)
+        - [Cryptography Historically](#cryptography-historically)
+        - [Personal Computing](#personal-computing)
+        - [RSA and ECDSA](#rsa-and-ecdsa)
+    - [Supplemental Resources on Digital Signatures](#supplemental-resources-on-digital-signatures)
+        - [ECDSA](#ecdsa)
+        - [Bitcoin](#bitcoin)
+        - [Diffie-Hellman Key Exchange](#diffie-hellman-key-exchange)
+        - [RSA](#rsa)
+3. [Proof of Work](#proof-of-work)
+    - [Proof of Work](#proof-of-work)
+        - [Proof of Work and Mining](#proof-of-work-and-mining)
+        - [Consensus Mechanisms](#consensus-mechanisms)
+        - [Proof of Work](#proof-of-work)
+        - [Mining](#mining)
+    - [Hashing and Proof of WOrk](#hashing-and-proof-of-work)
+        - [Why would you use proof of work?](#why-would-you-use-proof-of-work)
+        - [How does Bitcoin use Proof of Work?](#how-does-bitcoin-use-proof-of-work)
+    -[Supplemental Resources on Proof of Work](#supplemental-resources-on-proof-of-work)
+        - [History](#history)
+        - [Bitcoin Mining](#bitcoin-mining)
+        - [Mining Pools](#mining-pools)
+4. [Blockchain Network](#blockchain-network)
+    - [Blockchain Structure](#blockchain-strucutre)
+        - [Blockchain Architecture](#blockchain-architecture)
+        - [Blockcahin Demo](#blockchain-demo)
+        - [Data Integrity in a Blockchain Data Structure](#data-integrity-in-a-blockchain-data-structure)
+        - [Adding a New Block](#adding-a-new-block)
+        - [Peer to Peer Network/Conclusion](#peer-to-peer-network/conclusion)
+    - [Further Reading on the Bitcoin Network](#further-reading-on-the-bitcoin-network)
+        - [51% Attack](#51-attack)
+        - [Genesis Block and Blockchain Explorer](#genesis-block-and-blockchain-explorer)
+
+---
+
 ## The First Primitive
 
 ---
