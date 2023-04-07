@@ -26,3 +26,7 @@
 + Smart Contract Communication
 + Intro to Hardhat
 + Address Interactions
++ Week 4 Assignment: Smart Contract Winner
+
+### Week 5: Solidity
++ Mappings
