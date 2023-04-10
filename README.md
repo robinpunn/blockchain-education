@@ -30,3 +30,4 @@
 
 ### Week 5: Solidity
 + Mappings
++ Events
