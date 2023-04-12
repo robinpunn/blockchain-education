@@ -157,3 +157,56 @@
 1. Create a new event called ``ForSale`` which takes two ``uint`` parameters: the price and the current block timestamp.
 1. Create a new external function called ``markPrice`` which has a single ``uint`` parameter: the asking price.
 1. Inside the ``markPrice`` function, emit the ``ForSale`` event with the price and block timestamp as its arguments. HINT: ``block.timestamp`` is a [global variable](https://docs.soliditylang.org/en/v0.8.17/cheatsheet.html#global-variables)
+
+### Sale
+1. Create an event called Purchase which takes two arguments: a uint for the purchase amount, and an address for the buyer.
+1. Create an external, payable function purchase which allows a buyer to purchase the collectible at the asking price.
+1. To make this purchase happen you'll need to do 3 things:
+    1. Transfer the msg.value to the seller.
+    1. Transfer the ownership to the buyer.
+    1. Mark the collectible as not for sale any longer.
+    1. Emit a Purchase event.
+- **Reminder** - To send ether, you can use the ``.call`` syntax. Let's say we're trying to send the ``msg.value`` to an address called ``anAddress``:
+    ```solidity
+    (bool success, ) = anAddress.call{ value: msg.value }("");
+    require(success);
+    ```
+### Indexed
+- We can make it easy to filter on event arguments by adding an ``indexed`` keyword:
+    ```solidity
+    event HighScore(address indexed player);
+    ```
+- Now we can filter for both the ``HighScore`` event as well as the ``address`` of the player.
+
+#### Indexing
+- Underneath the hood, the Solidity events use the EVM opcodes ``LOGx`` where ``x`` is the number of **topics**.
+    - It can be any number from ``0`` to ``4``.
+- For all the previous stages, we have been using LOG1 underneath the hood. Can you figure out why?
+- As mentioned in the first coding stage, the first topic is hash of the event signature.
+    - This makes it easy for us to filter for events.
+- We can also add our own topics through the use of indexed:
+    ```solidity
+    event Transfer(
+        address indexed owner,
+        address indexed beneficiary1,
+        address indexed beneficiary2,
+    )
+    ```
+    - In this case we would be using ``LOG4`` because we have three topics: the hash of the event signature and the three addresses.
+    - This is the most topics allowed on any log.
+- Now we can specify the **topics** on the ``eth_getLogs`` method through the [JSON-RPC API](https://docs.alchemy.com/reference/eth-getlogs) to look for events involving a particular address.
+- For instance, if we wanted to know all Transfer events involving 0x7a580af1ca28d91c905e083071bb72b46c5dfc0d, we could first hash our Transfer signature:
+    ```solidity
+    keccak256("Transfer(address,address,address)");
+    ```
+- Take that result and the address above and pass them as parameters to eth_getLogs:
+    ```json
+    params: [{
+    "topics": [
+        "0x3b5c651dbcca6f936576130d201fbc5f5a2c3568820a6d9b2987ea2b7fc91b32",
+        "0x0000000000000000000000007a580af1ca28d91c905e083071bb72b46c5dfc0d"
+        ]
+    }]
+    ```
+    - You'll notice that the address is left-padded with zeroes.
+        - Topics are expected as 32 byte hexadecimal strings. The address is only 20 bytes long, so we pad it with zeroes.

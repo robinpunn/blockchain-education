@@ -5,6 +5,56 @@
 
 ---
 
+### Table of Contents
+1. [Keeping Track of Blockchain User State](#keeping-track-of-blockchain-user-state)
+    - [UTXO and Account Models](#utxo-and-account-models)
+        - [Transactions](#transactions)
+        - [Account-based Model](#account-based-model)
+        - [UTXO-based Model](#utxo-based-model)
+        - [Account vs UTXO model](#account-vs-utxo-model)
+        - [Conclusion](#conclusion)
+    - [Further Reading on UTXOS](#further-reading-on-utxos)
+        - [Real Transactions](#real-transactions)
+        - [Bitcoin Script](#bitcoin-script)
+2. [Tree Data Structures](#tree-data-structures)
+    - [Intro](#intro)
+    - [An Orientation to Trees](#an-orientation-to-trees)
+        - [Simple Tree](#simple-tree)
+        - [Binary Tree](#binary-tree)
+        - [Tree](#tree)
+        - [Tree vs Linked List](#tree-vs-linked-list)
+        - [Tree Vocabulary Summary](#tree-vocabulary-summary)
+    - [When To Use a Tree](#when-to-use-a-tree)
+        - [Binary Search Tree](#binary-search-tree)
+        - [Binary Search Tree Trivia](#binary-search-tree-trivia)
+        - [Conclusion](#conclusion-1)
+3. [Blockchain Data Storage](#blockchain-data-storage)
+    - [Merkle Trees](#merkle-trees)
+        - [Merkle Trees](#merkle-trees-1)
+        - [Merkle Trees In Bitcoin](#merkle-trees-in-bitcoin)
+        - [Merkle Proofs](#merkle-proofs)
+        - [Merkle Trees Use Cases](#merkle-trees-use-cases)
+        - [Logarithmic Scaling](#logarithmic-scaling)
+        - [Merkle Tree Vocabulary Summary](#merkle-tree-vocabulary-summary)
+        - [Conclusion](#conclusion-2)
+    - [Patricia Merkle Tries](#patricia-merkle-tries)
+        - [Intro](#intro-1)
+        - [REVIEW: Bitcoin: Block Architecture](#review-bitcoin-block-architecture)
+        - [First Look: Ethereum Block Architecture](#first-look-ethereum-block-architecture)
+        - [REVIEW: Merkle Trees in Bitcoin](#review-merkle-trees-in-bitcoin)
+        - [Trees in Ethereum](#trees-in-ethereum)
+        - [Radix Trie](#radix-trie)
+        - [Patricia Merkle Trees](#patricia-merkle-trees)
+    - [Why Does Ethereum Use a Merkle Patricia Trie?](#why-does-ethereum-use-a-merkle-patricia-trie)
+        - [Ethereum Block Header](#ethereum-block-header)
+        - [Ethereum: State Trie](#ethereum-state-trie)
+        - [Ethereum: Transaction Trie](#ethereum-transaction-trie)
+        - [Ethereum: Transaction Receipt Trie](#ethereum-transaction-receipt-trie)
+        - [Conclusion](#conclusion-3)
+    - [Further Reading](#further-reading)
+        - [Merkle Trees in Ethereum](#merkle-trees-in-ethereum)
+        - [Quick Note on RLP](#quick-note-on-rlp)
+
 ---
 
 ## Keeping Track of Blockchain User State
@@ -96,21 +146,15 @@
     - Ethereum uses the account-based model transactions must be more flexible to account for the many moving pieces of state in the system.
     - Bitcoin uses UTXOs as it is a network purposefully designed to be as simple and stateless as possible.
 
----
-
-## Further Reading on UTXOs
-
----
-
-### Real Transactions
+### Further Reading on UTXOs
+#### Real Transactions
 - We can take a look at the [Genesis Block](https://www.blockchain.com/btc/block/0) and see that there was a coinbase transaction sent to [1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa](https://www.blockchain.com/btc/address/1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa) which was never spent!
 - Here's some more information about the Genesis Block.
     - The scriptPubKey is also called the "Witness Script" or the "Locking Script".
 - For each Locking Script there should be an Unlocking Script that will unlock the UTXO and allow it to spent.
     - Typically, all the unlocking script needs to provide is a signature that verifies ownership of a public key, and then the public key needs to match the address after being hashed twice.
 >  If you look down in that wiki article, you'll see that the Genesis Block Coinbase UTXO is not included in client's database, so it cannot be spent! For more information on that [see here](https://bitcoin.stackexchange.com/questions/10009/why-can-t-the-genesis-block-coinbase-be-spent).
-
-### Bitcoin Script
+#### Bitcoin Script
 - The Bitcoin Script language is meant to be a simple stack-based language that has no loops so it will always resolve and there are no denial of service attacks.
 - The language is basically a list of function-like operation codes, that take arguments off the stack and operate on them. See the full list of [operation codes here](https://en.bitcoin.it/wiki/Script).
 - You can find some interesting background on Bitcoin Script in this [Stack Overflow answer here](https://bitcoin.stackexchange.com/a/29763).
@@ -182,7 +226,7 @@ class TreeNode {
     - **siblings**: nodes under the same parent and on the same level
     - **subtree**: once you isolate a part of a broader tree, you can form a brand new tree with new relationships
 
-#### When To Use a Tree
+### When To Use a Tree
 - Sometimes trees occur quite naturally! Take a file system for example:
 ![File System Tree](https://res.cloudinary.com/divzjiip8/image/upload/v1667179045/guides/Screen_Shot_2022-10-30_at_6.16.33_PM.png)
 > A file system can be a tree with an arbitrary amount of children in each directory
@@ -221,6 +265,11 @@ class TreeNode {
 - In the next section, we'll look at Merkle Trees.
 - As a heads up for the next two sections, blockchains use tree data structures quite heavily...
 
+---
+## Blockchain Data Storage
+---
+
+### Merkle Trees
 #### Merkle Trees
 - As we take a look at Ethereum Data Storage and as we build smart contracts, we'll often find ourselves interfacing with this data structure and we'll be expected to understand its usefulness
 - A Merkle Tree is a data structure that allows us to make efficient verifications that data belongs in a larger set of data.
@@ -268,8 +317,6 @@ class TreeNode {
 ```
 - We can quickly check ABCDMFGH against the our expected root ABCDEFGH and see we did not get our expected hash. Something's wrong.
 - The savings become important with larger trees where the average case for verification of tree is log2(n) where n is the number of nodes in the tree. So for a tree of size 128, it would take only 7 hashes to determine the root.
-
-### Merkle Trees
 #### Merkle Trees In Bitcoin
 - The design of merkle trees makes them extremely efficient for data verification.
 - In Bitcoin, Merkle trees are used to store every transaction mined on the Bitcoin network in an efficient way:
@@ -389,16 +436,16 @@ Well, because these blocks contain references to the tree data structures we are
 ### Why Does Ethereum Use a Merkle Patricia Trie?
 = There are typically two types of data:
 - **Permanent**
-- Once a transaction occurs, that record is sealed forever
-    - This means that once you locate a transaction in a block’s transaction trie, you can return to the same path over and over to retrieve the same result
-= **Ephemeral**
-- In the case of Ethereum, account states change all the time! (ie. A user receives some ether, interacts with a contract, etc)
-nonce, balance, storageRoot, codeHash
-- It makes sense that permanent data, like mined transactions, and ephemeral data, like Ethereum accounts (balance, nonce, etc), should be stored separately.
-- Merkle trees, again, are perfect for permanent data. PMTs are perfect for ephemeral data, which Ethereum is in plenty supply of.
-- Unlike transaction history, Ethereum account state needs to be frequently updated. The balance and nonce of accounts is often changed, and what’s more, new accounts are frequently inserted, and keys in storage are frequently inserted and deleted.
+    - Once a transaction occurs, that record is sealed forever
+        - This means that once you locate a transaction in a block’s transaction trie, you can return to the same path over and over to retrieve the same result
+- **Ephemeral**
+    - In the case of Ethereum, account states change all the time! (ie. A user receives some ether, interacts with a contract, etc)
+    nonce, balance, storageRoot, codeHash
+    - It makes sense that permanent data, like mined transactions, and ephemeral data, like Ethereum accounts (balance, nonce, etc), should be stored separately.
+    - Merkle trees, again, are perfect for permanent data. PMTs are perfect for ephemeral data, which Ethereum is in plenty supply of.
+    - Unlike transaction history, Ethereum account state needs to be frequently updated. The balance and nonce of accounts is often changed, and what’s more, new accounts are frequently inserted, and keys in storage are frequently inserted and deleted.
 
-### Ethereum Block Header
+#### Ethereum Block Header
 - The block header contains many pieces of data.
 - Remember back to Week 1 PoW Mining? The block header is the hash result of all of the data elements contained in a block.
 - It's kind of like the gift-wrap of all the block data.
@@ -407,7 +454,7 @@ nonce, balance, storageRoot, codeHash
 - **Transactions Root**: the root hash of the block's transactions
 - **Receipts Root**: the root hash of the receipts trie
 
-### Ethereum: State Trie
+#### Ethereum: State Trie
 ![Ethereum State Trie](https://res.cloudinary.com/divzjiip8/image/upload/v1669868801/guides/Screen_Shot_2022-11-30_at_8.26.05_PM.png)
 - As shown in the above diagram, **the state trie acts as a mapping between addresses and account states**.
 - It can be seen as a global state that is constantly updated by transaction executions.
@@ -420,7 +467,7 @@ nonce, balance, storageRoot, codeHash
 - Just an object containing some data!
 - That is all the account state is... but this is too much data to store in each block, so a root hash of it commits the data per block.
 
-### Ethereum: Transaction Trie
+#### Ethereum: Transaction Trie
 - **The transaction trie records transactions in Ethereum**.
 - Once the block is mined, the transaction trie is never updated.
 ![Ethereum Transaction Trie](https://res.cloudinary.com/divzjiip8/image/upload/v1669869222/guides/Screen_Shot_2022-11-30_at_8.33.27_PM.png)
@@ -432,7 +479,7 @@ nonce, balance, storageRoot, codeHash
 ![Ethereum Transaction Trie](https://res.cloudinary.com/divzjiip8/image/upload/v1669869342/guides/Screen_Shot_2022-11-30_at_8.35.23_PM.png)
 - You can even try querying the transactions trie directly using [Alchemy Composer](https://composer.alchemy.com/). Just take a random tx hash and use the ``eth_getTransactionByHash`` method - you'll get a response looking much like the object in the picture above.
 
-### Ethereum: Transaction Receipt Trie
+#### Ethereum: Transaction Receipt Trie
 - The transaction receipt trie records receipts (outcomes) of transactions.
     - Data including gasUsed and logs (events emitted are contained here!).
 - Once the block is mined, the transaction receipt trie is never updated.
@@ -450,7 +497,8 @@ nonce, balance, storageRoot, codeHash
 - Very few people learn these fundamentals. These are super important!
 - Not only does learning them give you a more holistic understanding of Ethereum, this is knowledge applicable in all of computer science and even physics
 
-## Merkle Trees in Ethereum
+### Further Reading
+#### Merkle Trees in Ethereum
 - Here is a [technical overview](https://blog.ethereum.org/2015/11/15/merkling-in-ethereum/) of merkling in Ethereum by Vitalik Buterin. Vitalik highlights several reasons for using Patricia Merkle Tries in Ethereum:
     - Efficient data verification (from its merkle properties)
     - More complex light-client queries
@@ -465,7 +513,7 @@ nonce, balance, storageRoot, codeHash
 - Here is a [good overview of Patricia Merkle Trees on Medium](https://medium.com/shyft-network-media/understanding-trie-databases-in-ethereum-9f03d2c3325d). This article references some images from a [stack overflow](https://ethereum.stackexchange.com/a/6413/18953) answer which are extremely helpful to look at!
 >  This starts with a good overview and quickly gets highly technical! Read as far as you are interested, we will not need to know the exact details of the Ethereum data storage implementation.
 
-### Quick Note on RLP
+#### Quick Note on RLP
 - We're going to be seeing RLP come up quite a bit.
 - This is a serialization format used in Ethereum, you can think of it like JSON.
 - It is used to send data from one machine to another in a format where the machine knows how to parse the data.
