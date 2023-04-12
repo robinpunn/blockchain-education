@@ -20,6 +20,9 @@
     - [Suggested Reading](#suggested-reading-1)
     - [Questions](#questions)
     - [Conclusion](#conclusion)
+3. [Escrow Contract](#escrow-contract)
+    - [What is an Escrow](#what-is-an-escrow)
+    - [Escrow Smart Contract](#escrow-smart-contract)
 
 ### Mappings
 - [Hardhat](https://hardhat.org/) arrived at a timely time because we were just learning about the many artifacts produced out of the Solidity compilation process, mainly two that we care about as devs: the ABI and the contract bytecode. 
@@ -232,3 +235,35 @@
 #### Conclusion
 - Events are a great way to emit information to the outside world of things happening with the blockchain.
 - Emitted events can be found inside the Transaction Receipt of every transaction.
+
+---
+
+## Escrow Contract
+
+---
+
+### Introduction
+#### What is an Escrow?
+- An [escrow](https://en.wikipedia.org/wiki/Escrow) is a contractual arrangement in which a third party (the stakeholder or escrow agent) receives and disburses money or property for the primary transacting parties, with the disbursement dependent on conditions agreed to by the transacting parties.
+- The need for an escrow arises from a buyer/seller relationship:
+    - The buyer wants to buy something from the seller, but the seller wants to be paid first.
+    - The seller wants to sell something to the buyer, but the buyer wants to be sure that the seller will deliver the item first.
+- The escrow agent is a trusted third party that holds the funds until the conditions of the contract are met.
+    1. Buyer pays the escrow agent.
+    2. Seller delivers the item to the buyer.
+    3. Buyer confirms that the item has been received.
+    4. Escrow agent releases the funds to the seller.
+- This relationship requires a lot of trust placed in the escrow agent.
+    - If the escrow agent is malicious they could steal the funds or not release the funds to the seller.
+    - The escrow agent can collude with the buyer or seller to steal the funds.
+#### Escrow Smart Contract
+- An escrow smart contract is a smart contract that holds funds until a certain condition is met replacing the need for a trusted third party.
+- The bedrock of a lot of defi protocols are escrow smart contracts.
+    - For example, the [Uniswap protocol](https://uniswap.org/) uses an escrow smart contract to hold funds until a trade is completed.
+    - The [Maker protocol](https://makerdao.com/en/) uses an escrow smart contract to hold funds until a loan is repaid.
+    - [Aave](https://aave.com) uses an escrow smart contract to hold funds until a loan is repaid.
+- Centralized finance places trust in corruptible human intermediaries to hold funds.
+- Decentralized finance places trust in incorruptible smart contracts to hold funds.
+- Escrow contracts are limited by the imagination, and the complexity of the contract is up to the smart contract creator.
+    - An indivdual can serve as the escrow.
+    - A group of individuals such as a DAO can serve as the escrow.
