@@ -34,3 +34,6 @@
 + Escrow Contract
 + Reference Types
 + Week 5 Assignment: Escrow Contract
+
+### Week 6: Solidity Core
++ Solidity Challenges
