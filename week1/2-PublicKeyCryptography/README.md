@@ -36,6 +36,7 @@
 > Please note, this tutorial will require functions documented in release version ``1.7.1`` of the [noble-secp256k1 library](https://github.com/paulmillr/noble-secp256k1/tree/1.7.1). Any further links in this tutorial will link directly to version ``1.7.1`` of the ``noble-secp256k1`` documentation.
 1. Your first step is to take the string message passed in and turn it into an array of UTF-8 bytes. You can do so with the utf8ToBytes function.
 2. Then take the keccak256 hash of those bytes and return this value.
+- **SOLUTION**
 ```js
 //hashMessage.js
 const { keccak256 } = require("ethereum-cryptography/keccak");
@@ -66,6 +67,7 @@ module.exports = hashMessage;
 1. Once you have the message hash, use the ``sign`` method from the [noble-secp256k1 library](https://github.com/paulmillr/noble-secp256k1/tree/1.7.1#signmsghash-privatekey).
 > **Note**
 > The ``sign`` method will take your message hash along with the constant ``PRIVATE_KEY`` declared at the top of the file. This private key is a valid key that could be used to authorize blockchain transactions. **Never use this specific key** because it is published on the internet, so many people including yourself could authenticate with this specific private key. In future lessons we'll be discussing good private key hygiene to avoid losing funds.
+- **SOLUTION**
 ```js
 //signMessage.js
 const secp = require("ethereum-cryptography/secp256k1");
@@ -89,6 +91,7 @@ module.exports = signMessage;
 1. Given a ``message``, ``signature``, and ``recoveryBit`` find the public key and return it! Be sure to hash the message when passing it to the recovery method.
 - Use the [noble-secp256k1 library](https://github.com/paulmillr/noble-secp256k1/tree/1.7.1) documentation to find the correct method and parameters for this one.
 > Remember to check ``version 1.7.1`` of the library's documentation!
+- **SOLUTION**
 ```js
 //recoverKey.js
 const secp = require("ethereum-cryptography/secp256k1");
@@ -116,6 +119,7 @@ module.exports = recoverKey;
     - The publicKey will be a ``Uint8Array`` so you can use the slice method to slice off the first byte.
 1. Next, take the ``keccak`` hash of the rest of the public key.
 1. Finally, take the last 20 bytes of the keccak hash and return this. Once again, you can make use of the [slice method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray/slice).
+- **SOLUTION**
 ```js
 //getAddress.js
 const secp = require("ethereum-cryptography/secp256k1");
