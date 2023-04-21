@@ -38,3 +38,4 @@
 ### Week 6: Solidity Core
 + Solidity Challenges
 + Multi Sigs
++ Inheritence
