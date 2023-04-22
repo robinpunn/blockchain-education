@@ -103,9 +103,72 @@ main()
     1. More Challenging Way: Write your own Hardhat Script to do an airdrop!
     2. Simpler Way: Add your ERC-20 token to MetaMask and send it to an address via the UI!
 
+---
 
 
+### Send ERC20s to Contracts
+- Something that can often be difficult to understand is how to integrate ERC20 tokens into other smart contracts in the ecosystem.
+#### Approve/TransferFrom
+- This two step process allows us to transfer tokens to a smart contract and allows the smart contract to account for that transfer
+1. The first transaction we interact with the ERC20 contract using the approve method:
+```solidity
+contract ERC20 {
+    mapping (address => mapping (address => uint256)) allowed;
 
+    // ...
+
+    function approve(address spender, uint256 value) public returns (bool success) {
+        allowed[msg.sender][spender] = value;
+        emit Approval(msg.sender, spender, value);
+        return true;
+    }
+}
+```
+- This approve method will give the spender, which is generally a smart contract address, the ability to spend tokens on behalf of the msg.sender. This sets up the second step:
+2. The second transaction we call the Spender smart contract to spend to pull our tokens;
+```solidity
+contract Spender {
+    mapping(address => uint) pooled;
+    address erc20;
+
+    // ...
+
+    function poolTokens(uint256 amount) public returns (bool success) {
+        // pull the tokens from the msg.sender using transferFrom
+        bool success = ERC20(erc20).transferFrom(msg.sender, address(this), amount);
+        require(success);
+
+        // account for this balance update
+        pooled[msg.sender] += amount;
+    }
+}
+
+contract ERC20 {
+    mapping (address => uint256) balances;
+    mapping (address => mapping (address => uint256)) allowed;
+
+    // ...
+
+    function transferFrom(address from, address to, uint256 value) public returns (bool success) {
+        balances[to] += value;
+        balances[from] -= value;
+        allowed[from][msg.sender] -= value;
+        emit Transfer(from, to, value);
+        return true;
+    }
+}
+```
+- In this case, we would call poolTokens on Spender and this contract would pull those tokens from the ERC20 contract.
+    - Then the Spender contract can account for this balance change, by keeping its own record in the pooled mapping.
+
+#### Bucket Challenge
+- Give approve/transferFrom a shot by attempting the Bucket challenge!
+![approve](https://res.cloudinary.com/divzjiip8/image/upload/c_scale,w_1200/v1672974880/bucket_yl2cfj.png)
+![two](https://res.cloudinary.com/divzjiip8/image/upload/c_scale,w_1200/v1672974880/bucket_yl2cfj.png)
+
+#### Your Goal: Emit Winner
+1. Emit a winner event by successfully depositing an ERC20 token into this smart contract: https://goerli.etherscan.io/address/0x873289a1aD6Cf024B927bd13bd183B264d274c68#code
+> **Hint**: Check out the source code on Etherscan to see the method you'll need to call. You can use the ERC20 you created on Goerli in an earlier guide!
 
 
 

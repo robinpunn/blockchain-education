@@ -38,6 +38,7 @@
     - [ERC-20 ``transfer``](#erc-20-transfer)
     - [Suggested Reading](#suggested-reading-2)
     - [Conclusion](#conclusion-2)
+1. [Send ERC20s to Contracts](#send-erc20s-to-contracts)
 
 ### Solidity Challenges
 #### Solidity Practice
@@ -407,3 +408,4 @@ interface IERC20 {
 - Thanks to standards like ERC-20, the developer ecosystem can build compatibility in a flash.
     - ⚡️ Are you ready to code up the ERC-20 token standard from scratch?
     - Not just that, you'll also be deploying your very own token to the Göerli test network.
+
