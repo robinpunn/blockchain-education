@@ -9,7 +9,7 @@ import {
   SimpleGrid,
   Text,
 } from "@chakra-ui/react";
-import { Alchemy, Network, Utils } from "alchemy-sdk";
+import { Alchemy, Network } from "alchemy-sdk";
 import { useState } from "react";
 
 function App() {
@@ -18,22 +18,22 @@ function App() {
   const [hasQueried, setHasQueried] = useState(false);
   const [tokenDataObjects, setTokenDataObjects] = useState([]);
 
-  async function getTokenBalance() {
+  async function getNFTsForOwner() {
     const config = {
       apiKey: import.meta.env.VITE_API_KEY,
       network: Network.ETH_MAINNET,
     };
 
     const alchemy = new Alchemy(config);
-    const data = await alchemy.core.getTokenBalances(userAddress);
-
+    const data = await alchemy.nft.getNftsForOwner(userAddress);
     setResults(data);
 
     const tokenDataPromises = [];
 
-    for (let i = 0; i < data.tokenBalances.length; i++) {
-      const tokenData = alchemy.core.getTokenMetadata(
-        data.tokenBalances[i].contractAddress
+    for (let i = 0; i < data.ownedNfts.length; i++) {
+      const tokenData = alchemy.nft.getNftMetadata(
+        data.ownedNfts[i].contract.address,
+        data.ownedNfts[i].tokenId
       );
       tokenDataPromises.push(tokenData);
     }
@@ -50,11 +50,10 @@ function App() {
           flexDirection={"column"}
         >
           <Heading mb={0} fontSize={36}>
-            ERC-20 Token Indexer
+            NFT Indexer 🖼
           </Heading>
           <Text>
-            Plug in an address and this website will return all of its ERC-20
-            token balances!
+            Plug in an address and this website will return all of its NFTs!
           </Text>
         </Flex>
       </Center>
@@ -64,9 +63,7 @@ function App() {
         alignItems="center"
         justifyContent={"center"}
       >
-        <Heading mt={42}>
-          Get all the ERC-20 token balances of this address:
-        </Heading>
+        <Heading mt={42}>Get all the ERC-721 tokens of this address:</Heading>
         <Input
           onChange={(e) => setUserAddress(e.target.value)}
           color="black"
@@ -76,44 +73,42 @@ function App() {
           bgColor="white"
           fontSize={24}
         />
-        <Button fontSize={20} onClick={getTokenBalance} mt={36} bgColor="blue">
-          Check ERC-20 Token Balances
+        <Button fontSize={20} onClick={getNFTsForOwner} mt={36} bgColor="blue">
+          Fetch NFTs
         </Button>
 
-        <Heading my={36}>ERC-20 token balances:</Heading>
+        <Heading my={36}>Here are your NFTs:</Heading>
 
         {hasQueried ? (
           <SimpleGrid w={"90vw"} columns={4} spacing={24}>
-            {results.tokenBalances.map((e, i) => {
+            {results.ownedNfts.map((e, i) => {
               return (
                 <Flex
                   flexDir={"column"}
-                  align={"center"}
-                  justify={"center"}
-                  color="black"
-                  bg="gray"
+                  color="white"
+                  bg="blue"
                   w={"20vw"}
                   key={e.id}
-                  position={"relative"}
-                  wrap={"wrap"}
                 >
-                  <Box zIndex={2} position={"absolute"} top="0" left="50px">
-                    <b>Symbol:</b> ${tokenDataObjects[i].symbol}&nbsp;
+                  <Box>
+                    <b>Name:</b>{" "}
+                    {tokenDataObjects[i].title?.length === 0
+                      ? "No Name"
+                      : tokenDataObjects[i].title}
                   </Box>
-                  <Box zIndex={2} position={"absolute"} top="50px" left="50px">
-                    <b>Balance:</b>&nbsp;
-                    {Utils.formatUnits(
-                      e.tokenBalance,
-                      tokenDataObjects[i].decimals
-                    )}
-                  </Box>
-                  <Image src={tokenDataObjects[i].logo} w={"10vw"} zIndex={1} />
+                  <Image
+                    src={
+                      tokenDataObjects[i]?.rawMetadata?.image ??
+                      "https://via.placeholder.com/200"
+                    }
+                    alt={"Image"}
+                  />
                 </Flex>
               );
             })}
           </SimpleGrid>
         ) : (
-          "Please make a query! This may take a few seconds..."
+          "Please make a query! The query may take a few seconds..."
         )}
       </Flex>
     </Box>

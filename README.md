@@ -40,3 +40,4 @@
 + Multi Sigs
 + Inheritence
 + ERC-20
++ NFTs
