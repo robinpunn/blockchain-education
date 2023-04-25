@@ -9,6 +9,13 @@
         - [Solidity Memory Types](#solidity-memory-types)
     - [What is storage memory?](#what-is-storage-memory)
     - [How are state variables stored in smart contract storage slots?](#how-are-state-variables-stored-in-smart-contract-storage-slots)
+    - [What is Endian-ness?](#what-is-endian-ness)
+        - [How is Endian-ness used in Ethereum?](#how-is-endian-ness-used-in-ethereum)
+    - [How are state variables padded and packed in smart contract storage slots?](#how-are-state-variables-padded-and-packed-in-smart-contract-storage-slots)
+    - [How are user-defined types (structs) stored in contract memory?](#how-are-user-defined-types-structs-stored-in-contract-memory)
+    - [How are statically-sized variables stored in memory?](#how-are-statically-sized-variables-stored-in-memory)
+    - [How are dynamically-sized state variables stored in smart contract memory?](#how-are-dynamically-sized-state-variables-stored-in-smart-contract-memory)
+    - [How are mappings stored in smart contract storage?](#how-are-mappings-stored-in-smart-contract-storage)
 ---
 
 ### Proxy Contracts
@@ -77,3 +84,72 @@
 ![storage](https://files.readme.io/e316e25-diagram-mapping-contract-state-variables-to-storage-slots.jpeg)
 - Here we can see how variables a, b and c get mapped from their declaration order to their storage slots.
     - To see how the storage variables actually get encoded and stored in the slots at the binary level we need to dig a little deeper and understand the concepts of endian-ness, byte-packing and byte-padding.
+
+#### What is Endian-ness?
+- Endian-ness refers to how computers store multi-byte values in memory (eg: uint256, bytes32, address), and there are two types of endian-ness: big-endian and little-endian.
+    - Big-endian → last byte of binary representation of data type is stored first
+    - Little-endian → first byte of binary representation of data type is stored first
+- For example take the hexadecimal number 0x01e8f7a1, a hexadecimal representation of the decimal number 32044961.
+    - How is this value stored in memory?
+    - Visually it will look like one of the diagrams below depending on the endian-ness.
+![endian](https://files.readme.io/a21dcf5-diagram-of-big-endian-and-little-endian-storage-layouts-in-solidity-smart-contracts.jpeg)
+
+##### How is Endian-ness used in Ethereum?
+- Ethereum uses both endian-ness formats, and the format used depends on the variable type.
+    - Big-endian is only used for bytes and string types.
+        - These 2 types behave differently in a contract’s storage slots than other variables.
+    - Little-endian is used for every other type of variable.
+        - Some examples are: uint8, uint32, uint256, int8, boolean, address, etc…
+
+#### How are state variables padded and packed in smart contract storage slots?
+- To store variables that require less than 32 bytes of memory in storage, the EVM will pad the values with 0s until all 32 bytes of the slot are used and then store the padded value.
+- Many variable types are smaller than the 32 byte slot size, eg: bool, uint8, address.
+    - Here is a diagram of what it looks like when we want to store state variables of types requiring less than 32 bytes of memory:
+![padded](https://files.readme.io/89ce3ce-diagram-of-how-the-ethereum-virtual-machine-pads-state-variables-that-need-less-than-32-bytes-of-memory.jpeg)
+- Due to EVM padding, developer’s can directly address the state variables a and c at the cost of wasting a lot of expensive storage memory.
+    - The EVM stores the variables in a way that minimizes the cost of reading/writing the values at the expense of the amount of memory used.
+- If we think carefully about the sizes of our contracts’ state variables and their declaration order, the EVM will pack the variables into storage slots to reduce the amount of storage memory that is used.
+    - Taking the ``PaddedContract`` example above we can reorder the declaration of the state variables to get the EVM to tightly pack the variables into storage slots.
+- An example of this is shown in the ``PackedContract`` below which is just a reordering of the variables in the ``PaddedContract`` example:
+![packed](https://files.readme.io/058295a-diagram-of-a-packed-contract-example-where-variables-are-packed-into-storage-slots-to-reduce-storage-memory.jpeg)
+- The EVM will pack variables within a slot starting at the right of the slot, moving left for each subsequent state variable that can be packed into the same slot.
+    - Here we can see that the variables a and c have been packed into storage slot 0.
+    - Because the size of variable b cannot fit into the remaining space in slot 0, the EVM assigns variable b to slot 1.
+- In contrast to padding variables, packing minimizes the amount of storage used at the expense of reading/writing these variables.
+    - The extra reading and writing costs come from the fact that extra bitwise operations will need to be done to read a and c.
+    - For example, to read a the EVM will need to read storage slot 0 and then bitmask out all bits not belonging to variable a.
+- The storage gas savings of tightly packing variables can significantly increase the cost of reading/writing them if the packed variables are not usually used together.
+    - For example, if we need to read c very often without reading a it might be best to not tightly pack the variables.
+    - This is a design consideration developers must take into account when writing contracts.
+
+#### How are user-defined types (structs) stored in contract memory?
+- In scenarios where we have a group of variables that logically belong together and are often read and written as unit, we can define a user-defined type via Solidity’s struct keyword and apply the above knowledge of byte-packing to get the most efficient gas-usage regarding storage usage and reading and writing of storage variables.
+![structs](https://files.readme.io/3e9dfc1-diagram-of-how-user-defined-structrs-are-packed-and-stored-in-smart-contract-storage-memory.jpeg)
+- Now we have the benefit of tight byte-packing and grouped reading/writing of the state variable someStruct.
+
+#### How are statically-sized variables stored in memory?
+- Statically-sized state variables are stored in their corresponding slots.
+    - If a statically-sized variable is 2 slots in size (64 bytes) and stored at slot s, then the following storage variable will be stored at slot s + 2.
+- For example, the storage layout of the state variables in the following contract:
+![static](https://files.readme.io/c9c107b-diagram-of-how-statically-sized-variables-are-stored-in-smart-contract-storage-memory.jpeg)
+
+#### How are dynamically-sized state variables stored in smart contract memory?
+- Dynamically-sized state variables are assigned slots in the same way as statically-sized state variables, but the slots assigned to dynamic state variables are only marker slots.
+    - That is, the slots mark the fact that a dynamic array or mapping exists, but the slot doesn’t store the variable’s data.
+- For a [dynamically-sized variable](https://www.alchemy.com/overviews/solidity-arrays), why isn’t its data stored directly in its assigned slot the same way that it works for statically-sized variables?
+- Because if new items are added to the variable it will require more slots to store its data, meaning subsequent state variables would have to be pushed down to further slots.
+- By using the ``keccak256 hash`` of the marker slot, we can take advantage of the enormous virtual storage area we have to store variables without the risk of a dynamically-sized variable growing and overlapping with other state variables.
+- For a dynamically-sized array, the marker slot also stores the array’s length.
+    - The keccak256 hash of the marker slot number is a ‘pointer’ to where the array’s values live in the contract’s storage layout.
+![dynamic](https://files.readme.io/388c33b-diagram-of-how-dynamically-sized-variables-are-stored-in-storage-memory-using-keccak256-hashing.jpeg)
+
+#### How are mappings stored in smart contract storage?
+- For [mappings](https://www.alchemy.com/overviews/solidity-mapping), the marker slot only marks the fact that there is a mapping.
+    - To find a value for a given key, the formula keccak256(h(k) . p) is used where:
+        - the symbol . denotes string concatenation
+        - p is the state variable’s declaration position in the smart contract
+        - h()is a function that is applied to the key depending on the key’s type
+        - for value types, h() returns the padded the value to 32 bytes
+        - for strings and byte arrays, h() just returns the unpadded data
+- Here is an diagram depicting how mappings are stored in memory:
+![mapping](https://files.readme.io/c4ba494-diagram-of-how-mappings-are-stored-in-storage-memory-using-keccak256-hashing.jpeg)
