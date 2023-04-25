@@ -41,3 +41,6 @@
 + Inheritence
 + ERC-20
 + NFTs
+
+### [Week 7: Solidity Governance](https://github.com/robinpunn/alchemy-university-ethereum-bootcamp/tree/main/week7)
++ Proxy Contracts

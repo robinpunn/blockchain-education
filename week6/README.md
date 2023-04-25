@@ -1,5 +1,7 @@
 ## Solidity Core
 
+---
+
 ### Table of Contents
 1. [Solidity Challenges](#solidity-challenges)
     - [Solidity Practice](#solidity-practice)
@@ -39,6 +41,12 @@
     - [Suggested Reading](#suggested-reading-2)
     - [Conclusion](#conclusion-2)
 1. [What are NFTs?](#what-are-nfts)
+    - [Non-Fungible Tokens](#non-fungible-tokens)
+    - [NFTs in Practice](#nfts-in-practice)
+    - [Metadata Storage](#metadata-storage)
+    - [Wrap Up](#wrap-up)
+
+---
 
 ### Solidity Challenges
 #### Solidity Practice
