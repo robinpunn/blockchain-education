@@ -16,6 +16,12 @@
     - [How are statically-sized variables stored in memory?](#how-are-statically-sized-variables-stored-in-memory)
     - [How are dynamically-sized state variables stored in smart contract memory?](#how-are-dynamically-sized-state-variables-stored-in-smart-contract-memory)
     - [How are mappings stored in smart contract storage?](#how-are-mappings-stored-in-smart-contract-storage)
+1. [Delegatecall](#delegatecall)
+    - [Communication](#communication)
+    - [Calldata](#calldata)
+    - [Call](#call)
+    - [Delegatecall](#delegatecall-1)
+        - [Use cases](#use-cases)
 ---
 
 ### Proxy Contracts
@@ -153,3 +159,54 @@
         - for strings and byte arrays, h() just returns the unpadded data
 - Here is an diagram depicting how mappings are stored in memory:
 ![mapping](https://files.readme.io/c4ba494-diagram-of-how-mappings-are-stored-in-storage-memory-using-keccak256-hashing.jpeg)
+
+### Delegatecall
+- The ``<address>.delegatecall`` method is critical to our understanding of proxies
+
+#### Communication
+![comm](https://i.ibb.co/MBvV606/comm.png)
+- Our program lives on the blockchain in bytecode form
+    - We write our program in Solidity, and it gets compiled into the bytecode that lives on the blockchain
+- When a EOA(externally owned account) interacts with the contract, it goes through steps such as signing a transaction
+    - the calldata and transaction performed by the EOA interacts with our smart contract
+
+#### Calldata
+![calldata](https://i.ibb.co/jwMjzXF/calldata.png)
+- Calldata is the function signature + arguments
+    - When data is encoded to a smartcontract, this is how it is done for solidity
+
+#### Call
+![messagecall](https://i.ibb.co/jZTXZww/message-Call.png)
+- EOA uses the calldata with signed transaction
+    - This information could be sent to contract A and contract A may interact with many other contracts during the transactions execution
+- Interacting with contract A involves the "message context" which has three important values:
+    - msg.sender: the EOA (person who signed the tx)
+    - msg.value: the amount of Ether that was signed
+    - storage: Contract A's storage
+- Contract A makes the call to another contract
+    - msg.sender is now Contract A
+    - msg.value is based on how much contract A is sending
+    - storage is based on new contract
+
+#### Delegatecall
+![delegatecall](https://i.ibb.co/ZM8JrKn/delegated-Call.png)
+- Instead of using ``b.call{value:2.0}(calldata)``, using delegatecall: ``b.delegatecall(calldata)``
+    - msg.sender is still the EOA
+    - msg.value is the value that was encoded during the EOA transaction
+    - storage is based on the inital contract a
+- Using delegatecall, contract B is being interacted with while using Contract A's storage
+- This allows new contracts to modify contract A's storage variables
+    - not something that you want to use everywhere
+##### Use cases
+- The proxy contract implements logic on other contracts using the proxy storage
+![proxy](https://i.ibb.co/DK8M90J/proxy.png)
+- Upgrades
+- Saving Gas
+
+**[Minimal Proxy (clone)](https://eips.ethereum.org/EIPS/eip-1167)**
+- save on gas by deploying one implementation and delegating to it
+
+**Upgrade Implementation**
+- we can't upgrade new code to a smart contract address
+- using a proxy, we can delegatecall to an upgraded contract.
+    - version 1 would still exist, but the proxy contract would deteremine which contract users interacted with
