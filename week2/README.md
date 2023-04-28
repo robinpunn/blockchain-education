@@ -434,7 +434,7 @@ Well, because these blocks contain references to the tree data structures we are
 - The root node of this PMT is empty so we can store other words not starting with ‘n’, like "apple" or "hello".
 
 ### Why Does Ethereum Use a Merkle Patricia Trie?
-= There are typically two types of data:
+- There are typically two types of data:
 - **Permanent**
     - Once a transaction occurs, that record is sealed forever
         - This means that once you locate a transaction in a block’s transaction trie, you can return to the same path over and over to retrieve the same result
