@@ -1,4 +1,4 @@
-### Binary Search Tree
+## Binary Search Tree
 - In programming, trees are a data structure that come up surprisingly often! 
 - They have a number of different use cases ranging from efficient data storage to representing a file heirarchy.
 - In this particular lesson we're going to go over the Binary Search Tree. 
@@ -15,30 +15,178 @@
     - There, we find 4. On average this will be faster than searching randomly. 
     - The time savings become greater the bigger the tree is.
 
+---
+
+### Table of Contents
+1. [Node](#node)
+    - [Creating a Node](#creating-a-node)
+    - [Your Goal: Complete Constructor](#your-goal-complete-constructor)
+1. [Tree](#tree)
+    - [Storing the Root](#storing-the-root)
+    - [Your Goal: Store the Root](#your-goal-store-the-root)
+1. [Add Root](#add-root)
+    - [Adding a root](#adding-a-root)
+    - [Your Goal: Add Node Method](#your-goal-add-node-method)
+1. [First Layer](#first-layer)
+    - [Your Goal: Modify Add Node](#your-goal-modify-add-node)
+1. [Many Layers](#many-layers)
+    - [Generalizing](#generalizing)
+    - [Recursive Solution](#recursive-solution)
+    - [Iterative Solution](#iterative-solution)
+1. [Search](#search)
+    - [Search Tree](#search-tree)
+    - [Your Goal: hasNode method](#your-goal-hasnode-method)
+---
+
+### Node
 #### Creating a Node
 - Let's first create the class Node, from which we will create each element inside of our tree:
 ![Node](https://res.cloudinary.com/divzjiip8/image/upload/v1572548951/Frame_1_50_wiuxcn.png)
 - The node should contain data, which in this case is 5.
     - It should also contain references to the left child (3) and the right child (7).
+#### Your Goal: Complete Constructor
+- Complete the constructor function on the node.
+    - Store the ``data`` inside a ``data`` property on the instance.
+- Store null in properties ``left`` and ``right``.
+- Usage Example:
+```js
+const node = new Node(5);
 
+console.log(node.data); // 5
+console.log(node.left); // null
+console.log(node.right); // null
+```
+---
+
+**SOLUTION**
+```js
+class Node {
+    constructor(data) {
+        this.data = data;
+        this.right = null;
+        this.left = null;
+    }
+}
+
+module.exports = Node;
+```
+---
+
+### Tree
 #### Storing the Root
 - A tree will keep track of one property: a reference to the root node.
 ![Root](https://res.cloudinary.com/divzjiip8/image/upload/v1572549482/Frame_1_51_x1l4si.png)
+#### Your Goal: Store the Root
+- Finish the constructor function on the ``Tree`` class in the new file ``Tree.js``.
+- All you need to do for now is store ``null`` on a ``root`` property.
+```js
+const tree = new Tree();
 
+console.log(tree.root); // null
+```
+---
+
+**SOLUTION**
+```js
+class Tree {
+    constructor() {
+        this.root = null;
+    }
+}
+
+module.exports = Tree;
+```
+
+---
+
+### Add Root
 #### Adding a Root
 - In this stage we'll create a new method for adding nodes to our tree.
 - This is a difficult task to generalize so we'll attack it piece by piece!
 - First let's start by adding a root to an empty tree.
 ![Root](https://res.cloudinary.com/divzjiip8/image/upload/v1572549735/Frame_1_52_gqn5ik.png)
+#### Your Goal: Add Node Method
+- Create a new method ``addNode`` on ``Tree`` which will take a new ``node`` and add it to the tree.
+- Assume that the tree is empty for this stage.
+    - Simply set the root to be the node passed into the method.
+```js
+// create a new tree and new node
+const tree = new Tree();
+const node = new Node(5);
 
-#### First Layer
+// add the node to the tree using addNode
+tree.addNode(node);
+
+// the new node becomes the tree's root
+console.log(tree.root.data); // 5
+```
+
+---
+
+**SOLUTION**
+```js
+class Tree {
+    constructor() {
+        this.root = null;
+    }
+    addNode(node){
+        this.root = node;
+    }
+}
+
+module.exports = Tree;
+```
+
+---
+
+### First Layer
 - Now it's time to focus on adding the first layer of nodes underneath our root!
 - Keep the code you used to pass the last stage and then add another case for when a root already exists
 ![First Layer](https://res.cloudinary.com/divzjiip8/image/upload/v1572550307/Frame_1_53_vgill7.png)
 - When the root already exists, we'll need to decide which side to add the new leaf node to.
     - If the new node ``data`` is **less than** the root data, we'll want to add it to the **left**.
     - Conversely, if the data is **greater** we'll add it to the **right**.
+#### Your Goal: Modify Add Node
+- Modify the ``addNode`` function to **also** handle adding the first children of the ``root``.
+```js
+const tree = new Tree();
+const node1 = new Node(5);
+const node2 = new Node(3);
+const node3 = new Node(7);
 
+tree.addNode(node1);
+tree.addNode(node2);
+tree.addNode(node3);
+
+console.log(tree.root.left.data); // 3
+console.log(tree.root.right.data); // 7
+```
+
+---
+**SOLUTION**
+```js
+class Tree {
+    constructor() {
+        this.root = null;
+    }
+    addNode(node){
+        if(!this.root){
+            this.root = node;
+        }
+        if (this.root.data > node.data){
+            this.root.left = node
+        }
+        if (this.root.data< node.data){
+            this.root.right = node
+        }
+    }
+}
+
+module.exports = Tree;
+```
+---
+
+### Many Layers
 #### Generalizing
 - Now it's time to make our addNode function work for many layers of the tree:
 ![Generalizing](https://res.cloudinary.com/divzjiip8/image/upload/v1572550789/Frame_1_54_ec9o91.png)
@@ -73,6 +221,86 @@
 - You'll continue to shift the reference until you find a spot to add your new node.
     - Once you've found that spot, you can add the node and break to escape the while(true) loop.
 
+####  Your Goal: Generalize
+- Complete the function addNode so that it can handle adding nodes no matter how large the tree gets.
+
+---
+**SOLUTION**
+- ***Recursive***
+```js
+class Tree {
+    constructor() {
+        this.root = null;
+    }
+    addNode(node){
+        if(!this.root){
+            this.root = node;
+        } else {
+            this.addChild(this.root,node)
+        }
+    }
+    addChild(parent, child) {
+        if (child.data < parent.data) {
+            if (parent.left) {
+                this.addChild(parent.left, child)
+            } else {
+                parent.left = child
+            }
+        }
+        if (child.data > parent.data) {
+            if (parent.right) {
+                this.addChild(parent.right,child)
+            } else {
+                parent.right = child
+            }
+        }
+    }
+}
+
+module.exports = Tree;
+```
+- ***Iterative***
+```js
+class Tree {
+    constructor() {
+        this.root = null;
+    }
+
+    addNode(node) {
+        if(!this.root) {
+            this.root = node;
+            return;
+        }
+
+        let ptr = this.root;
+        while(true) {
+            if(node.data < ptr.data) {
+                if(!ptr.left) {
+                    ptr.left = node;
+                    break;
+                }
+                else {
+                    ptr = ptr.left;
+                }
+            }
+            if (node.data > ptr.data) {
+                if (!ptr.right) {
+                    ptr.right = node;
+                    break;
+                }
+                else {
+                    ptr = ptr.right;
+                }
+            }
+        }
+    }
+}
+
+module.exports = Tree;
+```
+---
+
+### Search
 #### Search Tree
 - It's time to reap the rewards of creating our binary search tree. That's right, it's time to search!
 - Let's use the sort order to find nodes in the tree. For instance, if we were searching for the node 4:
@@ -84,3 +312,81 @@
 - For instance if we were looking for 7 on this tree:
 ![Search Tree](https://res.cloudinary.com/divzjiip8/image/upload/v1572552993/Frame_1_59_gara4d.png)
 - After recognizing that 7 is greater than 5, we attempt to move right, but there is no right node! We return false.
+
+#### Your Goal: hasNode Method
+- Add a method ``hasNode`` that will take a ``number`` and search our tree to find a node that has that number inside it's ``data`` property.
+- If a node exists with the ``number``, return ``true``. If not return ``false``.
+- For example:
+```js
+const tree = new Tree();
+const node1 = new Node(4);
+
+tree.addNode(node1);
+
+console.log(tree.hasNode(4)); // true
+console.log(tree.hasNode(7)); // false
+```
+
+---
+**SOLUTION**
+```js
+// Tree.js
+class Tree {
+    constructor() {
+        this.root = null;
+    }
+    addNode(node){
+        if(!this.root){
+            this.root = node;
+        } else {
+            this.addChild(this.root,node)
+        }
+    }
+    addChild(parent, child) {
+        if (child.data < parent.data) {
+            if (parent.left) {
+                this.addChild(parent.left, child)
+            } else {
+                parent.left = child
+            }
+        }
+        if (child.data > parent.data) {
+            if (parent.right) {
+                this.addChild(parent.right,child)
+            } else {
+                parent.right = child
+            }
+        }
+    }
+    hasNode(number) {
+        return this.searchNode(this.root,number)
+    }
+    searchNode(root,number){
+        if(!root) {
+            return false
+        }
+        if (root.data === number) {
+            return true
+        }
+        if (root.data > number) {
+            return this.searchNode(root.left,number)
+        }
+        if (root.data < number) {
+            return this.searchNode(root.right, number)
+        }
+    }
+}
+
+module.exports = Tree;
+
+// Node.js
+class Node {
+    constructor(data) {
+        this.data = data
+        this.left = null
+        this.right = null
+    }
+}
+
+module.exports = Node;
+```
