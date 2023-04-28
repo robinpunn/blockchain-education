@@ -23,7 +23,32 @@ Hash(Hash(Hash(A + B) + CD) + EFGHIJ)
 ```
 - Where we only need to know the hashes B, CD, and EFGHIJ to prove that A is in the merkle root.
 
-#### Combine Two Leaves
+---
+### Table of Contents
+1. [Combine Two Leaves](#combine-two-leaves)
+    - [Combination Function](#combination-function)
+    - [Your Goal: Root of Two Leaves](#your-goal-root-of-two-leaves)
+1. [Multiple Layers](#multiple-layers)
+    - [Purpose of the Merkle Tree](#purpose-of-the-merkle-tree)
+    - [Recommended Approach](#recommended-approach)
+    - [Your Goal: Handle Bigger Trees](#your-goal-handle-bigger-trees)
+1. [Odd Leaves](#odd-leaves)
+    - [Other Odd Trees](#other-odd-trees)
+    - [Five Leaf Tree](#five-leaf-tree)
+    - [Seven Leaf Tree](#seven-leaf-tree)
+    - [Your Goal: Handle Odd Number of Leaves](#your-goal-handle-odd-number-of-leaves)
+1. [Build The Proof](#build-the-proof)
+    - [ABCDE Merkle Proof Example](#abcde-merkle-proof-example)
+    - [Another Example](#another-example)
+    - [Recommended Approach](#recommended-approach-1)
+    - [Add the getProof Method](#add-the-getproof-method)
+1. [Verifying your Proof](#verifying-your-proof)
+    - [Example Proof](#example-proof)
+    - [ABCDE Merkle Tree](#abcde-merkle-tree)
+    - [Your Goal: Complete Verify Proof](#your-goal-complete-verify-proof)
+
+
+### Combine Two Leaves
 - A merkle tree will take an array of leaf nodes, combining them together two at a time, layer-by-layer, until they are reduced to a single root node.
 - This forms a tree-like structure of hashing.
 
@@ -48,7 +73,40 @@ Hash(Hash(A + B) + Hash(C + D))
 -  If you take a look at testTwo.js you'll see the function is simply forming the string in the format shown above.
 - This will help us debug problems in the first few stages! You'll be able to compare the string you created versus the expected result.
 
-#### Multiple Layers
+#### Your Goal: Root of Two Leaves
+- First, let's write a constructor for the MerkleTree class.
+  - This constructor will take two arguments passed in this order:
+  1. An array of leaf nodes
+  1. A combination function used to concatenate and hash two leaves together
+- Next, let's add a function getRoot on the MerkleTree class.
+  - This function will find the merkle root.
+- For this stage you will only need to take two leaves and hash them together:
+```
+    Root
+    /  \
+   A    B
+```
+- Here, A and B are the leaf nodes and the root is the result of the concatenation.
+  - Simply take the first and second leaf nodes and use the concatenate function to get the result.
+
+---
+**SOLUTION**
+```js
+class MerkleTree {
+    constructor(leaves, concat) {
+        this.leaves = leaves
+        this.concat = concat
+    }
+    getRoot() {
+        return this.concat(this.leaves[0],this.leaves[1])
+    }
+}
+
+module.exports = MerkleTree;
+```
+---
+
+### Multiple Layers
 - This tree will have multiple layers.
 - For example, with four leaf nodes you'll combine the first two nodes and then you'll combine the last two nodes.
 - Then you'll take the two results and combine those to get the root node.
@@ -111,6 +169,51 @@ Hash(AB, Hash(C, D))
   - If there is only one element left, it's root. Time to return that root!
 >  Alternatively, you can calculate ahead of time how many layers will be in the tree. Then you'll know when to return the root based on how many layers you've worked on.
 
+#### Your Goal: Handle Bigger Trees
+- Update the getRoot function to handle merkle trees with more than two leaf nodes.
+- When breaking down the logic of merkle trees, first we hash together A and B, then we hash together C and D.
+  - Then we hash together the combination of A and B (AB) with the combination of C and D (CD). Something like this:
+```
+   ABCD
+    /  \
+   AB  CD
+  / \  / \
+  A B  C D
+```
+- Writing the code you will likely find it useful to think of the tree as having multiple layers:
+  - The first layer is the leaves (``A``, ``B``, ``C``, ``D``)
+  - The second is the combination of both of those combinations (``AB``, ``CD``)
+  - The last layer is the final combination: the merkle root (``ABCD``)
+- In each layer, we'll need to combine elements two-at-a-time until we reach a layer with just a single element.
+  - At that point we can stop, knowing we've found the root.
+- For this stage you'll need to handle a **single leaf node**, **two leaf nodes**, **four leaf nodes** and **eight leaf nodes**.
+
+---
+**SOLUTION**
+```js
+class MerkleTree {
+    constructor(leaves, concat) {
+        this.leaves = leaves
+        this.concat = concat
+    }
+    getRoot(leaves = this.leaves) {
+        if (leaves.length === 1){
+            return leaves[0]
+        }
+        let layer = []
+        for (let i =0; i<leaves.length;i+=2) {
+            let left = leaves[i]
+            let right = leaves[i+1]
+            layer.push(this.concat(left,right))
+        }
+        return this.getRoot(layer)
+    }
+}
+module.exports = MerkleTree;
+```
+---
+
+### Odd Leaves
 #### Other Odd Trees
 - The rule for odd trees is always to use up everything towards the left side before filling out the right side of the tree.
 
@@ -138,7 +241,50 @@ Hash(AB, Hash(C, D))
   A B  C D  E F G
 ```
 
-#### Build The Proof
+#### Your Goal: Handle Odd Number of Leaves
+- Let's consider what happens in the case of an odd number of leaves in a tree.
+- Any time that there is no right pair to an element, we're just going to want to carry that leaf one layer up:
+```bash
+    Root
+    / \
+   AB  C
+  / \  |
+  A B  C
+```
+- In this case we don't use the C node until we combine it with AB to create the Merkle Root. Let's handle this in our getRoot function.
+
+---
+**SOLUTION**
+```js
+class MerkleTree {
+    constructor(leaves, concat) {
+        this.leaves = leaves;
+        this.concat = concat;
+    }
+    getRoot(leaves = this.leaves) {
+        if (leaves.length === 1) {
+            return leaves[0];
+        }
+        const layer = [];
+        for (let i = 0; i < leaves.length; i += 2) {
+            const left = leaves[i];
+            const right = leaves[i + 1];
+            if (right) {
+                layer.push(this.concat(left, right));
+            }
+            else {
+                layer.push(left);
+            }
+        }
+        return this.getRoot(layer);
+    }
+}
+
+module.exports = MerkleTree;
+```
+---
+
+### Build The Proof
 - Alright, now it's time to build the proof that a particular leaf node exists within a merkle tree!
 - With this proof, we'll only want to include the necessary hashes we need to create the root hash from our target leaf node.
 
@@ -265,7 +411,65 @@ Hash(Hash(Hash(Hash(A + B) + CD) + EFGH) + IJ)
 ```
 - At this point we will reach the top layer, with one node and can return our proof.
 
-#### Verifying your Proof
+#### Add the getProof Method
+- Let's add a getProof method to our MerkleTree class.
+    - This function will take in an index of a leaf node and return a Merkle Proof.
+- The Merkle Proof will be an array of objects with the properties data (the hash) and left (a boolean indicating if the hash is on the left).
+
+---
+**SOLUTION**
+```js
+class MerkleTree {
+    constructor(leaves, concat) {
+        this.leaves = leaves
+        this.concat = concat
+    }
+    getRoot(leaves = this.leaves) {
+        if (leaves.length === 1){
+            return leaves[0]
+        }
+        let layer = []
+        for (let i =0; i<leaves.length;i+=2) {
+            let left = leaves[i]
+            let right = leaves[i+1]
+            if (right) {
+                layer.push(this.concat(left,right))
+            } else {
+                layer.push(left)
+            }
+        }
+        return this.getRoot(layer)
+    }
+    getProof(index, layer=this.leaves,proof = []){
+        if (layer.length === 1) return proof
+        const newLayer = []
+        for (let i = 0; i < layer.length; i += 2) {
+            let left = layer[i]
+            let right = layer[i + 1]
+            if (!right) {
+                newLayer.push(left)
+            }
+            else {
+                newLayer.push(this.concat(left, right))
+
+                if (i === index || i === index - 1) {
+                    let isLeft = !(index % 2)
+                    proof.push({
+                        data: isLeft ? right : left,
+                        left: !isLeft
+                    })
+                }
+            }
+        }
+        return this.getProof(Math.floor(index / 2), newLayer, proof)
+    }
+}
+
+module.exports = MerkleTree;
+```
+---
+
+### Verifying your Proof
 - It's time to verify it.
 - The test cases will include some valid proofs and some invalid proofs, your function will need to know the difference.
 
@@ -292,3 +496,86 @@ Hash(Hash(AB + Hash(C + D)) + E)
 2. Hash the result together with AB (AB should be on the left)
 3. Hash the result together with E (E should be on the right)
 - After this is complete, our resulting hash is our merkle root: ``ABCDE``
+
+#### Your Goal: Complete Verify Proof
+- The function ``verifyProof`` takes four parameters: ``proof``, ``node``, ``root`` and ``concat``.
+- Here are their definitions:
+  1. ``proof`` - An array of objects whose properties are ``data`` and ``left``. (The proof you created in the previous stage)
+  1. ``node`` - A leaf node we're trying to prove is within the merkle tree.
+  1. ``root`` - The valid Merkle Root.
+  1. ``concat`` - The method used to combine the leaf nodes.
+- Take the ``node`` and combine it with all the data provided in the ``proof``.
+- At this point you'll have your own root derived from the ``node`` and the ``proof``.
+  - Compare this to the true ``root`` with ``===`` to see if they match.
+---
+**SOLUTION**
+```js
+// index.js
+class MerkleTree {
+    constructor(leaves, concat) {
+        this.leaves = leaves
+        this.concat = concat
+    }
+    getRoot() {
+        return this.getRecursiveRoot(this.leaves)
+    }
+    getRecursiveRoot(nodes) {
+        if (nodes.length === 1) {
+            return nodes[0]
+        }
+
+        const newNodes = []
+        for (let i=0; i<nodes.length;i+=2) {
+            const a = nodes[i]
+            const b = nodes[i+1]
+            if (b) {
+                newNodes.push(this.concat(a,b))
+            } else {
+                newNodes.push(a)
+            }
+        }
+
+        return this.getRecursiveRoot(newNodes)
+    }
+  getProof(index, layer = this.leaves, proof = []) {
+        if (layer.length === 1) return proof;
+        const newLayer = [];
+        for (let i = 0; i < layer.length; i += 2) {
+            let left = layer[i];
+            let right = layer[i + 1];
+            if (!right) {
+                newLayer.push(left);
+            }
+            else {
+                newLayer.push(this.concat(left, right));
+
+                if (i === index || i === index - 1) {
+                    let isLeft = !(index % 2);
+                    proof.push({
+                        data: isLeft ? right : left,
+                        left: !isLeft
+                    });
+                }
+            }
+        }
+        return this.getProof(Math.floor(index / 2), newLayer, proof);
+    }
+}
+module.exports = MerkleTree;
+
+// verify.js
+function verifyProof(proof, node, root, concat) {
+  let data = node
+  for (let i=0; i<proof.length;i++){
+      if(proof[i].left) {
+          data = concat(proof[i].data,data)
+      } else {
+          data = concat(data,proof[i].data)
+      }
+  }
+  return  data === root
+}
+
+module.exports = verifyProof;
+```
+---
