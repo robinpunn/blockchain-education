@@ -32,10 +32,12 @@
         - [History](#history)
         - [Pros and Cons](#pros-and-cons)
         - [Suggested Reading](#suggested-reading)
-2. [Libraries](#Libraries)
+1. [Libraries](#Libraries)
     - [Introduction to Libraries](#introduction-to-libraries)
     - [1. Deployed Inline](#1-deployed-inline)
     - [2. Deployed Separately](#2-deployed-separately)
+1. [Upgrading Contracts](#upgrading-contracts)
+    - [Upgradeable Smart Contracts](#upgradeable-smart-contracts)
 ---
 
 ### Proxy Contracts
@@ -292,6 +294,8 @@ There are several benefits to using proxy contracts as an upgrade mechanism.
 - [Upgradeable Smart Contracts](https://mvpworkshop.co/blog/upgradeable-smart-contracts-proxy-pattern/)
 - [Proxy Patterns](https://dev.to/nvn/proxy-patterns-for-upgradeability-of-solidity-contracts-transparent-vs-uups-proxies-3ig2)
 
+---
+
 ### Libraries
 #### Introduction to Libraries
 - Libraries are like contracts, but with some key differences!
@@ -336,3 +340,49 @@ There are several benefits to using proxy contracts as an upgrade mechanism.
 - When a library is deployed separately, the compiler requires that you link the contract to the library you intend to deploy it with.
     - This process can be tricky and many people run into issues.
     - If you find yourself in this situation, check out **library linking** on [the hardhat docs](https://hardhat.org/hardhat-runner/plugins/nomiclabs-hardhat-ethers#library-linking) as well as [the solidity compiler docs](https://docs.soliditylang.org/en/v0.8.17/using-the-compiler.html?highlight=linking#library-linking).
+
+---
+
+### Upgrading Contracts
+#### Upgradeable Smart Contracts
+- Did you know smart contracts can be written to be upgradeable?
+    - That's right! If you intend it at deploy time, you can make it so that your smart contract is able to be "upgraded". Let's dig in...
+#### Why Upgrade Smart Contracts?
+- By design, smart contracts are immutable.
+    - On the other hand, software quality heavily depends on the ability to upgrade and patch source code in order to produce iterative releases.
+- In short, if you want to make your smart-contract-based software be based on a more iterative approach, you can still do so and are not constrained by set-in-stone immutability.
+    - It is up to you to determine whether your dApp will require upgradeable software infrastructure!
+#### How Do Upgradeable Smart Contracts Work?
+- Upgradeable smart contracts are a pattern composed of THREE contracts:
+1. ``Proxy`` **contract**: The smart contract the user interacts with directly.
+    - This contracts holds the contract state (ie, the important data is held here!).
+    - This is an EIP1967 standard proxy contract.
+    - This proxy contract is in charge of forwarding transactions to the implementation contract, the one containing the pure logic.
+1. ``Implementation`` **contract**: The smart contract that provides the skeleton logic and data.
+    - This is where you instantiate your variables.
+    - Your proxy contract, via delegatecalls into this one, will give them value!
+1. ``ProxyAdmin`` **contract**: The contract links Proxy and Implementation.
+    - This contract holds authority over ``Proxy`` to upgrade the Proxy contract and thus link that proxy to a new implementation contract.
+- Check out the [OpenZeppelin FAQs on Proxy, Implementation and ProxyAdmin contracts](https://docs.openzeppelin.com/upgrades-plugins/1.x/faq#what-is-a-proxy-admin)!
+
+#### Visualization: Upgrading a Smart Contract from V2 to V3
+![v2tov3](https://res.cloudinary.com/divzjiip8/image/upload/v1673520308/alchemyu/Untitled_20.png)
+- The above diagram shows what is called the [transparent proxy pattern](https://blog.openzeppelin.com/the-transparent-proxy-pattern/).
+    - This pattern uses call, delegatecall and the three-contract design in order to achieve a super cool infrastrastructure.
+- Here is a breakdown of the diagram flow, from the user perspective:
+1. The user performs a ``call`` into the ``Proxy`` contract
+1. That ``call`` hits the ``fallback`` function of the ``Proxy`` contract which is directly rigged to ``delegatecall`` into the ``Implementation`` contract address
+1. In performing a ``delegatecall``, the context of the ``Proxy`` contract is forwarded.
+    - This means that the storage of ``0x1234.1111`` will be directly affected by the logic of ``0x1234.4444`` (that's the whole point of ``delegatecall``!)
+1. The logic from ``Implementation`` is performed on the state of ``Proxy`` and if the logic does not revert, the state is returned to ``Proxy`` which then returns a receipt to the original user
+1. Transaction over!  🧾
+
+#### Vending Machine Activity ➡️
+- In the next section, you will run through a guide that has you set up and deploy an upgradeable vending machine smart contract using two extremely useful tools:
+1. [OpenZeppelin Upgradeable Package](https://docs.openzeppelin.com/contracts/4.x/upgradeable)
+1. [OpenZeppelin Hardhat Upgrades plugin](https://docs.openzeppelin.com/upgrades-plugins/1.x/)
+
+#### BTW, Why Use That Hardhat Plugin??
+- As is a common theme in this course, we are always looking to equip you with the latest and greatest tools to build quality smart contracts.
+    - The OpenZeppelin Hardhat Upgrades plugin serves to abstract a lot of the complexity of what we just discussed above away from us as developers, so that we can focus on more specific solutions such as: do we want this contract to be upgradeable, yes or no? 👀
+    - Thanks to the plugin, we can get up and running with upgradeable smart contracts in a flash and we'll learn how to to do just that in the activity next section!
