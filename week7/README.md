@@ -1,4 +1,4 @@
-## Solidity Governance
+# Solidity Governance
 
 ---
 ### Table of Contents
@@ -38,14 +38,15 @@
     - [2. Deployed Separately](#2-deployed-separately)
 1. [Upgrading Contracts](#upgrading-contracts)
     - [Upgradeable Smart Contracts](#upgradeable-smart-contracts)
+1. [Governance](#governance)
 ---
 
-### Proxy Contracts
-#### [Storage Slots](https://docs.alchemy.com/docs/smart-contract-storage-layout#how-is-memory-used-in-the-evm)
+## Proxy Contracts
+### [Storage Slots](https://docs.alchemy.com/docs/smart-contract-storage-layout#how-is-memory-used-in-the-evm)
 - This guide will explain how data stored on smart contracts. 
     - Contract storage layout refers to the rules governing how contracts’ storage variables are laid out in long-term memory.
 
-##### What is contract storage layout and why does it matter?
+#### What is contract storage layout and why does it matter?
 - Contract storage layout refers to the rules governing how contracts’ storage variables are laid out in long-term memory. 
     - Almost all smart contracts have state variables that need to be stored long-term.
 - Understanding contract storage layout is important for:
@@ -56,12 +57,12 @@
 - Smart contract developer’s do not have direct control over this aspect of their contract’s external interface, it is controlled by the compiler. 
     - However, if the compiler version changes and the rules of contract storage layout were to change, a developer would need to be aware of this.
 
-##### How is memory used in the EVM?
+#### How is memory used in the EVM?
 - Smart contracts are computer programs that run on blockchains.
     - Programs consist of functions and data (also known as variables or parameters) that functions operate on.
     - The data that functions use need to be stored somewhere in the computer’s memory.
     - In this case the computer is the EVM.
-###### Solidity Memory Types
+##### Solidity Memory Types
 - There are 3 different types of memory in Solidity that developers can use to instruct the EVM where to store their variables: memory, calldata, and storage.
 - There are also rules about how long the variable’s memory location will be valid as well as rules about how the variable can be used.
     - For example, can the variable be read? Can the variable be written to?
@@ -83,7 +84,7 @@
     - In other programming environments, if we want to store variables long-term, we usually off-load this work to a filesystem or database.
     - But in blockchain, a smart contract’s code and data are both persisted together long-term on the blockchain.
 
-##### What is storage memory?
+#### What is storage memory?
 - Each contract gets its own storage area which is a persistent, read-write memory area.
     - Contract’s can only read and write from their own storage.
     - A contract’s storage is divided up into 2²⁵⁶ slots of 32 bytes each.
@@ -100,14 +101,14 @@
 **Why did the designers of the EVM give contracts such a large storage area?**
 - The reason the contract storage area is so large has to do with state variables of dynamic size and how hashes are used to calculate state variables’ storage slots.
 
-##### How are state variables stored in smart contract storage slots?
+#### How are state variables stored in smart contract storage slots?
 - Solidity will automatically map every defined state variable of your contract to a slot in storage in the order the state variables are declared, starting at slot 0.
 - A simple visualization of this idea is show here:
 ![storage](https://files.readme.io/e316e25-diagram-mapping-contract-state-variables-to-storage-slots.jpeg)
 - Here we can see how variables a, b and c get mapped from their declaration order to their storage slots.
     - To see how the storage variables actually get encoded and stored in the slots at the binary level we need to dig a little deeper and understand the concepts of endian-ness, byte-packing and byte-padding.
 
-##### What is Endian-ness?
+#### What is Endian-ness?
 - Endian-ness refers to how computers store multi-byte values in memory (eg: uint256, bytes32, address), and there are two types of endian-ness: big-endian and little-endian.
     - Big-endian → last byte of binary representation of data type is stored first
     - Little-endian → first byte of binary representation of data type is stored first
@@ -116,14 +117,14 @@
     - Visually it will look like one of the diagrams below depending on the endian-ness.
 ![endian](https://files.readme.io/a21dcf5-diagram-of-big-endian-and-little-endian-storage-layouts-in-solidity-smart-contracts.jpeg)
 
-###### How is Endian-ness used in Ethereum?
+##### How is Endian-ness used in Ethereum?
 - Ethereum uses both endian-ness formats, and the format used depends on the variable type.
     - Big-endian is only used for bytes and string types.
         - These 2 types behave differently in a contract’s storage slots than other variables.
     - Little-endian is used for every other type of variable.
         - Some examples are: uint8, uint32, uint256, int8, boolean, address, etc…
 
-##### How are state variables padded and packed in smart contract storage slots?
+#### How are state variables padded and packed in smart contract storage slots?
 - To store variables that require less than 32 bytes of memory in storage, the EVM will pad the values with 0s until all 32 bytes of the slot are used and then store the padded value.
 - Many variable types are smaller than the 32 byte slot size, eg: bool, uint8, address.
     - Here is a diagram of what it looks like when we want to store state variables of types requiring less than 32 bytes of memory:
@@ -144,18 +145,18 @@
     - For example, if we need to read c very often without reading a it might be best to not tightly pack the variables.
     - This is a design consideration developers must take into account when writing contracts.
 
-##### How are user-defined types (structs) stored in contract memory?
+#### How are user-defined types (structs) stored in contract memory?
 - In scenarios where we have a group of variables that logically belong together and are often read and written as unit, we can define a user-defined type via Solidity’s struct keyword and apply the above knowledge of byte-packing to get the most efficient gas-usage regarding storage usage and reading and writing of storage variables.
 ![structs](https://files.readme.io/3e9dfc1-diagram-of-how-user-defined-structrs-are-packed-and-stored-in-smart-contract-storage-memory.jpeg)
 - Now we have the benefit of tight byte-packing and grouped reading/writing of the state variable someStruct.
 
-##### How are statically-sized variables stored in memory?
+#### How are statically-sized variables stored in memory?
 - Statically-sized state variables are stored in their corresponding slots.
     - If a statically-sized variable is 2 slots in size (64 bytes) and stored at slot s, then the following storage variable will be stored at slot s + 2.
 - For example, the storage layout of the state variables in the following contract:
 ![static](https://files.readme.io/c9c107b-diagram-of-how-statically-sized-variables-are-stored-in-smart-contract-storage-memory.jpeg)
 
-##### How are dynamically-sized state variables stored in smart contract memory?
+#### How are dynamically-sized state variables stored in smart contract memory?
 - Dynamically-sized state variables are assigned slots in the same way as statically-sized state variables, but the slots assigned to dynamic state variables are only marker slots.
     - That is, the slots mark the fact that a dynamic array or mapping exists, but the slot doesn’t store the variable’s data.
 - For a [dynamically-sized variable](https://www.alchemy.com/overviews/solidity-arrays), why isn’t its data stored directly in its assigned slot the same way that it works for statically-sized variables?
@@ -165,7 +166,7 @@
     - The keccak256 hash of the marker slot number is a ‘pointer’ to where the array’s values live in the contract’s storage layout.
 ![dynamic](https://files.readme.io/388c33b-diagram-of-how-dynamically-sized-variables-are-stored-in-storage-memory-using-keccak256-hashing.jpeg)
 
-##### How are mappings stored in smart contract storage?
+#### How are mappings stored in smart contract storage?
 - For [mappings](https://www.alchemy.com/overviews/solidity-mapping), the marker slot only marks the fact that there is a mapping.
     - To find a value for a given key, the formula keccak256(h(k) . p) is used where:
         - the symbol . denotes string concatenation
@@ -176,22 +177,22 @@
 - Here is an diagram depicting how mappings are stored in memory:
 ![mapping](https://files.readme.io/c4ba494-diagram-of-how-mappings-are-stored-in-storage-memory-using-keccak256-hashing.jpeg)
 
-#### Delegatecall
+### Delegatecall
 - The ``<address>.delegatecall`` method is critical to our understanding of proxies
 
-##### Communication
+#### Communication
 ![comm](https://i.ibb.co/MBvV606/comm.png)
 - Our program lives on the blockchain in bytecode form
     - We write our program in Solidity, and it gets compiled into the bytecode that lives on the blockchain
 - When a EOA(externally owned account) interacts with the contract, it goes through steps such as signing a transaction
     - the calldata and transaction performed by the EOA interacts with our smart contract
 
-##### Calldata
+#### Calldata
 ![calldata](https://i.ibb.co/jwMjzXF/calldata.png)
 - Calldata is the function signature + arguments
     - When data is encoded to a smartcontract, this is how it is done for solidity
 
-##### Call
+#### Call
 ![messagecall](https://i.ibb.co/jZTXZww/message-Call.png)
 - EOA uses the calldata with signed transaction
     - This information could be sent to contract A and contract A may interact with many other contracts during the transactions execution
@@ -204,7 +205,7 @@
     - msg.value is based on how much contract A is sending
     - storage is based on new contract
 
-##### Delegatecall
+#### Delegatecall
 ![delegatecall](https://i.ibb.co/ZM8JrKn/delegated-Call.png)
 - Instead of using ``b.call{value:2.0}(calldata)``, using delegatecall: ``b.delegatecall(calldata)``
     - msg.sender is still the EOA
@@ -213,7 +214,7 @@
 - Using delegatecall, contract B is being interacted with while using Contract A's storage
 - This allows new contracts to modify contract A's storage variables
     - not something that you want to use everywhere
-###### Use cases
+#### Use cases
 - The proxy contract implements logic on other contracts using the proxy storage
 ![proxy](https://i.ibb.co/DK8M90J/proxy.png)
 - Upgrades
@@ -227,45 +228,45 @@
 - using a proxy, we can delegatecall to an upgraded contract.
     - version 1 would still exist, but the proxy contract would deteremine which contract users interacted with
 
-#### Evolution of Proxies
+### Evolution of Proxies
 - Proxy contracts in Solidity have undergone significant evolution as developers have sought to create a more upgradeable and maintainable smart contract infrastructure.
     - The concept of a proxy contract is such that all message calls go through a proxy contract that will redirect them to the latest deployed contract logic.
     - Developers can set up a proxy contract architecture that will allow them to use new deployed contracts as if their main logic had been upgraded.
 
-##### Proxy Patterns
+#### Proxy Patterns
 - There are several proxy patterns that developers can use to achieve upgradeability, and each has its own advantages and disadvantages.
 - The three options explored by Zeppelin are:
     - Upgradeability using Inherited Storage
     - Upgradeability using Eternal Storage
     - Upgradeability using Unstructured Storage
 
-##### Inherited Storage
+#### Inherited Storage
 - In the Inherited Storage approach, the logic contract incorporates the storage structure required by the proxy.
     - Both the proxy and the logic contract inherit the same storage structure to ensure that both adhere to storing the necessary proxy state variables.
     - This approach relies on having a Registry contract to keep track of the different versions of your logic contract
 
-##### External Storage
+#### External Storage
 - In the Eternal Storage pattern, the storage schemas are defined in a separate contract that both the proxy and logic contract inherit from.
     - The storage contract holds all the state variables the logic contract will need, and since the proxy is aware of them too, it can define its own state variables necessary for upgradeability without the concern of them being overwritten
 
-##### Unstructured Storage
+#### Unstructured Storage
 - The Unstructured Storage pattern is similar to Inherited Storage but doesn’t require the logic contract to inherit any state variables associated with upgradeability.
     - This pattern uses an unstructured storage slot defined in the proxy contract to save the data required for upgradeability.
     - By using this pattern, none of the logic contract versions have to know about the storage structure of the proxy, however all future logic contracts must inherit the storage variables declared by their ancestor versions
 
-##### Fallback
+#### Fallback
 - When a function call to a contract is made that it does not support, the fallback function will be called.
     - The proxy contract uses a custom fallback function to redirect calls to other contract implementations.
     - If the logic contract relies on its constructor to set up some initial state, this has to be redone after the proxy upgrades to your logic contract.
     - A common pattern for upgrading the proxy contract is that the proxy to immediately call an initialize method on the logic contract
 
-##### Delegatecall
+#### Delegatecall
 - Zeppelin’s Proxy contract, shared by all proxy patterns, implements its own delegatecall function which returns the value that resulted in calling the logic contract.
     - In the Inherited Storage and Unstructured Storage patterns, future upgraded token logic contracts can upgrade existing functions as well as introduce new functions and new storage variables.
     - In the Eternal Storage pattern, all future versions of the logic contract should not define any other state variable.
     - All versions of the logic contract must always use the eternal storage structure defined in the beginning
 
-##### History
+#### History
 - Proxies in Solidity have undergone several changes and improvements over the years.
 - Here's a brief overview of their evolution:
 1. **Solidity version 0.4.x**
@@ -283,21 +284,21 @@
     - This version introduced the "Diamond" pattern, which is a more advanced approach to implementing upgradeable contracts.
     - The Diamond pattern uses multiple proxy contracts to create a modular architecture that allows for more granular upgrades and better separation of concerns.
 
-##### Pros and Cons
+#### Pros and Cons
 There are several benefits to using proxy contracts as an upgrade mechanism.
     - For example, proxy contracts allow developers to upgrade their smart contracts without having to migrate their data to a new contract.
     - Additionally, proxy contracts enable developers to fix bugs or add new features to their smart contracts without having to redeploy them from scratch.
 - However, there are also some challenges associated with using proxy contracts, such as the need to carefully manage storage and the risk of introducing security vulnerabilities
 
-##### Suggested Reading
+#### Suggested Reading
 - [Open Zeppelin](https://blog.openzeppelin.com/proxy-patterns/)
 - [Upgradeable Smart Contracts](https://mvpworkshop.co/blog/upgradeable-smart-contracts-proxy-pattern/)
 - [Proxy Patterns](https://dev.to/nvn/proxy-patterns-for-upgradeability-of-solidity-contracts-transparent-vs-uups-proxies-3ig2)
 
 ---
 
-### Libraries
-#### Introduction to Libraries
+## Libraries
+### Introduction to Libraries
 - Libraries are like contracts, but with some key differences!
     - When you deploy a library on its own, you cannot store storage variables on libraries and you can't send ether to them either.
     - However, not all libraries are deployed on their own.
@@ -343,16 +344,16 @@ There are several benefits to using proxy contracts as an upgrade mechanism.
 
 ---
 
-### Upgrading Contracts
-#### Upgradeable Smart Contracts
+## Upgrading Contracts
+### Upgradeable Smart Contracts
 - Did you know smart contracts can be written to be upgradeable?
     - That's right! If you intend it at deploy time, you can make it so that your smart contract is able to be "upgraded". Let's dig in...
-#### Why Upgrade Smart Contracts?
+### Why Upgrade Smart Contracts?
 - By design, smart contracts are immutable.
     - On the other hand, software quality heavily depends on the ability to upgrade and patch source code in order to produce iterative releases.
 - In short, if you want to make your smart-contract-based software be based on a more iterative approach, you can still do so and are not constrained by set-in-stone immutability.
     - It is up to you to determine whether your dApp will require upgradeable software infrastructure!
-#### How Do Upgradeable Smart Contracts Work?
+### How Do Upgradeable Smart Contracts Work?
 - Upgradeable smart contracts are a pattern composed of THREE contracts:
 1. ``Proxy`` **contract**: The smart contract the user interacts with directly.
     - This contracts holds the contract state (ie, the important data is held here!).
@@ -365,7 +366,7 @@ There are several benefits to using proxy contracts as an upgrade mechanism.
     - This contract holds authority over ``Proxy`` to upgrade the Proxy contract and thus link that proxy to a new implementation contract.
 - Check out the [OpenZeppelin FAQs on Proxy, Implementation and ProxyAdmin contracts](https://docs.openzeppelin.com/upgrades-plugins/1.x/faq#what-is-a-proxy-admin)!
 
-#### Visualization: Upgrading a Smart Contract from V2 to V3
+### Visualization: Upgrading a Smart Contract from V2 to V3
 ![v2tov3](https://res.cloudinary.com/divzjiip8/image/upload/v1673520308/alchemyu/Untitled_20.png)
 - The above diagram shows what is called the [transparent proxy pattern](https://blog.openzeppelin.com/the-transparent-proxy-pattern/).
     - This pattern uses call, delegatecall and the three-contract design in order to achieve a super cool infrastrastructure.
@@ -377,7 +378,7 @@ There are several benefits to using proxy contracts as an upgrade mechanism.
 1. The logic from ``Implementation`` is performed on the state of ``Proxy`` and if the logic does not revert, the state is returned to ``Proxy`` which then returns a receipt to the original user
 1. Transaction over!  🧾
 
-#### Vending Machine Activity ➡️
+### Vending Machine Activity ➡️
 - In the next section, you will run through a guide that has you set up and deploy an upgradeable vending machine smart contract using two extremely useful tools:
 1. [OpenZeppelin Upgradeable Package](https://docs.openzeppelin.com/contracts/4.x/upgradeable)
 1. [OpenZeppelin Hardhat Upgrades plugin](https://docs.openzeppelin.com/upgrades-plugins/1.x/)
@@ -386,3 +387,27 @@ There are several benefits to using proxy contracts as an upgrade mechanism.
 - As is a common theme in this course, we are always looking to equip you with the latest and greatest tools to build quality smart contracts.
     - The OpenZeppelin Hardhat Upgrades plugin serves to abstract a lot of the complexity of what we just discussed above away from us as developers, so that we can focus on more specific solutions such as: do we want this contract to be upgradeable, yes or no? 👀
     - Thanks to the plugin, we can get up and running with upgradeable smart contracts in a flash and we'll learn how to to do just that in the activity next section!
+
+---
+
+## Governance
+### The State of Governance
+- How are smart contract protocols governed today?
+    - Fortunately, as with many things in the EVM contract system, governance has started begun to standardize!
+    - The Compound protocol kicked off this standardization with their release of the Governor Alpha contract and the subsequent Governor Bravo.
+    - These contracts, when combined with an ERC20 token that supports them, can create a governance system described in the image below:
+![governance](https://res.cloudinary.com/divzjiip8/image/upload/c_scale,w_750/v1647399476/gov_diagram_q4jeam.png)
+> You can find more about Compound Governance [here](https://docs.compound.finance/v2/governance/).
+- A new, executable proposal can be created which could be anything from a financial allocation from a shared treasury to a smart contract protocol upgrade.
+    - This proposal is voted upon by token holders and, if the minimum voting thresholds are reached, the vote will be queued for eventual execution.
+    - Variables like the length of voting, timelock delay, and voting thresholds (turnout & quorum) can be configured to meet the needs of the protocol.
+- We're going to be experimenting with the Governor standard from [OpenZeppelin](https://docs.openzeppelin.com/contracts/4.x/api/governance) in an upcoming guide.
+    - This guide will teach you how to set the mint function of your ERC20 token to a function governed by a set of token holders!
+#### On-Chain Dashboard
+- Because of this standardization it is possible to see rich dashboards being created for smart contract governance like Tally.
+    - Tally displays on-chain data about proposals that are going through in the ecosystem today.
+    - Explore this dashboard to see which protocols are being governed, what decisions are being made and by whom!
+#### Off-Chain Temperature Checks
+- Another great tool for community governance is off-chain voting. Often times it is helpful to be able to poll the community to get a feel for what the community wants before building an executable proposal on-chain.
+    - Snapshot is a great tool for such a use case. By taking a snapshot of community token balances at a certain block height, they can freeze voting weights for a poll.
+    - Then, by collecting signatures (which can be verified which just public key cryptography!) they can authenticate how the token holders are voting.
