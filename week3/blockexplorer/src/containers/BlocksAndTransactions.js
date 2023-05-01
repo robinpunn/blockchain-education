@@ -1,6 +1,6 @@
 import React from "react";
-import Blocks from "../components/Blocks";
-import Transactions from "../components/Transactions";
+import Blocks from "../components/HomePage/Blocks";
+import Transactions from "../components/HomePage/Transactions";
 
 const BlocksAndTransactions = ({ transactions, blocks }) => {
   return (

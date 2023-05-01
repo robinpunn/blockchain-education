@@ -1,9 +1,9 @@
 import React from "react";
-import Price from "../components/Price";
-import Gas from "../components/Gas";
-import BlockNumber from "../components/BlockNumber";
-import Marketcap from "../components/Marketcap";
-import BlockTop from "../components/BlockTop";
+import Price from "../components/HomePage/Price";
+import Gas from "../components/HomePage/Gas";
+import BlockNumber from "../components/HomePage/BlockNumber";
+import Marketcap from "../components/HomePage/Marketcap";
+import BlockTop from "../components/HomePage/BlockTop";
 
 const PriceGasBlocks = ({
   ethereumPrice,

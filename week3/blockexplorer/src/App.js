@@ -1,7 +1,7 @@
-import { Alchemy, Network, AlchemySubscription } from "alchemy-sdk";
+import { Alchemy, Network } from "alchemy-sdk";
 import { useEffect, useState } from "react";
 import "./App.css";
-import Input from "./components/Input";
+import Input from "./components/HomePage/Input";
 import PriceGasBlocks from "./containers/PriceGasBlocks";
 import BlocksAndTransactions from "./containers/BlocksAndTransactions";
 

@@ -3,6 +3,7 @@
   margin: 0 auto;
 }
 
+/*Search*/
 .input {
   text-align: center;
   margin: 3rem auto;
@@ -30,11 +31,12 @@
   color: #ffffff;
   background-color: #060708;
   border-radius: 5px;
+  text-indent: 3rem;
 }
 
 .search::placeholder {
   color: #ffffff;
-  padding: 0.75rem;
+  padding: 0;
   margin: 1rem;
 }
 
