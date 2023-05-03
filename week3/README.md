@@ -1,10 +1,65 @@
 
 ---
+# Ethereum Features
+---
+### Table of Contents
+1. [Ethereum Features](#ethe)
+    - [Introduction to Ethereum](#introduction-to-ethereum)
+        - [Review: Ethereum Block Architecture](#review-ethereum-block-architecture)
+        - [What is Ethereum?](#what-is-ethereum)
+        - [Ethereum = A Computer](#ethereum--a-computer)
+        - [Properties of the Ethereum Computer](#properties-of-the-ethereum-computer)
+        - [So... Why Ethereum?](#so-why-ethereum)
+        - [Ethereum vs. Bitcoin](#ethereum-vs-bitcoin)
+        - [The Ethereum Virtual Machine](#the-ethereum-virtual-machine)
+        - [Gas](#gas)
+        - [Understanding Forks](#understanding-forks)
+        - [Conclusion](#conclusion)
+    - [Proof of Stake](#proof-of-stake)
+        - [How PoS works](#how-pos-works)
+        - [How PoS affects Ethereum Development](#how-pos-affects-ethereum-development)
+        - [Additional Resources](#additional-resources)
+    - [Gas on Ethereum](#gas-on-ethereum)
+        - [EIP-1559](#eip-1559)
+        - [Gas Prices](#gas-prices)
+        - [Denominations of Ether](#denominations-of-ether)
+        - [How is the price of gas set?](#how-is-the-price-of-gas-set)
+        - [What happens to the base fee?](#what-happens-to-the-base-fee)
+        - [Setting the gas for your transaction](#setting-the-gas-for-your-transaction)
+        - [How are miners paid?](#how-are-miners-paid)
+    - [Accounts in Ethereum](#accounts-in-ethereum)
+        - [Externally Owned Accounts](#externally-owned-accounts)
+        - [Accounts vs UTXOs](#accounts-vs-utxos)
+        - [Contract Accounts](#contract-accounts)
+        - [Wrap Up](#wrap-up)
+    - [Supplemental Reading](#supplemental-reading)
+        - [Node Clients](#node-clients)
+        - [The History of Ethereum](#the-history-of-ethereum)
+        - [Ether: Ultrasound Money](#ether-ultrasound-money)
+        - [Use cases of Ethereum](#use-cases-of-ethereum)
+        - [Other Resources](#other-resources)
+1. [Reading Data from Ethereum](#reading-data-from-ethereum)
+    - [Intro to JSON-RPC](#intro-to-json-rpc)
+        - [Introduction](#introduction)
+        - [What We Are Ultimately Trying To Build](#what-we-are-ultimately-trying-to-build)
+        - [Core Concept: Ethereum Clients](#core-concept-ethereum-clients)
+        - [Core Concept: JSON-RPC](#core-concept-json-rpc)
+        - [Visualization of API Standards: REST and JSON-RPC](#visualization-of-api-standards-rest-and-json-rpc)
+        - [JSON-RPC Request](#json-rpc-request)
+        - [JSON-RPC Response](#json-rpc-response)
+        - [JSON-RPC Tools](#json-rpc-tools)
+        - [Suggested Reading](#suggested-reading)
+        - [Conclusion](#conclusion-1)
+    - [Ethereum Nodes](#ethereum-nodes)
+        - [Understanding Ethereum Nodes](#understanding-ethereum-nodes)
+        - [Bonus Material: Data Storage](#bonus-material-data-storage)
+        - [Wrap Up](#wrap-up-1)
+1. [Ethereum Transactions](#ethereum-transactions)
+---
 ## Ethereum Features
 ---
----
 ### Introduction to Ethereum
----
+
 #### Review: Ethereum Block Architecture
 ![Ethereum Block Architecture](https://i.stack.imgur.com/eOwjD.png)
 
@@ -202,9 +257,9 @@ for(let i = 0; i >= 0; i++) {
 #### Conclusion
 - Just remember, Ethereum = A Computer!
 
----
+
 ### Proof of Stake
----
+
 - On September 15th, 2022 Ethereum transitioned from Proof of Work to Proof of Stake (POS), also known as “The Merge”.
 - This was a massive migration that was always in the roadmap and original planning for Ethereum, but required coordination from the entire network to execute.
 - We learned about Proof of Work, the consensus mechanism used by Bitcoin and previously Ethereum in week 1.
@@ -250,9 +305,9 @@ for(let i = 0; i >= 0; i++) {
 - [The Merge](https://www.alchemy.com/the-merge)
 - [The Ethereum Developer Guide to the Merge](https://docs.alchemy.com/reference/ethereum-developer-guide-to-the-merge)
 
----
+
 ### Gas on Ethereum
----
+
 - In the previous article we talked about the cost of operation codes in terms of gas. In this article we’ll take a look at the actual price of gas and understand what determines it.
 
 #### EIP-1559
@@ -334,9 +389,7 @@ Here is a table with the relevant denominations for ether and their common use c
 - This is why the miner tip does not need to be insanely high to get your transaction included.
 - Typically when you set the gas for your transaction you’re setting a value called ``maxPriorityFee`` which is equal to the ``max fee`` + the miner ``tip``.
 
----
 ### Accounts in Ethereum
----
 - There are two types of accounts in Ethereum: **externally owned accounts** and **contract accounts**.
 
 #### Externally Owned Accounts
@@ -407,9 +460,9 @@ Here is a table with the relevant denominations for ether and their common use c
 - We talked about some of the differences between an account-based model and a UTXO model.
 - We also briefly touched on Smart Contracts from a high-level perspective, we'll dive into these concepts further when we start programming our own smart contracts!
 
----
+
 ### Supplemental Reading
----
+
 #### Node Clients
 - Node client software is a crucial aspect to accessing the blockchain.
 - Having a diverse set of node clients helps reduce risk factors of just using one.
@@ -498,9 +551,8 @@ Here is a table with the relevant denominations for ether and their common use c
 ---
 ## Reading Data from Ethereum
 ---
----
+
 ### Intro to JSON-RPC
----
 
 #### Introduction
 - Ethereum is simply a computer for all intents and purposes.
@@ -583,9 +635,7 @@ Here is a table with the relevant denominations for ether and their common use c
 - These write requests can be contract interactions or even a simple Ethereum transfer.
 - The next section covers signed JSON-RPC requests, in other words: **transactions**.
 
----
 ### Ethereum Nodes
----
 - Ethereum nodes are what maintain the integrity and data on the network. There are several different [types of Ethereum nodes](https://www.alchemy.com/overviews/full-vs-light-vs-archive-nodes) that are participating in the network and are used depending on what type of data is needed.
 - **Full nodes** store and validate all blocks and transactions over the entire blockchain locally.
     - When a smart contract transaction is executed, Ethereum full nodes execute all of the instructions in the smart contract.
@@ -621,10 +671,8 @@ Here is a table with the relevant denominations for ether and their common use c
 ---
 ## Ethereum Transactions
 ---
----
+
 ### Intro to Ethereum Transactions
----
-#### Intro
 - We learned that Ethereum nodes contain a JSON-RPC interface which we can use to send JSON-RPC requests.
 - We looked mainly at how to do read-only requests... basically just requests that ask the Ethereum computer for data.
 - We are only reading from the ledger at this point. What about writing?
