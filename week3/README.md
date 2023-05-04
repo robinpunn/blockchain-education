@@ -74,6 +74,13 @@
         - [Transaction Object Example](#transaction-object-example)
         - [How To Manually Construct Calldata](#how-to-manually-construct-calldata)
         - [Conclusion](#conclusion-2)
+1. [Front-end Libraries](#front-end-libraries)
+    - [Introduction to Ethereum Front-end Libraries](#introduction-to-ethereum-front-end-libraries)
+        - [Advantages of ethers.js](#advantages-of-ethersjs)
+        - [Drawbacks of ethers.js](#drawbacks-of-ethersjs)
+        - [When to Use ethers.js](#when-to-use-ethersjs)
+        - [Important ethers.js Class Abstractions](#important-ethersjs-class-abstractions)
+        - [Conclusion](#conclusion-3)
 ---
 
 ---
