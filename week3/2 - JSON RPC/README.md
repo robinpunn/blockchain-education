@@ -6,6 +6,20 @@
     - [Alchemy API Key](#alchemy-api-key)
     - [Get API Key (with pictures!)](#get-api-key-with-pictures)
     - [Your Goal: Fetch the key!](#your-goal-fetch-the-key)
+1. [Current Block Number](#current-block-number)
+    - [Your Goal: Current Block Number](#your-goal-current-block-number)
+1. [Get Balance](#get-balance)
+    - [Alchemy JSON RPC Tools](#alchemy-json-rpc-tools)
+    - [Balances](#balances)
+    - [Your Goal: Retrieve the Balance](#your-goal-retrieve-the-balance)
+1. [Get Nonce](#get-nonce)
+    - [Transaction Nonce](#transaction-nonce)
+    - [Your Goal: Find the Nonce](#your-goal-find-the-nonce)
+1. [Block Transactions](#block-transactions)
+    - [Your Goal: Find Total Transactions](#your-goal-find-total-transactions)
+1. [Total Wei](#total-wei)
+    - [Batch Transactions](#batch-transactions)
+    - [Your Goal: Total Balance](#your-goal-total-balance)
 ---
 
 ### API Key
@@ -86,6 +100,7 @@ async function getBlockNumber() {
 module.exports = getBlockNumber;
 ```
 ---
+
 ###  Get Balance
 #### Alchemy JSON RPC Tools
 - As you're going through these exercises, be sure to check out:
@@ -97,10 +112,40 @@ module.exports = getBlockNumber;
     - Every Ethereum address has an associated balance.
     - This is true whether it's an Externally Owned Account, or a smart contract!
     - You can see this balance if you go to Etherscan: here's an example address.
+#### Your Goal: Retrieve the Balance
+- We're going to make another JSON-RPC call just like we did on the last stage! This time we're going to retrieve the balance of an address using [eth_getBalance](https://docs.alchemy.com/reference/eth-getbalance).
+- This method requires you to fill in two parameters: an address and an optional block number. If you leave the block number blank, it will default to the latest block.
+> The block number parameter actually accepts several different types of arguments, you can learn more in the [docs](https://docs.alchemy.com/reference/eth-getbalance).
+1. Get the latest balance for the address passed into our ``getBalance`` function and return it.
+> Be sure to use the "latest" tag for the block number or you can leave it blank!
+---
+**SOLUTION**
+```js
+require('dotenv').config();
+const { API_KEY } = process.env;
+const axios = require('axios');
+const url = `https://eth-mainnet.g.alchemy.com/v2/${API_KEY}`;
 
+async function getBalance(address) {
+    const response = await axios.post(url, {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "eth_getBalance", // <-- fill in the method
+        params: [address, 'latest'],  // <-- fill in the params
+    });
 
+    // use this if you want to inspect the response data!
+    console.log(response.data);
 
+    // TODO: return the balance of the address
+    return response.data.result
+}
 
+module.exports = getBalance;
+```
+---
+
+### Get Nonce
 #### Transaction Nonce
 - When sending transactions in Ethereum it's a requirement to include a nonce.
 - The reasoning is quite simple: you wouldn't want your transaction to be executed multiple times!
@@ -115,15 +160,78 @@ module.exports = getBlockNumber;
     - This makes each request unique, even if it has the same parameters!
     - Each time you sign a transaction, you'll sign it with the latest transaction count as the nonce.
     - If your or someone else tries to replay a transaction with a nonce lower than your transaction count, it will be rejected by the network.
+#### Your Goal: Find the Nonce
+- Time to find the nonce for the account! It's up to you to find the correct method on this one.
+- Use the [Ethereum API documentation](https://docs.alchemy.com/reference/ethereum-api-endpoints) and your knowledge from the section above to find the appropriate method!
+- Once you retrieve the nonce, return it.
 
-#### Block Transactions
+---
+**SOLUTION**
+```js
+require('dotenv').config();
+const { API_KEY } = process.env;
+const axios = require('axios');
+const url = `https://eth-mainnet.g.alchemy.com/v2/${API_KEY}`;
+
+async function getNonce(address) {
+    const response = await axios.post(url, {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "eth_getTransactionCount", // <-- fill in the method
+        params: [address, "latest"], // <-- fill in the params
+    });
+
+    // use this if you want to inspect the response data!
+    // console.log(response.data);
+
+    // return the nonce for the address
+    return response.data.result
+}
+
+module.exports = getNonce;
+```
+---
+
+### Block Transactions
 - Ethereum blocks contain a list of transactions.
 - This list can be empty or it can grow as large as the gas limit allows.
 - The block gas limit can vary from block to block as we learned in the Gas on Ethereum section.
 >Remember a transaction has its own gas limit which is the amount of gas the owner is willing to spend on a transaction. The actual gas spent on a transaction can be lower than the limit and the sender will be issued a refund. This is quite different than the block's gas limit, so be careful not to get them confused!
 - Since a transfer costs 21000 gas, this means that ~714 transfer transactions could fit into a single block (assuming we hit the target gas limit of 15 million).
 >The gas cost of a contract transaction depends heavily on its computational complexity. Its possible that a contract function requires so much gas to execute that its impossible to fit into a block!
+#### Your Goal: Find Total Transactions
+1. In the ``getTotalTransactions`` function, find the total number of transactions included in the block specified by the ``blockNumber`` parameter and return this.
+- Use the [Ethereum API documentation](https://docs.alchemy.com/reference/ethereum-api-endpoints) to help you find the right JSON RPC method!
+- Note: The ``blockNumber`` argument will be passed in as a hexadecimal string (i.e ``"0xfe34"``).
 
+---
+**SOLUTION**
+```js
+require('dotenv').config();
+const { API_KEY } = process.env;
+const axios = require('axios');
+const url = `https://eth-mainnet.g.alchemy.com/v2/${API_KEY}`;
+
+async function getTotalTransactions(blockNumber) {
+    const response = await axios.post(url, {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "eth_getBlockByNumber",
+        params: [blockNumber,true],
+    });
+
+    // use this if you want to inspect the response data!
+    console.log(response.data);
+
+    // return the total number of transactions in the block
+    return response.data.result.transactions.length
+}
+
+module.exports = getTotalTransactions;
+```
+---
+
+### Total Wei
 #### Batch Transactions
 - Have you noticed the id property on all of our JSON-RPC requests?
 - This property is used when batching requests.
@@ -160,6 +268,7 @@ console.log(response.data);
 1. Take each address and find its ether balance
 1. Add all of these balances together to find the total balance of all the addresses and return it
 > You'll notice from the example above that the result is coming back as a hexadecimal string. You can use ``parseInt('0xb1a2bc2ec50000')`` method to convert hex values to integers in order to add them.
+
 ---
 **SOLUTION**
 ```js

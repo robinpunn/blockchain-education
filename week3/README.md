@@ -2,6 +2,8 @@
 ---
 # Ethereum Features
 ---
+
+---
 ### Table of Contents
 1. [Ethereum Features](#ethe)
     - [Introduction to Ethereum](#introduction-to-ethereum)
@@ -55,6 +57,25 @@
         - [Bonus Material: Data Storage](#bonus-material-data-storage)
         - [Wrap Up](#wrap-up-1)
 1. [Ethereum Transactions](#ethereum-transactions)
+    - [Intro to Ethereum Transactions](#intro-to-ethereum-transactions)
+        - [Ethereum = A Transaction-Based State Machine](#ethereum--a-transaction-based-state-machine)
+        - [What is a Transaction? (Ethereum)](#what-is-a-transaction-ethereum)
+        - [Block & Transactions](#block--transactions)
+        - [Chain of Blocks... A Blockchain!](#chain-of-blocks-a-blockchain)
+        - [Stack of Transactions](#stack-of-transactions)
+        - [Refresher on the Ethereum World State](#refresher-on-the-ethereum-world-state)
+        - [Wait, So An Account Can Be A Smart Contract?](#wait-so-an-account-can-be-a-smart-contract)
+        - [How Are The Account Public Addresses Determined?](#how-are-the-account-public-addresses-determined)
+        - [Ok, Back to Transactions](#ok-back-to-transactions)
+        - [Two Types of Transactions in Ethereum](#two-types-of-transactions-in-ethereum)
+        - [Ethereum Transaction Architecture](#ethereum-transaction-architecture)
+        - [Blockchain = Globally Shared Transaction Database](#blockchain--globally-shared-transaction-database)
+        - [P2P Network](#p2p-network)
+        - [Transaction Object Example](#transaction-object-example)
+        - [How To Manually Construct Calldata](#how-to-manually-construct-calldata)
+        - [Conclusion](#conclusion-2)
+---
+
 ---
 ## Ethereum Features
 ---
@@ -862,8 +883,10 @@ Let's jump back into focusing specifically on transactions...
 - We learned the low-level so that we become competent web3 developers, but we'll learn all the high-level libraries meant to make us web3 developer superstars... starting with Ethers.js and the Alchemy SDK.
 
 ---
-## Introduction to Ethereum Front-end Libraries
+## Front-end Libraries
 ---
+
+### Introduction to Ethereum Front-end Libraries
 - Virtually every web3 website, or dapp that you have ever used uses one of [web3.js](https://web3js.readthedocs.io/en/v1.8.1/) or [ethers.js](https://docs.ethers.io/v5/).
 - Together, they are the two most popular Ethereum Javascript libraries that allow developers to interact with Ethereum or EVM-compatible blockchains using the JSON-RPC (Javascript Object Notation- Remote Procedure Call) protocol.
 - In other words, these are JavaScript libraries that allow you to do things that fundamental to almost every dapp: deploy smart contracts, create wallets, sign transactions, query the blockchain, etc. without having to make raw API calls to the blockchain.
@@ -873,7 +896,7 @@ Let's jump back into focusing specifically on transactions...
 >We built a strict superset of Ethers.js that makes it simple to integrate your Ethers.js code into Alchemy's custom endpoints, called the Alchemy SDK. You'll get the same syntax and features as Ethers while gaining access to Alchemy's best-in-class infrastructure and Enhanced APIs.
 >[Alchemy SDK Quickstart](https://docs.alchemy.com/reference/alchemy-sdk-quickstart)
 
-### Advantages of ethers.js
+#### Advantages of ethers.js
 - Ethers can do everything that web3.js can when it comes to interacting with the blockchain. In addition to that, it has a few more perks:
     - A Broader License
         - Ethers is available under the MIT License which not only allows developers to use it for free, but also allows modifications to it.
@@ -887,24 +910,24 @@ Let's jump back into focusing specifically on transactions...
         - Ethers is extraordinarily well-tested, with close to 10,000 test cases; a significant chunk being written by Richard Moore himself.
         - Ethers was a pioneer with respect to maintaining a well-tested Ethereum library (web3 has since managed to catch up to an extent).
 
-### Drawbacks of ethers.js
+#### Drawbacks of ethers.js
 - Ethers is a relatively new library.
     - Hence, it is hard to find it in use in older, more foundational projects and companies.
     - If you work or are planning to work in such a company, it may be worthwhile to spend more time learning web3.
 
-### When to Use ethers.js
+#### When to Use ethers.js
 - Ethers is a fantastic library to use if you're building a new project.
     - At the time of writing, the popularity (in terms of weekly downloads, beginner tutorials, and community support) has either surpassed or quickly catching up to that of web3.
 - Given the small size of the library, it is especially lucrative on the frontend as it can improve the performance of your website/app significantly.
 
-### Important ethers.js Class Abstractions
+#### Important ethers.js Class Abstractions
 - These are the core class abstractions that you will need to use to write scripts that interact with the Ethereum computer.
 - These are also the base abstractions that the Alchemy SDK uses 1-to-1.
     - [Provider](https://docs.ethers.io/v5/api/providers/provider/#Provider): Represents any connection to an Ethereum node
     - [Wallet](https://docs.ethers.io/v5/api/signer/#Wallet): EOA (private key holder) with ability to sign and send messages to network
     - [Contract](https://docs.ethers.io/v5/api/contract/contract/#Contract): Represents a smart contract executable deployed on the network
 
-### Conclusion
+#### Conclusion
 - Front-end libraries like ethers.js and software development kits like the Alchemy SDK make our life as developers extremely easy. Can you imagine what a pain it would be to be coding out all of our scripts in raw JSON-RPC?
 - So, web3 developers use front-end libraries that work to abstract the lower-level away from them so that they can focus on streamlined development. This is the flow typical of web3 dApps:
 ![web3 flow](https://res.cloudinary.com/divzjiip8/image/upload/v1670483981/alchemyu/Untitled_5.png)
