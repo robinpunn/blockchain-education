@@ -1,0 +1,35 @@
+.input {
+    text-align: center;
+    margin: 3rem auto;
+    padding: 0 auto;
+  }
+  
+  .input > h4 {
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 400;
+    margin: 0 auto;
+    padding: 0;
+    width: 100%;
+  }
+  
+  .search {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 80%;
+    height: 3rem;
+    margin: 1rem auto;
+    padding: 0.5rem auto;
+    color: #ffffff;
+    background-color: #060708;
+    border-radius: 5px;
+    text-indent: 3rem;
+  }
+  
+  .search::placeholder {
+    color: #ffffff;
+    padding: 0;
+    margin: 1rem;
+  }

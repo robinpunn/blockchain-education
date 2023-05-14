@@ -1,6 +1,6 @@
 import React from "react";
 
-const BlockPage = () => {
+const BlockPage = ({ blockInfo }) => {
   return (
     <div className="block-page">
       <div className="block-head">

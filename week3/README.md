@@ -5,7 +5,7 @@
 
 ---
 ### Table of Contents
-1. [Ethereum Features](#ethe)
+1. [Ethereum Features](#ethereum-features)
     - [Introduction to Ethereum](#introduction-to-ethereum)
         - [Review: Ethereum Block Architecture](#review-ethereum-block-architecture)
         - [What is Ethereum?](#what-is-ethereum)

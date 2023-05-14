@@ -1,0 +1,84 @@
+.upper-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    color: #61dafb;
+    background-color: #16181d;
+    max-width: 100%;
+    max-height: 30rem;
+    overflow: scroll;
+    overflow-x: hidden;
+    padding: 0.5rem;
+    margin: 0.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  }
+  
+  .price-gas,
+  .final-safe {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 20rem;
+    border-bottom: 1px solid #f3f6f7;
+  }
+  .price {
+    text-align: left;
+  }
+  .gas,
+  .safe {
+    text-align: right;
+  }
+  .marketcap {
+    text-align: center;
+    border-bottom: 1px solid #f3f6f7;
+  }
+  .current-block {
+    width: 20rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .current-block > p,
+  .marketcap > p {
+    margin: 0.5rem;
+  }
+  
+  @media (min-width: 40rem) {
+    .upper-container {
+      overflow: hidden;
+      flex-direction: row;
+    }
+    .price-gas-cap {
+      display: flex;
+      flex-direction: row;
+    }
+    .price-gas {
+      justify-content: space-evenly;
+      border-bottom: none;
+    }
+    .marketcap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin: 0.5rem 1rem;
+      border-bottom: none;
+    }
+    .upper-blocks {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.25rem;
+    }
+    .final-safe {
+      border-bottom: none;
+      margin-left: 5.5rem;
+      text-align: left;
+    }
+  }
+  

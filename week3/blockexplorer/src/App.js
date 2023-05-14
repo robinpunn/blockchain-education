@@ -4,6 +4,7 @@ import "./App.css";
 import Input from "./components/HomePage/Input";
 import PriceGasBlocks from "./containers/PriceGasBlocks";
 import BlocksAndTransactions from "./containers/BlocksAndTransactions";
+import BlockPage from "./containers/BlockPage";
 
 // Refer to the README doc for more information about using API
 // keys in client-side code. You should never do this in production
@@ -29,6 +30,8 @@ function App() {
   const [blocks, setBlocks] = useState([]);
   const [ethereumPrice, setEthereumPrice] = useState(null);
   const [marketCap, setMarketCap] = useState(null);
+  const [page, setPage] = useState("home");
+  const [blockInfo, setBlockinfo] = useState(null);
 
   useEffect(() => {
     console.log("Fetching Ethereum Price...");
@@ -109,18 +112,41 @@ function App() {
     getBlockTxNum();
   }, [blockNumber]);
 
+  const navigateToBlockPage = (block) => {
+    setPage("blockpage");
+    setBlockinfo(block);
+    console.log("block:", block, "difficulty:", block._difficulty);
+  };
+
+  const navigateToHome = () => {
+    setPage("home");
+  };
+
   return (
     <div className="App">
-      <Input />
-      <PriceGasBlocks
-        ethereumPrice={ethereumPrice}
-        marketCap={marketCap}
-        gas={gas}
-        blockNumber={blockNumber}
-        finalizedBlock={finalizedBlock}
-        safeBlock={safeBlock}
-      />
-      <BlocksAndTransactions blocks={blocks} transactions={transactions} />
+      {page === "home" && (
+        <>
+          <Input />
+          <PriceGasBlocks
+            ethereumPrice={ethereumPrice}
+            marketCap={marketCap}
+            gas={gas}
+            blockNumber={blockNumber}
+            finalizedBlock={finalizedBlock}
+            safeBlock={safeBlock}
+          />
+          <BlocksAndTransactions
+            blocks={blocks}
+            transactions={transactions}
+            onClickBlock={navigateToBlockPage}
+          />
+        </>
+      )}
+      {page === "blockpage" && (
+        <>
+          <BlockPage block={blockInfo} />
+        </>
+      )}
     </div>
   );
 }

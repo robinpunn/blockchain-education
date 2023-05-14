@@ -1,0 +1,89 @@
+.transactions-container,
+.blocks-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  color: #61dafb;
+  background-color: #16181d;
+  max-width: 100%;
+  max-height: 30rem;
+  overflow: scroll;
+  overflow-x: hidden;
+  padding: 0.5rem;
+  margin: 0.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+.header {
+    position: sticky; /* add position sticky to h4 */
+    top: 0; /* specify a top value for the sticky positioning */
+    padding: 0.25rem; /* add padding to the top of the h4 */
+    margin: 0; /* remove any margin */
+    z-index: 1; /* add a z-index to ensure the h4 is always on top */
+    width: 100%;
+    border-bottom: 1px solid #f3f6f7;
+  }
+
+.transactions,
+.blocks {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: scroll;
+    overflow-x: hidden;
+}
+
+.transaction,
+.block {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #61dafb;
+    width: 100%;
+    border-top: 1px solid #f3f6f7;
+    border-bottom: 1px solid #f3f6f7;
+    padding: 0.75rem 0;
+    margin: 0;
+    line-height: 0.25rem;
+}
+
+.hash,
+.to-from,
+.number,
+.fee-txns {
+    margin: 0;
+}
+
+.hash > p,
+.number > p {
+    margin: 0;
+}
+
+@media (min-width: 40rem) {
+    .lower-container {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .blocks-container,
+    .transactions-container {
+      width: 100%;
+      max-height: 100rem;
+      overflow: hidden;
+    }
+    .transactions,
+    .blocks {
+      overflow: hidden;
+      max-height: 50rem;
+    }
+    .transaction,
+    .block {
+      align-items: center;
+      flex-direction: row;
+    }
+  }

@@ -1,6 +1,9 @@
 import React from "react";
 
-const Blocks = ({ blocks }) => {
+const Blocks = ({ blocks, onClickBlock }) => {
+  const handleClick = (block) => {
+    onClickBlock(block);
+  };
   return (
     <div className="blocks-container">
       <div className="header">
@@ -10,7 +13,7 @@ const Blocks = ({ blocks }) => {
         {blocks.map((block) => (
           <div className="block" key={block.number}>
             <div className="number">
-              <p>Block: {block.number}</p>
+              <p onClick={() => handleClick(block)}> Block: {block.number}</p>
             </div>
             <div className="fee-txns">
               <p>Fee: {block.baseFeePerGas.toString()}</p>
