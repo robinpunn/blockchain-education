@@ -3,7 +3,7 @@ import React from "react";
 const Price = ({ ethereumPrice }) => {
   return (
     <div className="price">
-      <p>Ether Price</p>
+      <p>Ether</p>
       <p>{ethereumPrice}</p>
     </div>
   );
