@@ -4,16 +4,16 @@ const Top = ({ blockInfo }) => {
   return (
     <div className="block-info-top">
       <div className="blocktop-hash">
-        <p>Hash:</p>
-        <p>{blockInfo.hash}</p>
+        <p className="title">Hash:</p>
+        <p className="value">{blockInfo.hash}</p>
       </div>
       <div className="blocktop-parent-hash">
-        <p>Parent Hash:</p>
-        <p>{blockInfo.parentHash}</p>
+        <p className="title">Parent Hash:</p>
+        <p className="value">{blockInfo.parentHash}</p>
       </div>
       <div className="blocktop-timestamp">
-        <p>Timestamp: </p>
-        <p>{blockInfo.timestamp}</p>
+        <p className="title">Timestamp: </p>
+        <p className="value">{blockInfo.timestamp}</p>
       </div>
     </div>
   );

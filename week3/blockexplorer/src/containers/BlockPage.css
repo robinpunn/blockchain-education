@@ -1,19 +1,19 @@
 .fee, .gas-used, .gas-limit, .blocktop-hash, .blocktop-parent-hash, .blocktop-timestamp, .block-info-bot {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-  }
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
 
-  .fee-recipient {
-    text-align: left;
-  }
-
-  .fee-miner {
-    text-align: right;
-  }
+.title {
+  width: 35%
+}
+.value {
+  width: 65%;
+  text-align: left;
+}
 
 @media (min-width: 44rem) {
-    .fee, .gas-used, .gas-limit, .blocktop-hash, .blocktop-parent-hash, .blocktop-timestamp, .block-info-bot {
-        width: 70%;
-      }
+  .fee, .gas-used, .gas-limit, .blocktop-hash, .blocktop-parent-hash, .blocktop-timestamp, .block-info-bot {
+    width: 90%;
+  }
 }

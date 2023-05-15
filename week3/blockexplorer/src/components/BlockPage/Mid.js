@@ -9,18 +9,16 @@ const Mid = ({ blockInfo }) => {
   return (
     <div className="block-info-mid">
       <div className="fee">
-        <p className="fee-recipient">Fee Recipient: </p>
-        <p className="fee-miner">{blockInfo.miner}</p>
+        <p className="title">Fee Recipient: </p>
+        <p className="value">{blockInfo.miner}</p>
       </div>
-      <div className="gas-used-limit">
-        <div className="gas-used">
-          <p>Gas Used:</p>
-          <p>{convertToNumber(blockInfo.gasUsed._hex)}</p>
-        </div>
-        <div className="gas-limit">
-          <p>Gas Limit:</p>
-          <p>{convertToNumber(blockInfo.gasLimit._hex)}</p>
-        </div>
+      <div className="gas-used">
+        <p className="title">Gas Used:</p>
+        <p className="value">{convertToNumber(blockInfo.gasUsed._hex)}</p>
+      </div>
+      <div className="gas-limit">
+        <p className="title">Gas Limit:</p>
+        <p className="value">{convertToNumber(blockInfo.gasLimit._hex)}</p>
       </div>
     </div>
   );

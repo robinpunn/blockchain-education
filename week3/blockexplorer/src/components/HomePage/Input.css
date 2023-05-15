@@ -33,3 +33,15 @@
     padding: 0;
     margin: 1rem;
   }
+
+  @media (min-width:44rem) {
+    .input {
+      display: flex;
+      justify-content: space-evenly;
+      width: 100%;
+    }
+    .input > h4 {
+      margin: auto auto auto 1rem;
+      text-align: left;
+    }
+  }

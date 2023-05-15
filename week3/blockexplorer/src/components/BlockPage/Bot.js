@@ -3,10 +3,8 @@ import React from "react";
 const Bot = ({ blockInfo }) => {
   return (
     <div className="block-info-bot">
-      <p className="bot-txs">Transactions:</p>
-      <p className="bot-txs-lenth">
-        {blockInfo.transactions.length} transactions
-      </p>
+      <p className="title">Transactions:</p>
+      <p className="value">{blockInfo.transactions.length} transactions</p>
     </div>
   );
 };
