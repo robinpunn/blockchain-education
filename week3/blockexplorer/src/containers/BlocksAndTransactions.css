@@ -85,5 +85,8 @@
     .block {
       align-items: center;
       flex-direction: row;
+      height: 8rem;
+      margin: 0;
+      padding: 0;
     }
   }

@@ -1,0 +1,19 @@
+.fee, .gas-used, .gas-limit, .blocktop-hash, .blocktop-parent-hash, .blocktop-timestamp, .block-info-bot {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .fee-recipient {
+    text-align: left;
+  }
+
+  .fee-miner {
+    text-align: right;
+  }
+
+@media (min-width: 44rem) {
+    .fee, .gas-used, .gas-limit, .blocktop-hash, .blocktop-parent-hash, .blocktop-timestamp, .block-info-bot {
+        width: 70%;
+      }
+}

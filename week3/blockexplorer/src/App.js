@@ -115,7 +115,7 @@ function App() {
   const navigateToBlockPage = (block) => {
     setPage("blockpage");
     setBlockinfo(block);
-    console.log("block:", block, "difficulty:", block._difficulty);
+    console.log("block:", block);
   };
 
   const navigateToHome = () => {
@@ -144,7 +144,7 @@ function App() {
       )}
       {page === "blockpage" && (
         <>
-          <BlockPage block={blockInfo} />
+          <BlockPage blockInfo={blockInfo} />
         </>
       )}
     </div>
