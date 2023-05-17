@@ -1,10 +1,96 @@
 
 ---
-## Smart Contract Basics
+# Smart Contract Basics
 ---
 
 ---
-### Solidity Syntax
+### Table of Contents
+1. [Solidity Syntax](#solidity-syntax)
+    - [Intro to Solidity](#intro-to-solidity)
+        - [A First Look at Solidity](#a-first-look-at-solidity)
+        - [Smart Contracts](#smart-contracts)
+        - [Smart Contracts - The Theoretical Approach](#smart-contracts---the-theoretical-approach)
+        - [Smart Contracts - The Ethereum Approach](#smart-contracts---the-ethereum-approach)
+        - [Smart Contracts - Properties](#smart-contracts---properties)
+        - [Smart Contracts - The Vending Machine](#smart-contracts---the-vending-machine)
+        - [Back to Solidity](#back-to-solidity)
+        - [Solidity - The Contract 📜](#solidity---the-contract-📜)
+        - [Solidity - Constructor](#solidity---constructor)
+        - [Solidity - State Variables](#solidity---state-variables)
+        - [Solidity - Numbers](#solidity---numbers)
+        - [Solidity - Data Types](#solidity---data-types)
+        - [Smart Contract Context](#smart-contract-context)
+        - [Suggested Reading](#suggested-reading)
+        - [Conclusion](#conclusion)
+    - [Solidity and the EVM](#solidity-and-the-evm)
+        - [Talk Bytecode To Me](#talk-bytecode-to-me)
+    - [Solidity at a Glance](#solidity-at-a-glance)
+        - [Smart Contracts](#smart-contracts-1)
+        - [Compiler Version Control](#compiler-version-control)
+        - [The Contract](#the-contract)
+        - [Control Structures](#control-structures)
+        - [Visibility](#visibility)
+        - [Static Typing](#static-typing)
+1. [Functions](#functions)
+    - [Intro to Solidity Functions](#intro-to-solidity-functions)
+        - [Solidity Functions](#solidity-functions)
+        - [Solidity Functions - Syntax](#solidity-functions---syntax)
+        - [Solidity Functions - Declarations](#solidity-functions---declarations)
+        - [Solidity Functions - Returns](#solidity-functions---returns)
+        - [Functions - Writing to Storage](#functions---writing-to-storage)
+        - [Solidity Functions - Visibility](#solidity-functions---visibility)
+        - [Suggested Reading](#suggested-reading-1)
+        - [Conclusion](#conclusion-1)
+1. [Smart Contract Communication](#smart-contract-communication)
+    - [Smart Contract Compilation](#smart-contract-compilation)
+    - [Contract Compilation Produces Two Artifacts: ABI & Bytecode](#contract-compilation-produces-two-artifacts-abi--bytecode)
+    - [ABI - Application Binary Interface (Computer Science)](#abi---application-binary-interface-computer-science)
+    - [ABI - Application Binary Interface (Ethereum)](#abi---application-binary-interface-ethereum)
+    - [What Does the ABI Look Like?](#what-does-the-abi-look-like)
+    - [ABI vs API](#abi-vs-api)
+    - [ABI Encoding](#abi-encoding)
+    - [Interacting With a Smart Contract](#interacting-with-a-smart-contract)
+    - [Bytecode](#bytecode)
+    - [Receipts Trie](#receipts-trie)
+    - [Conclusion](#conclusion-2)
+1. [Intro to Hardhat](#intro-to-hardhat)
+    - [Hardhat](#hardhat)
+        - [Intro](#intro)
+        - [What is Hardhat?](#what-is-hardhat)
+        - [Why Hardhat?](#why-hardhat)
+        - [AU Suggested Hardhat Flow](#au-suggested-hardhat-flow)
+        - [Conclusion](#conclusion-3)
+    - [Activity: Deploy a Contract with Ethers.js + Hardhat](#activity-deploy-a-contract-with-ethersjs--hardhat)
+        - [Activity Requirements](#activity-requirements)
+        - [Setup](#setup)
+            - [1. Acquire Göerli ETH](#1-acquire-göerli-eth)
+        - [Instructions](#instructions)
+            - [1. Create Project Structure](#1-create-project-structure)
+            - [2. Add files, .env and run npx hardhat](#2-add-files-env-and-run-npx-hardhat)
+            - [3. Edit hardhat.config.js](#3-edit-hardhatconfigjs)
+            - [4. Add A Smart Contract File](#4-add-a-smart-contract-file)
+            - [5. Add Scripts](#5-add-scripts)
+            - [6. Deploy Your Faucet!](#6-deploy-your-faucet)
+    - [Hardhat Quick Guide: Modifying State Variables](#hardhat-quick-guide-modifying-state-variables)
+        - [Step 1: Set Up Project Structure Using Hardhat](#step-1-set-up-project-structure-using-hardhat)
+        - [Step 2: Create Smart Contract](#step-2-create-smart-contract)
+        - [Step 3: Create Test](#step-3-create-test)
+        - [Step 4: Run the Test](#step-4-run-the-test)
+        - [Extra Challenges:](#extra-challenges)
+1. [Address Interactions](#address-interactions)
+    - [Calling EOAs](#calling-eoas)
+        - [EOAs in a Smart Contract](#eoas-in-a-smart-contract)
+        - [Call](#call)
+        - [Curly Braces](#curly-braces)
+        - [The Empty String Argument](#the-empty-string-argument)
+        - [Return Value](#return-value)
+    - [Reverting Transactions](#reverting-transactions)
+        - [Real World Example](#real-world-example)
+    - [Calling Contract Addresses](#calling-contract-addresses)
+---
+
+---
+## Solidity Syntax
 ---
 
 ### Intro to Solidity
@@ -238,7 +324,6 @@ const myContractInstance = await contract.deploy('0x38cE03CF394C349508fBcECf8e2c
     - ``msg.sender`` (understand message context!)
     - ``address`` (understand the EVM-specific types)
 
----
 
 ### Solidity and the EVM
 - Solidity is a **high-level language** that **compiles** down into **bytecode** which is run directly on the Ethereum Virtual Machine.
@@ -346,7 +431,7 @@ const myContractInstance = await contract.deploy('0x38cE03CF394C349508fBcECf8e2c
     - After this, the program will unconditionally jump back to ``tag 7`` from where it will run the ``i`` comparison again.
 >  Quite a bit of this is simplified to give the **gist of what is happening**. If you have an interest in digging further, I'd suggest taking a look at an [EVM Disassembler](https://github.com/crytic/ethersplay).
 
----
+
 ### Solidity at a Glance
 #### Smart Contracts
 - Before we dive into Solidity Coding Tutorials, let's study a Smart Contract!
@@ -882,7 +967,7 @@ const myContractInstance = await contract.deploy('0x38cE03CF394C349508fBcECf8e2c
 - If you are writing contracts TO Ethereum (ie. deploying), the contract compilation produces what you need: the contract's bytecode.
 - If you are reading contracts FROM Ethereum, the contract compilation produces what you need here as well: the contract's ABI.
 
-## Intor to Hardhat
+## Intro to Hardhat
 ### Hardhat
 ![Hardhat](https://hardhat.org/card.jpg)
 #### Intro
@@ -933,24 +1018,23 @@ const myContractInstance = await contract.deploy('0x38cE03CF394C349508fBcECf8e2c
     - It is specifically built to cover the entire smart contract developer flow end-to-end.
         - Master it, and thou shalt become a Web3 Master. 🧙‍♂
 
----
-## Activity: Deploy a Contract with Ethers.js + Hardhat
----
+### Activity: Deploy a Contract with Ethers.js + Hardhat
+
 - In this activity, we'll run through deploying a contract to the Göerli test network.
     - We will deploy a live ether faucet on Göerli - you can choose to deploy any contract you'd like or customize the one below however you like!
 - It's great to get some practice in with leading web3 development like Hardhat, let's jump in!
 > These activities are meant to teach you how to work more on your local. Setting up a local development environment is something that becomes extremely easy with a lot of practice!
-### Activity Requirements
+#### Activity Requirements
 - [Apex](https://apexwallet.xyz/): Browser extension wallet that provides key storage and secure account log-in as well as acts as a JSON-RPC gateway.
 - [Alchemy](https://www.alchemy.com/): Alchemy is a blockchain development platform from which we will use some APIs to help query the Ethereum blockchain.
 - [Hardhat](https://hardhat.org/): Ethereum developer suite full of tools that make the developer experience more efficient.
 
 #### Setup
-#### 1. Acquire Göerli ETH
+##### 1. Acquire Göerli ETH
 - You can get some testnet ether at https://goerlifaucet.com/
 
 #### Instructions
-#### 1. Create Project Structure
+##### 1. Create Project Structure
 1. Open up a generic terminal
 1. In your preferred root folder, run ``mkdir au-deployContract && cd au-deployContract``
 1. run ``npm init -y``
@@ -963,7 +1047,7 @@ const myContractInstance = await contract.deploy('0x38cE03CF394C349508fBcECf8e2c
     - ``npm install dotenv``: installs a package that allows us to use sensitive data as environment variables in our project
     - ``npm install hardhat``: plugs in the ``hre`` global access to our project so that we can use Hardhat features throughout it
 > If you see a bunch of warnings like npm WARN deprecated appear on your terminal when you are installing dependencies, don't worry about them! They are a common part of npm installs and there is little you can do about them.
-#### 2. Add files, .env and run npx hardhat
+##### 2. Add files, .env and run npx hardhat
 1. Run ``touch .env`` (this creates a brand new ``.env`` file in your current directory), then open in and add in your **Göerli** private key as a variable
 1. **This time, also add your Alchemy ``GOERLI_URL`` as a variable in your ``.env`` file!**
 1. Save and close the file
@@ -975,7 +1059,7 @@ const myContractInstance = await contract.deploy('0x38cE03CF394C349508fBcECf8e2c
 - You'll now have a basic project structure set up with a contracts and scripts folder and some sample files in them, just like above.
     - Go ahead and delete only the files in them, we won't be needing them - but we do need the folders, so keep those!
 - Ok, now that we've got a basic Hardhat project structure set up, let's start implementing a contract and a deployment script! 💥
-#### 3. Edit hardhat.config.js
+##### 3. Edit hardhat.config.js
 - In the ``hardhat.config.js`` that Hardhat set up for us, we'll want to make some modifications - for now, just delete everything in it and copy-paste the following:
     ```javascript
     require("@nomiclabs/hardhat-waffle");
@@ -992,7 +1076,7 @@ const myContractInstance = await contract.deploy('0x38cE03CF394C349508fBcECf8e2c
     };
     ```
     - We are setting a compiler version and enabling hardhat to run commands to the Göerli network!
-#### 4. Add A Smart Contract File
+##### 4. Add A Smart Contract File
 - We'll be deploying a generic faucet contract on Göerli - anyone will be able to send and withdraw some ether, just like the typical faucets we use to acquire Göerli. 🚰
     1. cd into your contracts folder and run touch Faucet.sol
     1. Open the Faucet.sol file and copy-paste the following contents:
@@ -1015,7 +1099,7 @@ const myContractInstance = await contract.deploy('0x38cE03CF394C349508fBcECf8e2c
     1. Save the file!
 - The Faucet contract is quite simple; it allows anyone to call the withdraw method and specify an amount lower than .1 ETH at a time.
     - The receive fallback function will handle any ETH deposited into the Faucet and add it to the contract balance.
-#### 5. Add Scripts
+##### 5. Add Scripts
 - Now, we need to create a script that will run the methods provided by ethers.js in order to deploy Faucet.sol to the Göerli test network.
 - We will need one script:
     - deployment script
@@ -1070,11 +1154,7 @@ const myContractInstance = await contract.deploy('0x38cE03CF394C349508fBcECf8e2c
     - Or using timestamps to limit mass withdrawals all at once?
 - Did you notice Hardhat make things easier for us as developers? Or maybe harder?
 
----
-
-## Hardhat Quick Guide: Modifying State Variables
-
----
+### Hardhat Quick Guide: Modifying State Variables
 
 - In this guide, we will set up a simple Hardhat project structure, add a contract with a state variable and a function to modify it.
     - We will then write a quick test to make sure the function modifies the state variable as expected - let's get to it!
@@ -1337,220 +1417,3 @@ const myContractInstance = await contract.deploy('0x38cE03CF394C349508fBcECf8e2c
         - For the definition of an interface, we only need to give Solidity enough information to figure out how to encode the calldata to call the address b.
         - From contract A's perspective, we don't need the full method definition of storeValue, we simply need to describe how we'd like to interface with contract B. Make sense?
 
----
-
-## Hardhat Guide: How to Unit Test a Smart Contract
-
----
-- In this guide, we'll cover the fundamentals of using [Hardhat](https://hardhat.org/) to unit test a Solidity smart contract.
-    - Testing is one of the most important parts of smart contract development, so let's jump right in! 🦅
-- We will be setting up some simple tests on a Faucet.sol smart contract while covering some of the different aspects of Solidity testing using JavaScript.
-
-
-#### Guide Requirements
-- [Hardhat](https://hardhat.org/): Hardhat is an Ethereum development platform that provides all the tools needed to build, debug and deploy smart contracts.
-
-#### Useful JS + Solidity Testing Resources
-- We will use these resources throughout this guide but bookmark these for any other testing you do!
-    - [ChaiJS](https://www.chaijs.com/)
-    - [Chai BDD Styled](https://www.chaijs.com/api/bdd/)
-    - [Chai Assert](https://www.chaijs.com/api/assert/)
-    - [Mocha Hooks](https://mochajs.org/#hooks)
-    - [Solidity Chai Matchers](https://ethereum-waffle.readthedocs.io/en/latest/matchers.html)
-
-#### Step 1: Hardhat Project Structure Setup
-1. In a directory of your choice, run ``npm init -y``
-1. Run ``npm install --save-dev hardhat``
-1. Run ``npx hardhat`` and you will get the following UI on your terminal:
-    ![Hardhat UI](https://res.cloudinary.com/divzjiip8/image/upload/v1671126973/alchemyu/Screen_Shot_2022-12-14_at_9.29.17_PM.png)
-1. Select Create a JavaScript project
-    - You will then get a few more options such as if you want to create a .gitignore and install some dependencies like in the following image:
-    ![Hardhat UI](https://res.cloudinary.com/divzjiip8/image/upload/v1671652663/alchemyu/Screen_Shot_2022-12-21_at_11.57.35_AM.png)
-1. **Select YES to all of these options!**
-> It might take a minute or two to install everything!
-- Your project should now contain the following:
-    - **Files**: ``node_modules``, ``package.json``, ``hardhat.config.js``, ``package-lock.json``, ``README.md``
-    - **Folders**: ``scripts``, ``contracts``, ``test``
-#### Step 2: Add a Faucet.sol Contract File
-1. In your ``/contracts`` directory, go ahead and delete the ``Lock.sol`` that Hardhat includes for you by default
-> You can do this by running rm -rf Lock.sol in your terminal or just delete it manually via your IDE
-2. Run touch Faucet.sol
-3. Open the file and copy-paste the following:
-    ```solidity
-    // SPDX-License-Identifier: MIT
-    pragma solidity 0.8.17;
-
-    contract Faucet {
-        address payable public owner;
-
-        constructor() payable {
-            owner = payable(msg.sender);
-        }
-
-        function withdraw(uint _amount) payable public {
-            // users can only withdraw .1 ETH at a time, feel free to change this!
-            require(_amount <= 100000000000000000);
-            (bool sent, ) = payable(msg.sender).call{value: _amount}("");
-            require(sent, "Failed to send Ether");
-        }
-
-        function withdrawAll() onlyOwner public {
-            (bool sent, ) = owner.call{value: address(this).balance}("");
-            require(sent, "Failed to send Ether");
-        }
-
-        function destroyFaucet() onlyOwner public {
-            selfdestruct(owner);
-        }
-
-        modifier onlyOwner() {
-            require(msg.sender == owner);
-            _;
-        }
-    }
-    ```
-1. Save the file. 💾
-1. Check out / audit the contract! 👀 ⬇️
-1. **Start thinking about what we could possibly test for!** 🤔 Lots of things right? Let's list out a few:
-- **A lot of the logic in the contract depends on the owner being set correctly in the constructor, so we'll want to test that.**
-- **We don't want someone instantly draining all of our funds, so we should check that the ``require`` clause in the ``withdraw()`` function works as expected**
-- **The ``destroyFaucet()`` function should only be called by the owner, as should the ``withdrawAll`` function.**
-- Let's set up some unit tests to test that all of these assumptions are correct!
-
-#### Step 3: Add Test File Structure
-- We will build out our unit tests for our ``Faucet.sol``.
-    - As we build out the test script, we will cover some of the important parts of Solidity testing.
-1. In your ``/test`` folder, rename the sample file included by Hardhat either from ``Lock.js`` to ``faucetTests.js``
-1. You are welcome to create your own test file in this folder from scratch. Hardhat already gives us a pre-written scaffold in ``Lock.js`` so better to take advantage of that and just re-name the sample file
-1. Woah, this sample file has a TON of stuff! 🤯 Those are just tests relevant to the sample ``Lock.js`` file included by Hardhat, let's clean the file and repurpose for the ``Faucet.sol`` contract
-1. Open the ``faucetTests.js`` file and copy-paste the following:
-    ```solidity
-    const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers');
-    const { expect } = require('chai');
-
-    describe('Faucet', function () {
-        // We define a fixture to reuse the same setup in every test.
-        // We use loadFixture to run this setup once, snapshot that state,
-        // and reset Hardhat Network to that snapshot in every test.
-        async function deployContractAndSetVariables() {
-            const Faucet = await ethers.getContractFactory('Faucet');
-            const faucet = await Faucet.deploy();
-
-            const [owner] = await ethers.getSigners();
-
-            console.log('Signer 1 address: ', owner.address);
-            return { faucet, owner };
-        }
-
-        it('should deploy and set the owner correctly', async function () {
-            const { faucet, owner } = await loadFixture(deployContractAndSetVariables);
-
-            expect(await faucet.owner()).to.equal(owner.address);
-        });
-    });
-    ```
-    - Let's first define some of these newer terms like ``describe`` and ``it``... 📖
-    - In the code above, we open a ``describe`` function called ``Faucet``. The best way to think of this is just a general function scope that "describes" the suite of test cases enumerated by the "it" functions inside.
-    - Inside that ``describe``, we have an ``it`` function. These are your specific unit test targets... just sound it out!: "I want ``it`` to x.", "I want ``it`` to y.", etc.
-    - Inside the ``it`` function, we use the ``loadFixture`` functionality we imported in the first line to help bring all the variables we need for each test easily.
-    - Inside the ``deployContractAndSetVariables`` function, we use the ``contractFactory`` abstraction provided to us by Ethers.
-    - [From the Hardhat testing docs](https://hardhat.org/tutorial/testing-contracts): A ``ContractFactory`` in ethers.js is an abstraction used to deploy new smart contracts, so Faucet here is a factory for instances of our faucet contract.
-    - We then ``await`` for the ``faucet`` instance we created from our ``ContractFactory`` to be deployed. This is our basic setup - after all these lines, we now have a deployed contract instance with which we can test! We then return them via ``loadFixture`` so that we can use them super easily via:
-        ```solidity
-        const { faucet, owner } = await loadFixture(deployContractAndSetVariables);
-        ```
-    - **The code is ready to test as soon as you save it**. It includes just one simple unit test checking that ``owner`` is set correctly at contract deployment. ✅ It is basically testing the following line in the ``Faucet.sol`` constructor:
-        ```solidity
-        owner = payable(msg.sender);
-        ```
-4. Run ``npx hardhat test`` in your terminal - if you successfully set up all of the above, you should see:
-    ![image](https://res.cloudinary.com/divzjiip8/image/upload/v1671655084/alchemyu/Screen_Shot_2022-12-21_at_12.36.48_PM.png)
-- We've successfully accounted for the first assumption we made above
-- **A lot of the logic in the contract depends on the owner being set correctly in the constructor, so we'll want to test that**.
-
-#### Step 4. Add Withdrawal Amount Test
-- Let's continue working through each assumption we made above. Next one is:
-    - **We don't want someone instantly draining all of our funds, so we should check that the ``require`` clause in the ``withdraw()`` function works as expected**
-- Do you think you can do this by yourself? Take a moment and try to think how you would implement this test...
-> Hint: It's basically adding a new it() block! 🧑‍💻
-- Let's run through adding a new unit test for this assumption...
-1. Add a new ``it`` function scope
-> Pro-tip: just copy-paste the entire previous it function and replace the contents for the new test! No need to write out the whole syntax again. Like this:
-    ![image](https://res.cloudinary.com/divzjiip8/image/upload/v1671657165/alchemyu/Screen_Recording_2022-12-21_at_1.10.58_PM.gif)
-2. As shown in the gif above, name it something that denotes we are testing the withdraw functionality of the contract
-- For now, we want to test that we can't withdraw more than .1 ETH as denoted by the ``require`` statement in our contract's ``withdraw()`` function.
-- **It's time to use expect! again**
-- Since we want to use ``expect``, we'll need to import some special functionality more specific to Solidity. We will be using these [Solidity Chai Matchers](https://ethereum-waffle.readthedocs.io/en/latest/matchers.html).
-> This import is already in the file!
-3. ``ethereum-waffle`` should already be installed, but run ``npm install ethereum-waffle`` just in case
-- Cool, we have the necessary imports and installations. 🧩
-    - As opposed to the first unit test, we will the [**Revert** Chai Matcher](https://ethereum-waffle.readthedocs.io/en/latest/matchers.html#revert) to ``expect`` a transaction to revert. This is how we make sure we cover certain cases that we expect **should revert**.
-4. Add the following variable to your ``deployContractAndSetVariables`` function:
-    ```solidity
-    let withdrawAmount = ethers.utils.parseUnits("1", "ether");
-    ```
-5. Remember to ``return`` it:
-    ```solidity
-    return { faucet, owner, withdrawAmount };
-    ```
-6. Add the following to your newly created ``it`` block:
-    ```solidity
-    const { faucet, withdrawAmount } = await loadFixture(deployContractAndSetVariables);
-    await expect(faucet.withdraw(withdrawAmount)).to.be.reverted;
-    ```
-    - We are creating ``withdrawAmount`` variable equal to 1 ether, which is way over what the ``require`` statement in the ``withdraw()`` function allows; **so we expect it to revert!** 🚫
-    - Go ahead and change the value to be less than .1 ETH and see the terminal get angry when you run ``npx hardhat test``... not reverting! 😱
-5. Our test file should look like this so far:
-    ```js
-    const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers');
-    const { expect } = require('chai');
-
-    describe('Faucet', function () {
-        // We define a fixture to reuse the same setup in every test.
-        // We use loadFixture to run this setup once, snapshot that state,
-        // and reset Hardhat Network to that snapshot in every test.
-        async function deployContractAndSetVariables() {
-            const Faucet = await ethers.getContractFactory('Faucet');
-            const faucet = await Faucet.deploy();
-
-            const [owner] = await ethers.getSigners();
-
-            let withdrawAmount = ethers.utils.parseUnits('1', 'ether');
-
-            return { faucet, owner, withdrawAmount };
-        }
-
-        it('should deploy and set the owner correctly', async function () {
-            const { faucet, owner } = await loadFixture(deployContractAndSetVariables);
-
-            expect(await faucet.owner()).to.equal(owner.address);
-        });
-
-        it('should not allow withdrawals above .1 ETH at a time', async function () {
-            const { faucet, withdrawAmount } = await loadFixture(
-            deployContractAndSetVariables
-            );
-            await expect(faucet.withdraw(withdrawAmount)).to.be.reverted;
-        });
-    });
-    ```
-    - Run ``npx hardhat test``, do your tests pass? 🤨 If so, heck yeahhhhh! 🎉
-
-#### Step 5 - Challenge: Add Critical Function Tests ☢️
-- We have just one more initial assumption to test:
-    - **The destroyFaucet() function should only be called by the contract owner, as should the withdrawAll function.**
-- This last one shouldn't be too bad to test! We just need to make sure the **onlyOwner** modifier is working, similar to the first test.
-    - These are some of the most important (in fact, critical!!) functions in our contract so we want to make sure they are indeed only callable by the owner.
-- As a challenge, implement these tests! Some good corner cases to test with these two functions:
-    - can only the owner call them?
-    - does the contract actually self destruct when the ``destroyFaucet()`` is called? (this one is tricky! hint: [``getCode``](https://docs.ethers.io/v5/single-page/#/v5/api/providers/provider/-%23-Provider-getCode))
-    - does the ``withdrawAll()`` function successfully return all of the ether held in the smart contract to the caller?
-- Use the same testing flow outlined above for efficiency! Here is the suggested flow:
-    1. Just copy-paste a current ``it`` block
-    1. Replace with whatever new functionality you need specific to your new testing assumption
-    1. Remember to update any necessary variables in the ``deployContractAndSetVariables`` function and ``return`` them
-    1. Import the variables into your ``it`` block via:
-        ```js
-        const { faucet, owner, anyVariable } = await loadFixture(deployContractAndSetVariables);
-        ```
-- There are many more cases that you can test for to create really iron-clad and comprehensive unit tests - and thus create iron-clad smart contracts! 💪 The testing rabbit hole is particularly great for anyone looking to get a solid foundation in smart contract security, lots of testing there for sure! Good luck, smart contract tester! 🫡
