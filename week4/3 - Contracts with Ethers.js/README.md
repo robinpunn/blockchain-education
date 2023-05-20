@@ -1,4 +1,24 @@
-### Contracts with ethers.js
+## Contracts with ethers.js
+
+---
+### Table of Conents
+1. [Contracts with Ether.js](#contracts-with-ethersjs-1)
+1. [Getter](#getter)
+    - [Contracts](#contracts)
+    - [Your Goal: Get The Value](#your-goal-get-the-value)
+1. [Setter](#setter)
+    - [Transactions](#transactions)
+    - [Your Goal: Modify Value](#your-goal-modify-value)
+1. [Transfer](#transfer)
+    - [Multiple Arguments](#multiple-arguments)
+    - [Your Goal: Transfer](#your-goal-transfer)
+1. [Signer](#signer)
+    - [Your Goal: Set Message](#your-goal-set-message)
+1. [Deposit](#deposit)
+    - [Value Transfer](#value-transfer)
+---
+
+### Contracts with Ethers.js
 - In this lesson, we will be interacting with smart contracts from ethers.js! 
 - It's going to be a fun lesson, combining your Solidity knowledge with your JavaScript prowess!
 - Since this lesson will include multiple languages, we will include a filename at the top of each code block to indicate the language.
@@ -49,6 +69,43 @@
     -  Here, ``contract`` is an ethers.js contract instance that has dynamically created the ``getNumber`` function based on the ABI of the Example contract.
 - We can invoke this ``getNumber`` function which returns a promise that resolves with the value we were looking for. Nice and easy!
 
+#### Your Goal: Get The Value
+- In the ``contract.sol`` file there is a public state variable called ``value``.
+1. Your goal is to complete the function in ``index.js`` to retrieve this ``value``.
+1. This function can either return the promise from invoking the method or you can make the ``getValue`` function ``async`` and return the value.
+> Returning a promise that resolves with a value or returning a value in an async function result in essentially the same functionality, afterall!
+
+---
+**SOLUTION**
+```solidity
+// contract.sol
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.5;
+
+contract Contract {
+	uint public value;
+
+	constructor(uint _value) {
+		value = _value;
+	}
+}
+```
+```js
+// index.js
+/**
+ * Find the `value` stored in the contract
+ *
+ * @param {ethers.Contract} contract - ethers.js contract instance
+ * @return {promise} a promise which resolves with the `value`
+ */
+function getValue(contract) {
+    return contract.value().then(result => result)
+}
+
+module.exports = getValue;
+```
+---
+
 ### Setter
 #### Transactions
 - In the last stage we made a call to the value getter. 
@@ -81,6 +138,42 @@
     - Since the contract is already associated with the signer, ethers.js can do this automatically.
 > In the previous ethers.js tutorial we specifically worked with ethers **Wallets**. Wallets implement the [Signer API](https://docs.ethers.io/v5/api/signer/#Signer) with additional functionality.
 
+#### Your Goal: Modify Value
+- In ``contract``.sol you'll see there is a uint state variable called ``value``.
+1. Your goal is to call the ``modify()`` function on this ``value`` from the ``setValue`` function in ``index.js``.
+1. The default value for a uint is ``0``, so change this value to anything else and the tests will pass.
+
+---
+**SOLUTION**
+```solidity
+// contract.sol
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.5;
+
+contract Contract {
+	uint public value;
+
+	function modify(uint _value) external {
+		value = _value;
+	}
+}
+```
+```js
+// index.js
+/**
+ * Modify the `value` stored in the contract
+ *
+ * @param {ethers.Contract} contract - ethers.js contract instance
+ * @return {promise} a promise of transaction
+ */
+function setValue(contract) {
+    return contract.modify(2)
+}
+
+module.exports = setValue;
+```
+
+
 ### Transfer
 #### Multiple Arguments
 - Calling solidity contracts with multiple arguments in ethers.js is not much different from what you might expect!
@@ -101,6 +194,48 @@
         console.log(sum); // 5
     }
     ```
+#### Your Goal: Transfer
+1. In the ``index.js`` file, complete the ``transfer`` function to transfer value from the contract signer to the ``friend`` address.
+1. The signer will also be the deployer of the contract. Their balance will be ``1000`` after deploying the contract.
+1. Your task is to transfer some of this to the ``friend``. It can be however much you want!
+---
+**SOLUTION**
+```solidity
+// Token.sol
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.5;
+
+contract Token {
+    mapping(address => uint) public balances;
+
+    constructor() {
+        balances[msg.sender] = 1000;
+    }
+
+    function transfer(address beneficiary, uint amount) external {
+        require(balances[msg.sender] >= amount, "Balance too low!");
+        balances[beneficiary] += amount;
+        balances[msg.sender] -= amount;
+    }
+}
+```
+```js
+// index.js
+/**
+ * Transfer funds on the contract from the current signer
+ * to the friends address
+ *
+ * @param {ethers.Contract} contract - ethers.js contract instance
+ * @param {string} friend - a string containing a hexadecimal ethereum address
+ * @return {promise} a promise of the transfer transaction
+ */
+function transfer(contract, friend) {
+    return contract.transfer(friend,500)
+}
+
+module.exports = transfer;
+```
+---
 
 ### Signer
 - We've talked about the **signer** quite a bit in the past few stages, but what is it, exactly?
@@ -129,6 +264,48 @@
     }
     ```
     - The ``createUser`` function will be called once for each signer in the ``signers`` array.
+
+#### Your Goal: Set Message
+1. In the Contract you will find a ``message`` state variable. Your goal is to modify the message to contain anything other than an empty string.
+1. The only problem is the ``owner`` cannot change this message! You'll need to connect the contract to a different ``signer`` in order to change it. In the ``index.js`` file you'll have access to the contract and a different ``signer``.
+
+---
+**SOLUTION**
+```solidity
+// Contract.sol
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.5;
+
+contract Contract {
+    address owner;
+    string public message;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function modify(string calldata _message) external {
+        require(msg.sender != owner, "Owner cannot modify the message!");
+        message = _message;
+    }
+}
+```
+```js
+// index.js
+/**
+ * Set the message on the contract using the signer passed in
+ *
+ * @param {ethers.Contract} contract - ethers.js contract instance
+ * @param {ethers.types.Signer} signer - ethers.js signer instance
+ * @return {promise} a promise of transaction modifying the `message`
+ */
+function setMessage(contract, signer) {
+    return contract.connect(signer).modify('ok')
+}
+
+module.exports = setMessage;
+```
+---
 
 ### Deposit
 #### Value Transfer
@@ -162,3 +339,37 @@
     - In this object we can specify the **value**, which is how much ether we'd like to send. 
     - This object must be passed in **last** after all the other argument functions.
 > Along with the **value** there are four other values that can be specified in the overrides object of a transaction: **gasLimit**, **gasPrice**, **nonce** and **chainId**.
+
+#### Your Goal: Make a Deposit
+Complete the deposit function within the index.js to call the contract and deposit at least 1 ether.
+
+---
+**SOLUTION**
+```solidity
+// Contract.sol
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.5;
+
+contract Contract {
+    function deposit() payable external { }
+}
+```
+```js
+// index.js
+const ethers = require('ethers');
+
+/****
+ * Deposit at least 1 ether into the contract
+ *
+ * @param {ethers.Contract} contract - ethers.js contract instance
+ * @return {promise} a promise of the deposit transaction
+ */
+function deposit(contract) {
+    return contract.deposit({
+        value:ethers.utils.parseEther('1')
+    })
+}
+
+module.exports = deposit;
+```
+---

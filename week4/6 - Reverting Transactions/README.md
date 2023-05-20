@@ -8,6 +8,22 @@
     - ``require``
     - ``revert``
 
+---
+### Table of Contents
+1. [Constructor Revert](#constructor-revert)
+    - [Reverting Transactoins](#reverting-transactions)
+    - [The Nitty Gritty of Creating Errors](#the-nitty-gritty-of-creating-errors)
+    - [Notes](#notes)
+    - [References and Further Reading](#references-and-further-reading)
+    - [Your Goal: Require 1 Ether Deposit](#your-goal-require-1-ether-deposit)
+1. [Only Owner](#only-owner)
+    - [Restricting by Address](#restricting-by-address)
+    - [Your Goal: Owner Withdrawal](#your-goal-owner-withdrawal)
+1. [Owner Modifier](#owner-modifier)
+    - [Function Modifiers](#function-modifiers)
+    - [Your Goal: Require Owner](#your-goal-require-owner)
+---
+
 ### Constructor Revert
 #### Reverting Transactions
 - In the EVM the main opcode to revert a transaction is ``REVERT``. 
@@ -93,7 +109,28 @@
 - [Error Handling in Solidity](https://docs.soliditylang.org/en/v0.8.4/control-structures.html#error-handling-assert-require-revert-and-exceptions)
 - More on the ['REVERT' EVM Opcode](https://ethervm.io/#FD)
 
-### Ownly Owner
+#### Your Goal: Require 1 Ether Deposit
+- Add a payable constructor method that requires a 1 ether deposit.
+- If at least 1 ether is not sent to the constructor, revert the transaction.
+> There are globally available ether units such as ``ether`` that you can use instead of having to convert from Wei (``1 ether == 1e18``).
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Contract {
+
+    constructor() payable {
+        require(msg.value >= 1 ether, 'Not enough');
+    }
+
+}
+```
+---
+
+### Only Owner
 #### Restricting by Address
 - We can provide certain roles to an address.
 - For instance, let's say we had an address that could create new game items:
@@ -111,6 +148,36 @@
         }
     }
     ```
+
+#### Your Goal: Owner Withdrawal
+1. Create a public function ``withdraw`` that will withdraw all funds from the contract and send them to the deployer of the contract.
+1. Require that only the deployer of the contract be allowed to call this function. For all other addresses, this function should revert.
+> The deployer of the contract is ``msg.sender`` of the constructor.
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Contract {
+    address owner;
+
+    constructor() payable {
+        require(msg.value >= 1 ether, 'Not enough');
+        owner = msg.sender;
+    }
+
+    function withdraw() public {
+        require(msg.sender == owner);
+        (bool s, ) = msg.sender.call{value: address(this).balance}("");
+        require(s);
+    }
+
+}
+```
+---
+
     - This function ``createItem`` may be ``public``, but there's only one address that can call it without the transaction reverting!
 ### Owner Modifier
 #### Function Modifiers
@@ -141,3 +208,47 @@
     - Notice that the ``logMessage`` function signature is decorated with the ``logModifier`` modifier.
     - This modifier can add behavior to the function before and after the function body runs. 
     - The ``_`` in the ``modifier`` body is where the function body of the modified function will run.
+
+#### Your Goal: Require Owner
+- You'll notice that the onlyOwner modifier has been added to each of the configuration functions in this contract.
+    - Only problem is, it doesn't currently do anything!
+- Update the onlyOwner modifier to require that only the owner address can call these functions without reverting.
+> Remember to use the ``_`` to indicate where the function body should go!
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.7.5;
+
+contract Contract {
+	address owner;
+	uint configA;
+	uint configB;
+	uint configC;
+
+	constructor() {
+		owner = msg.sender;
+	}
+
+	function setA(uint _configA) public onlyOwner {
+		configA = _configA;
+	}
+
+	function setB(uint _configB) public onlyOwner {
+		configB = _configB;
+	}
+
+	function setC(uint _configC) public onlyOwner {
+		configC = _configC;
+	}
+
+	modifier onlyOwner {
+		// TODO: require only the owner access
+		require(msg.sender == owner);
+		// TODO: run the rest of the function body
+		_;
+	}
+}
+```
+---

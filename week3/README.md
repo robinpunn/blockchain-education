@@ -1,6 +1,6 @@
 
 ---
-# Ethereum Features
+# Ethereum
 ---
 
 ---
@@ -673,6 +673,7 @@ Here is a table with the relevant denominations for ether and their common use c
 
 #### Understanding Ethereum Nodes
 - In the below video we will break down how nodes work, why they can be extremely challenging for applications at scale, and how to solve data consistency issues.
+- [Ethereum Foundation](https://www.youtube.com/watch?v=6yWmF4hiAsA)
 
 #### Bonus Material: Data Storage
 - We've talked about Ethereum Nodes storing information locally, although we haven't really talked about how they store the data locally. Let's take a closer look.

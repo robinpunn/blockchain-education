@@ -1,3 +1,39 @@
+## Sending Ether
+
+---
+### Table of Contents
+1. [Accounts](#accounts)
+1. [Storing Owner](#storing-owner)
+    - [Solidity Addresses](#solidity-addresses)
+    - [Ethereum Messages](#ethereum-messages)
+    - [Your Goal: Store the Owner](#your-goal-store-the-owner)
+1. [Recieve Ether](#receive-ether)
+    - [Recieve Function](#receive-function)
+    - [External Visibility](#external-visibility)
+    - [Fallback Function](#fallback-function)
+    - [Your Goal: Receive Ether](#your-goal-receive-ether)
+1. [Tip Owner](#tip-owner)
+    - [Transferring Funds](#transferring-funds)
+    - [Your Goal: Transfer Tips](#your-goal-transfer-tips)
+1. [Charity](#charity)
+    - [Contract Account](#contract-account)
+    - [This Keyword](#this-keyword)
+    - [Your Goal: Charity Donation](#your-goal-charity-donation)
+1. [Self Destruct](#self-destruct)
+    - [Self-Destruct Repercussions](#self-destruct-repercussions)
+    - [Your Goal: Self Destruct](#your-goal-self-destruct)
+---
+
+### Accounts
+- In Ethereum, accounts are often distinguished into two types: Externally Owned Accounts and Contract Accounts.
+    - The differences between these accounts is largely conceptual as the EVM essentially treats them the same!
+- Every account on the EVM has a public address and a balance.
+    - Contract accounts will also store their bytecode as well as their internal storage data.
+- When making a call from an EOA to a Contract Account it's important to know things like who is making the call, how much ether they are sending and the function they are intending to invoke with which arguments.
+- The Solidity language handles the wiring up of the transaction data to the function we have defined on the contract.
+    - The language also gives us access to the transaction parameters through globals like ``msg.sender`` and ``msg.value``.
+- By providing these utilities for working with accounts we can easily define roles, permissions and track token balances in contracts. Let's learn all about working with accounts in Solidity!
+
 ### Storing Owner
 #### Solidity Addresses
 - Let's talk about the address data type in Solidity!
@@ -33,7 +69,27 @@
     - **msg.value** (``uint``) - the amount of wei sent
 > Wondering why the **msg.sig** is 4 bytes? This value is actually the first four bytes of the **keccak256 hash** of the function signature. It provides a way to uniquely identify (and target) the functions on a smart contract without worrying about how long the function signature is. Otherwise you could potentially store a ``reallyLongNameForAFunction`` and the calldata would need to store all of this information to invoke that function!
 
-### Receiving Ether
+###  Your Goal: Store the Owner
+1. Create a public ``address`` state variable called ``owner`` on the contract
+1. Next create a constructor function which will store the ``msg.sender`` in ``owner``
+> Since the constructor is only called **once during contract deployment**, storing the ``owner`` is not all too uncommon, especially if you need to have an administrative role. Of course, keep in mind that the administrative role can infringe on the decentralized nature of your contract!
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Contract {
+    address public owner;
+
+    constructor() {
+        owner = msg.sender;
+    }
+}
+```
+---
+
+### Receive Ether
 #### Receive Function
 - In the latest versions of Solidity, contracts **cannot receive ether** by default.
 - In order to receive ether, a contract must specify a **payable** function.
@@ -100,6 +156,30 @@
 - When you create a ``receive`` function it's clear you're accepting ether on transactions without data.
 - When you create a ``fallback`` function it's generally for the purposes of handling function signature mistakes.
 
+#### Your Goal: Receive Ether
+- Add a function to the contract that will allow it to receive ether on a transaction without any calldata.
+> If you take a look at the test cases you'll notice that the method used is the web3 sendTransaction which is the same method used to send ether from one Externally Owned Account to another. No bytecode data required.
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Contract {
+    address public owner;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    receive() external payable {
+
+    }
+}
+```
+---
+
 ### Tip Owner
 #### Transferring Funds
 - We can make any regular function payable.
@@ -128,6 +208,34 @@
     ```
     -  We have two pay methods ``payA`` and ``payB`` which will transfer ether to the respective address.
         - It takes a ``uint`` amount of Wei and transfers it from the contract account to the address.
+#### Your Goal: Transfer Tips
+- Let's create a way to tip the contract owner!
+- Create a public payable function ``tip`` which sends any of its received ether to the ``owner``.
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Contract {
+    address public owner;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function tip() public payable {
+        (bool s, ) = owner.call{value: msg.value}("");
+        require(s);
+    }
+
+    receive() external payable {}
+}
+```
+---
+
+
+
 ### Charity
 #### Contract Account
 - Within contracts, the ``this`` keyword can explicitly be converted to an address:
@@ -180,6 +288,41 @@
     }
     ```
     - Once we convert ``this`` to an address we can treat it like any other ``address``. It represents the address of the contract account itself.
+#### Your Goal: Charity Donation
+- Let's take all funds that were passed to the receive function and donate them to charity.
+    - We'll do this in two steps.
+1. **First**, modify the constructor to accept a new argument: the charity address.
+1. **Next**, add a new function called donate. When this function is called transfer all remaining funds in the contract to the charity address.
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Contract {
+    address public owner;
+    address public charity;
+
+    constructor(address _charity) {
+        owner = msg.sender;
+        charity = _charity;
+    }
+
+    receive() external payable {}
+
+    function tip() public payable {
+        (bool s, ) = owner.call{value: msg.value}("");
+        require(s);
+    }
+
+    function donate() public payable {
+        (bool s, ) = charity.call{value: address(this).balance}("");
+        require(s);
+    }
+}
+```
+---
 
 ### Self Destruct
 - Contracts can destroy themselves by using the ``SELFDESTRUCT`` opcode on the EVM!
@@ -217,3 +360,35 @@
 - Instead of self-destructing the contract, you could consider setting state variables so that nobody can call the function.
     - Then you revert the transaction if they try to call a function or send ether in the future!
     - This is probably the safest course of action.
+
+#### Your Goal: Self Destruct
+- When the ``donate`` function is called, trigger a ``selfdestruct`` in the contract!
+> The ``selfdestruct`` will send all remaining funds to the ``address`` passed in, so it might be a good candidate to replace the existing functionality in your ``donate`` function by sending the funds to the ``charity``! Just be sure to cast the ``address`` to an ``address payable`` as shown in the example above.
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Contract {
+    address public owner;
+    address public charity;
+
+    constructor(address _charity) {
+        owner = msg.sender;
+        charity = _charity;
+    }
+
+    receive() external payable {}
+
+    function tip() public payable {
+        (bool s, ) = owner.call{value: msg.value}("");
+        require(s);
+    }
+
+    function donate() public payable {
+        selfdestruct(payable(charity));
+    }
+}
+```

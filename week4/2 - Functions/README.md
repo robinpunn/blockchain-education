@@ -1,5 +1,33 @@
-### Arguments 
-#### Solidity Functions
+## Functions
+
+---
+### Table of Conents
+1. [Solidity Functions](#solidity-functions)
+1. [Arguments](#arguments)
+    - [Solidity Arguments](#solidity-arguments)
+    - [Variable Shadowing](#variable-shadowing)
+    - [JavaScript](#javascript)
+    - [Solidity](#solidity)
+    - [Your Goal: Unsigned Int Constructor](#your-goal-unsigned-int-constructor)
+1. [Increment](#increment)
+    - [Contract Functions](#contract-functions)
+    - [Transactions](#transactions)
+    - [Queries](#queries)
+    - [Your Goal: Increment x](#your-goal-increment-x)
+1. [View Addition](#view-addition)
+    - [Returning Values](#returning-values)
+    - [Returning Values](#returning-values-1)
+    - [What about Transactions?](#what-about-transactions)
+    - [Your Goal: Add Uint](#your-goal-add-uint)
+1. [Pure Double](#pure-double)
+    - [Pure Functions](#pure-functions)
+    - [Your Goal: Double Uint](#your-goal-double-uint)
+1. [Double Overload](#double-overload)
+    - [Overloading Functions](#overloading-functions)
+    - [Your Goal: Overload Double](#your-goal-overload-double)
+---
+
+### Solidity Functions
 - We've learned about how to store values inside of our smart contracts. 
     - Now it's time to learn how to read and modify those values! 
     - We accomplish this by adding functions to our contract code.
@@ -22,6 +50,7 @@
     }
     ```
 
+### Arguments
 #### Solidity Arguments
 - The first function we'll talk about is the **constructor**:
     ```Solidity
@@ -122,6 +151,24 @@
         - This is not the typical approach. 
         - In general you'll see the undescore parameter (i.e. ``_variableName``) over anything else.
 
+#### Your Goal: Unsigned Int Constructor
+1. Create a constructor which will take a ``uint`` as an argument.
+1. Store this ``uint`` value inside a public state variable called ``x``.
+---
+**SOLUTIONS**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Contract {
+    uint public x;
+    constructor(uint _x) {
+        x = _x;
+    }
+}
+```
+---
+
 ### Increment
 #### Contract Functions
 - Besides the constructor, contracts can define other functions which can be invoked by **transactions** or as **queries**.
@@ -191,6 +238,30 @@
     ```
     - In fact, the ABI would be the same as the public state variable example!
 
+#### Your Goal: Increment x
+- Let's build on your code from the previous stage!
+1. Create an external function called ``increment`` that will add ``1`` to the state variable ``x``.
+> Many of the shorthand operators we've become accustomed to in languages like JavaScript will also available in Solidity: ``-=``, ``*=``, ``/=``, ``%=``, ``|=``, ``&=``, ``^=``, ``++`` and ``--``.
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Contract {
+    uint public x;
+
+    constructor(uint _x) {
+        x = _x;
+    }
+
+    function increment() external {
+        x++;
+    }
+}
+```
+---
+
 ### View Addition
 #### Returning Values
 - It's time to learn how to ``return`` values from Solidity functions!
@@ -233,6 +304,38 @@
     - For looking up values after a transaction has occurred, there is a logging mechanism in the EVM which is available through Solidity ``events``.
     - We will cover events in a future lesson.
 
+#### Your Goal: Add Uint
+1. Create an external view function ``add`` which takes a ``uint`` parameter and returns the sum of the parameter plus the state variable ``x``.
+> This function should **not modify state**. In fact, if it's labeled as a **view** it **cannot** modify state.
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Contract {
+    uint public x;
+
+    constructor(uint _x) {
+        x = _x;
+    }
+
+    function increment() external {
+        x++;
+    }
+
+    function add(uint num)
+        external
+        view
+        returns(uint)
+    {
+        return x + num;
+    }
+}
+```
+---
+
 ### Pure Double
 #### Pure Functions
 - Occasionally there is the necessity for Solidity functions that neither read from nor write to state.
@@ -254,6 +357,26 @@
     - In the ``returns`` keyword we specified the name of the returned parameter ``sum``.
         - Then we assigned the ``x + y`` to ``sum`` inside our function body. The value of ``sum`` is implicitly returned.
 >  A bit of a change-up from what we're used to from JavaScript! This return style is perfectly valid Solidity and quite often used
+
+#### Your Goal: Double Uint
+1. Create an external, pure function called ``double`` which takes a ``uint`` parameter and doubles it. It should return this doubled ``uint`` value.
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Contract {
+    function double(uint x)
+        external
+        pure
+        returns (uint doubled)
+    {
+        doubled = x*2;
+    }
+}
+```
+---
 
 ### Double Overload
 #### Overloading Functions
@@ -284,3 +407,47 @@
     console.log(x); // 6
     console.log(y); // 10
     ```
+#### Your Goal: Overload Double
+1. Create another pure external/public function ``double`` which takes two ``uint`` parameters.
+1. Double both of the arguments and return both of them in the same order they were passed into the function.
+> For this solution, it is possible to use the ``double`` function from the previous stage in this solution. You may need to change the visibility from ``external`` to ``public`` so that you can call it internally as well.
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Contract {
+
+    function double(uint x)
+        public
+        pure
+        returns (uint doubled)
+    {
+        doubled = x*2;
+    }
+
+    function double(uint x, uint y)
+        external
+        pure
+        returns (uint doubled, uint doubled2)
+    {
+        doubled = double(x);
+        doubled2 = double(y);
+    }
+}
+
+//OR
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Contract {
+    function double(uint x) external pure returns(uint sum){
+        sum = x*2;
+    }
+    function double(uint x, uint y) external pure returns(uint,uint){
+        return(x*2,y*2);
+    }
+}
+```
