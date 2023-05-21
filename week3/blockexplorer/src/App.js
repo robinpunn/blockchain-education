@@ -5,19 +5,13 @@ import Input from "./components/HomePage/Input";
 import PriceGasBlocks from "./containers/PriceGasBlocks";
 import BlocksAndTransactions from "./containers/BlocksAndTransactions";
 import BlockPage from "./containers/BlockPage";
+import BlockTransactions from "./containers/BlockTransactions";
 
-// Refer to the README doc for more information about using API
-// keys in client-side code. You should never do this in production
-// level code.
 const settings = {
   apiKey: process.env.REACT_APP_ALCHEMY_API_KEY,
   network: Network.ETH_MAINNET,
 };
 
-// In this week's lessons we used ethers.js. Here we are using the
-// Alchemy SDK is an umbrella library with several different packages.
-//
-// You can read more about the packages here:
 //   https://docs.alchemy.com/reference/alchemy-sdk-api-surface-overview#api-surface
 const alchemy = new Alchemy(settings);
 
@@ -32,6 +26,7 @@ function App() {
   const [marketCap, setMarketCap] = useState(null);
   const [page, setPage] = useState("home");
   const [blockInfo, setBlockinfo] = useState(null);
+  const [transactionReceipts, setTransactionReceipts] = useState([]);
 
   useEffect(() => {
     console.log("Fetching Ethereum Price...");
@@ -112,14 +107,37 @@ function App() {
     getBlockTxNum();
   }, [blockNumber]);
 
+  useEffect(() => {
+    const fetchTransactionReceipts = async () => {
+      try {
+        const params = {
+          blockHash: blockInfo?.hash,
+        };
+        const response = await alchemy.core.getTransactionReceipts(params);
+        setTransactionReceipts(response.receipts);
+        console.log("Transaction Receipts:", response.receipts);
+      } catch (error) {
+        console.log("Error fetching transaction receipts:", error);
+      }
+    };
+
+    if (blockInfo) {
+      fetchTransactionReceipts();
+    }
+  }, [blockInfo]);
+
+  // const navigateToHome = () => {
+  //   setPage("home");
+  // };
+
   const navigateToBlockPage = (block) => {
-    setPage("blockpage");
+    setPage("blockPage");
     setBlockinfo(block);
-    console.log("block:", block);
   };
 
-  const navigateToHome = () => {
-    setPage("home");
+  const navigateToBlockTransactions = (blockNumber) => {
+    setBlockNumber(blockNumber);
+    setPage("blockTransactions");
   };
 
   return (
@@ -142,9 +160,17 @@ function App() {
           />
         </>
       )}
-      {page === "blockpage" && (
+      {page === "blockPage" && (
         <>
-          <BlockPage blockInfo={blockInfo} />
+          <BlockPage
+            blockInfo={blockInfo}
+            onClickTransactionCount={navigateToBlockTransactions}
+          />
+        </>
+      )}
+      {page === "blockTransactions" && (
+        <>
+          <BlockTransactions transactionReceipts={transactionReceipts} />
         </>
       )}
     </div>

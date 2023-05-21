@@ -1,11 +1,11 @@
 import React from "react";
 import Input from "../components/HomePage/Input";
-import Top from "../components/BlockPage/Top";
-import Mid from "../components/BlockPage/Mid";
-import Bot from "../components/BlockPage/Bot";
+import BlockHashTime from "../components/BlockPage/BlockHashTime";
+import BlockFeeGas from "../components/BlockPage/BlockFeeGas";
+import BlockTxs from "../components/BlockPage/BlockTxs";
 import "./BlockPage.css";
 
-const BlockPage = ({ blockInfo }) => {
+const BlockPage = ({ blockInfo, onClickTransactionCount }) => {
   console.log("blockPage:", blockInfo);
   return (
     <>
@@ -14,9 +14,12 @@ const BlockPage = ({ blockInfo }) => {
         <div className="block-head">
           <h3>Block {blockInfo.number}</h3>
         </div>
-        <Top blockInfo={blockInfo} />
-        <Mid blockInfo={blockInfo} />
-        <Bot blockInfo={blockInfo} />
+        <BlockHashTime blockInfo={blockInfo} />
+        <BlockFeeGas blockInfo={blockInfo} />
+        <BlockTxs
+          blockInfo={blockInfo}
+          onClickTransactionCount={onClickTransactionCount}
+        />
       </div>
     </>
   );

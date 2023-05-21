@@ -1,7 +1,7 @@
 import React from "react";
 const { Utils } = require("alchemy-sdk");
 
-const Mid = ({ blockInfo }) => {
+const BlockFeeGas = ({ blockInfo }) => {
   const convertToNumber = (gas) => {
     const decimalValue = Utils.formatUnits(gas, 0);
     return decimalValue;
@@ -24,4 +24,4 @@ const Mid = ({ blockInfo }) => {
   );
 };
 
-export default Mid;
+export default BlockFeeGas;

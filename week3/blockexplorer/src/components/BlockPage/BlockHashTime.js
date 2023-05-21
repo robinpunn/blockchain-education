@@ -1,6 +1,6 @@
 import React from "react";
 
-const Top = ({ blockInfo }) => {
+const BlockHashTime = ({ blockInfo }) => {
   return (
     <div className="block-info-top">
       <div className="blocktop-hash">
@@ -19,4 +19,4 @@ const Top = ({ blockInfo }) => {
   );
 };
 
-export default Top;
+export default BlockHashTime;
