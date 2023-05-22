@@ -9,7 +9,6 @@ const BlockPage = ({ blockInfo, onClickTransactionCount }) => {
   console.log("blockPage:", blockInfo);
   return (
     <>
-      <Input />
       <div className="block-page">
         <div className="block-head">
           <h3>Block {blockInfo.number}</h3>

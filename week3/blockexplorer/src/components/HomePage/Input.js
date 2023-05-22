@@ -1,10 +1,13 @@
 import React from "react";
 import "./Input.css";
 
-const Input = () => {
+const Input = ({ onClickHome }) => {
+  const homeClick = () => {
+    onClickHome();
+  };
   return (
     <div className="input">
-      <h4>THE ETHEREUM BLOCKCHAIN EXPLORER</h4>
+      <h4 onClick={homeClick}>THE ETHEREUM BLOCKCHAIN EXPLORER</h4>
       <input
         className="search"
         type="text"

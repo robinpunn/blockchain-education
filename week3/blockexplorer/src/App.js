@@ -7,6 +7,7 @@ import BlocksAndTransactions from "./containers/BlocksAndTransactions";
 import BlockPage from "./containers/BlockPage";
 import BlockTransactions from "./containers/BlockTransactions";
 import SingleTransaction from "./containers/SingleTransaction";
+import ViewAddress from "./containers/Address";
 
 const settings = {
   apiKey: process.env.REACT_APP_ALCHEMY_API_KEY,
@@ -29,6 +30,7 @@ function App() {
   const [blockInfo, setBlockinfo] = useState(null);
   const [transactionReceipts, setTransactionReceipts] = useState([]);
   const [transactionHash, setTransactionHash] = useState(null);
+  const [viewAddress, setViewAddress] = useState(null);
 
   useEffect(() => {
     console.log("Fetching Ethereum Price...");
@@ -128,9 +130,9 @@ function App() {
     }
   }, [blockInfo]);
 
-  // const navigateToHome = () => {
-  //   setPage("home");
-  // };
+  const navigateToHome = () => {
+    setPage("home");
+  };
 
   const navigateToBlockPage = (block) => {
     setPage("blockPage");
@@ -147,31 +149,40 @@ function App() {
     setPage("singleTransaction");
   };
 
+  const navigateToAddress = (address) => {
+    setViewAddress(address);
+    setPage("viewAddress");
+  };
+
   return (
     <div className="App">
-      {page === "home" && (
-        <>
-          <Input />
-          <PriceGasBlocks
-            ethereumPrice={ethereumPrice}
-            marketCap={marketCap}
-            gas={gas}
-            blockNumber={blockNumber}
-            finalizedBlock={finalizedBlock}
-            safeBlock={safeBlock}
-          />
-          <BlocksAndTransactions
-            blocks={blocks}
-            transactions={transactions}
-            onClickBlock={navigateToBlockPage}
-          />
-        </>
-      )}
+      <>
+        <Input onClickHome={navigateToHome} />
+        {page === "home" && (
+          <>
+            <PriceGasBlocks
+              ethereumPrice={ethereumPrice}
+              marketCap={marketCap}
+              gas={gas}
+              blockNumber={blockNumber}
+              finalizedBlock={finalizedBlock}
+              safeBlock={safeBlock}
+            />
+            <BlocksAndTransactions
+              blocks={blocks}
+              transactions={transactions}
+              onClickBlock={navigateToBlockPage}
+              onClickAddress={navigateToAddress}
+            />
+          </>
+        )}
+      </>
       {page === "blockPage" && (
         <>
           <BlockPage
             blockInfo={blockInfo}
             onClickTransactionCount={navigateToBlockTransactions}
+            onClickAddress={navigateToAddress}
           />
         </>
       )}
@@ -180,12 +191,21 @@ function App() {
           <BlockTransactions
             transactionReceipts={transactionReceipts}
             onClickTransaction={navigateToSingleTransaction}
+            onClickAddress={navigateToAddress}
           />
         </>
       )}
       {page === "singleTransaction" && (
         <>
-          <SingleTransaction transactionHash={transactionHash} />
+          <SingleTransaction
+            transactionHash={transactionHash}
+            onClickAddress={navigateToAddress}
+          />
+        </>
+      )}
+      {page === "viewAddress" && (
+        <>
+          <ViewAddress viewAddress={viewAddress} />
         </>
       )}
     </div>

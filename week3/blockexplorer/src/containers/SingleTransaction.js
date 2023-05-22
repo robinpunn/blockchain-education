@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Alchemy, Network } from "alchemy-sdk";
-import { useEffect } from "react";
 import Input from "../components/HomePage/Input";
 import SingleTxInfo from "../components/SingleTransactionPage/SingleTxInfo";
 import SingleTxParties from "../components/SingleTransactionPage/SingleTxParties";
@@ -14,7 +13,7 @@ const settings = {
 //   https://docs.alchemy.com/reference/alchemy-sdk-api-surface-overview#api-surface
 const alchemy = new Alchemy(settings);
 
-const SingleTransaction = ({ transactionHash }) => {
+const SingleTransaction = ({ transactionHash, onClickAddress }) => {
   const [singleTx, setSingleTx] = useState(null);
   const [gasReceipt, setGasReceipt] = useState(null);
 
@@ -38,11 +37,13 @@ const SingleTransaction = ({ transactionHash }) => {
 
   return (
     <div>
-      <Input />
       {singleTx && gasReceipt && (
         <>
           <SingleTxInfo singleTx={singleTx} />
-          <SingleTxParties singleTx={singleTx} />
+          <SingleTxParties
+            singleTx={singleTx}
+            onClickAddress={onClickAddress}
+          />
           <SingleTxValues singleTx={singleTx} gasReceipt={gasReceipt} />
         </>
       )}

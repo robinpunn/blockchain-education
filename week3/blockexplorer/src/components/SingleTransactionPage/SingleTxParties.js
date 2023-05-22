@@ -1,15 +1,22 @@
 import React from "react";
 
-const SingleTxParties = ({ singleTx }) => {
+const SingleTxParties = ({ singleTx, onClickAddress }) => {
+  const addressClick = (address) => {
+    onClickAddress(address);
+  };
   return (
     <div className="singletx-parties">
       <div className="singletx-hash-to">
         <p className="title">To: </p>
-        <p className="value">{singleTx.to}</p>
+        <p onClick={() => addressClick(singleTx.to)} className="value">
+          {singleTx.to}
+        </p>
       </div>
       <div className="singletx-hash-from">
         <p className="title">From: </p>
-        <p className="value">{singleTx.from}</p>
+        <p onClick={() => addressClick(singleTx.from)} className="value">
+          {singleTx.from}
+        </p>
       </div>
     </div>
   );
