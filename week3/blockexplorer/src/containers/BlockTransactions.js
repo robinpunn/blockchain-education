@@ -1,8 +1,11 @@
 import React from "react";
 import "./BlockTransactions.css";
 
-const BlockTransactions = ({ transactionReceipts }) => {
-  console.log(transactionReceipts);
+const BlockTransactions = ({ transactionReceipts, onClickTransaction }) => {
+  //   console.log(transactionReceipts);
+  const handleClick = (txHash) => {
+    onClickTransaction(txHash);
+  };
   return (
     <div className="block-transactions">
       <table>
@@ -18,7 +21,9 @@ const BlockTransactions = ({ transactionReceipts }) => {
         <tbody>
           {transactionReceipts.map((receipt) => (
             <tr key={receipt.transactionHash}>
-              <td>{receipt.transactionHash}</td>
+              <td onClick={() => handleClick(receipt.transactionHash)}>
+                {receipt.transactionHash}
+              </td>
               <td>{receipt.blockNumber}</td>
               <td>{receipt.to}</td>
               <td>{receipt.from}</td>

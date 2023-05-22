@@ -6,6 +6,7 @@ import PriceGasBlocks from "./containers/PriceGasBlocks";
 import BlocksAndTransactions from "./containers/BlocksAndTransactions";
 import BlockPage from "./containers/BlockPage";
 import BlockTransactions from "./containers/BlockTransactions";
+import SingleTransaction from "./containers/SingleTransaction";
 
 const settings = {
   apiKey: process.env.REACT_APP_ALCHEMY_API_KEY,
@@ -27,6 +28,7 @@ function App() {
   const [page, setPage] = useState("home");
   const [blockInfo, setBlockinfo] = useState(null);
   const [transactionReceipts, setTransactionReceipts] = useState([]);
+  const [transactionHash, setTransactionHash] = useState(null);
 
   useEffect(() => {
     console.log("Fetching Ethereum Price...");
@@ -140,6 +142,11 @@ function App() {
     setPage("blockTransactions");
   };
 
+  const navigateToSingleTransaction = (hash) => {
+    setTransactionHash(hash);
+    setPage("singleTransaction");
+  };
+
   return (
     <div className="App">
       {page === "home" && (
@@ -170,7 +177,15 @@ function App() {
       )}
       {page === "blockTransactions" && (
         <>
-          <BlockTransactions transactionReceipts={transactionReceipts} />
+          <BlockTransactions
+            transactionReceipts={transactionReceipts}
+            onClickTransaction={navigateToSingleTransaction}
+          />
+        </>
+      )}
+      {page === "singleTransaction" && (
+        <>
+          <SingleTransaction transactionHash={transactionHash} />
         </>
       )}
     </div>
