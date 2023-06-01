@@ -15,7 +15,10 @@ const PriceGasBlocks = ({
   finalizedBlock,
   safeBlock,
 }) => {
-  console.log("price:", ethereumPrice, "cap:", marketCap);
+  let displayBlockNumber = blockNumber;
+  if (typeof blockNumber === "string" && blockNumber.startsWith("0x")) {
+    displayBlockNumber = parseInt(blockNumber, 16);
+  }
   return (
     <div className="upper-container">
       <div className="price-gas-cap">
@@ -30,7 +33,11 @@ const PriceGasBlocks = ({
           <Final finalizedBlock={finalizedBlock} />
           <Safe safeBlock={safeBlock} />
         </div>
-        <BlockNumber blockNumber={blockNumber} />
+        {blockNumber ? (
+          <BlockNumber blockNumber={displayBlockNumber} />
+        ) : (
+          <div>Loading...</div>
+        )}
       </div>
     </div>
   );

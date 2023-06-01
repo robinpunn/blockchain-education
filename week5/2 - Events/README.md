@@ -31,6 +31,30 @@
         - Now we'll be able to lookup all ``Withdrawal`` events to see addresses that have received ether.
 > Underneath the hood, events use the EVM ``LOGx`` opcodes, where ``x`` is a value ``0`` through ``4``, based on the number of searchable parameters. We'll discuss this further throughout the lesson.
 
+---
+### Table of Contents
+1. [Deployed](#deployed)
+    - [Emitting an Event](#emitting-an-event)
+    - [Retrieving log Events](#retrieving-event-logs)
+    - [Data](#data)
+    - [Topics](#topics)
+    - [Further Reading](#further-reading)
+    - [Your Goal: Deployed Event](#your-goal-deployed-event)
+1. [Transfer](#transfer)
+    - [Multiple Arguments](#multiple-arguments)
+    - [Named Arguments](#named-arguments)
+    - [Your Goal: Transfer the Collectible](#your-goal-transfer-the-collectible)
+1. [Up for Sale](#up-for-sale)
+    - [Your Goal: Mark the Price](#your-goal-mark-the-price)
+    - [Function Security](#function-security)
+1. [Sale](#sale)
+    - [Your Goal: Make a Purchase!](#your-goal-make-a-purchase)
+    - [Function Security](#function-security-1)
+1. [Indexed](#indexed)
+    - [Indexing](#indexing)
+    - [Your Goal: Index the Addresses](#your-goal-index-the-addresses)
+---
+
 ### Deployed
 #### Emitting an Event
 - To emit an event, we need to take two steps. First, we need to declare the event:
@@ -88,6 +112,27 @@
 >  It is possible to have no topics, using an **anonymous** event. You can simply add the ``anonymous`` keyword to the event signature. It will save gas, but it will make it difficult to distinguish between events.
 #### Further Reading
 - To learn more about logs on the EVM, check out this guide on [Understanding Logs: Deep Dive into eth_getLogs](https://docs.alchemy.com/docs/deep-dive-into-eth_getlogs).
+
+#### Your Goal: Deployed Event
+1. Create a new ``event`` called ``Deployed``. This event should take one argument: an ``address``.
+1. This address will be the first **owner** of this collectible. The owner in this case will be the address that deployed the contract.
+1. Create a public ``constructor``. In this constructor, emit the ``Deployed`` event with the owner's address as the argument.
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Collectible {
+    event Deployed(address _address);
+
+    constructor() {
+        emit Deployed(msg.sender);
+    }
+}
+```
+---
 
 ### Transfer
 #### Multiple Arguments
@@ -153,12 +198,88 @@
     - When using a library like ethers.js, it will generally parse the ABI and match up the returned event data with the argument names provided here.
 >  For our testing, we'll mostly use the **order** of the event arguments you send back to verify the data is correct. For example in the goal of the stage, you'll need to pass the original owner of the collectible back first. This will distinguish it from the new owner, which is also an address type. So feel free to leave the names off!
 
+#### Your Goal: Transfer the Collectible
+1. Create a new event called ``Transfer`` which has two ``address`` parameters: the original owner and the new owner.
+1. Create an external function called ``transfer`` which takes a recipient ``address`` to send the collectible to. In this function, transfer the ownership of the collectible to the recipient.
+1. Then, emit the ``Transfer`` event with the original owner's address and the new owner's address as arguments (be sure to specify the event arguments in that order).
+1. Ensure that the person calling this function **is the current owner** of the collectible. Otherwise, revert the transaction.
+> The owner of the collectible should be initially set as the deployer of the contract. You'll need to store this value into a state variable from the constructor so you can check for it in this function.
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Collectible {
+    address owner;
+
+    event Deployed(address);
+    constructor() {
+        owner = msg.sender;
+        emit Deployed(msg.sender);
+    }
+
+    event Transfer(address, address);
+    function transfer(address recipient) external {
+        require(owner == msg.sender);
+        owner = recipient;
+        emit Transfer(msg.sender, recipient);
+    }
+}
+```
+---
+
+
 ### Up for sale
+#### Your Goal: Mark the Price
 1. Create a new event called ``ForSale`` which takes two ``uint`` parameters: the price and the current block timestamp.
 1. Create a new external function called ``markPrice`` which has a single ``uint`` parameter: the asking price.
 1. Inside the ``markPrice`` function, emit the ``ForSale`` event with the price and block timestamp as its arguments. HINT: ``block.timestamp`` is a [global variable](https://docs.soliditylang.org/en/v0.8.17/cheatsheet.html#global-variables)
+#### Function Security
+- Ensure that the person calling this function is the current owner of the collectible. Otherwise, revert.
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Collectible {
+    address owner;
+    uint price;
+
+    event Deployed(address);
+    constructor() {
+        owner = msg.sender;
+        emit Deployed(msg.sender);
+    }
+
+    event Transfer(address, address);
+    function transfer(address recipient) external {
+        require(owner == msg.sender);
+        owner = recipient;
+        emit Transfer(msg.sender, recipient);
+    }
+
+    event ForSale(uint, uint);
+    function markPrice(uint _price) external {
+        require(msg.sender == owner);
+        price = _price;
+        emit ForSale(price, block.timestamp);
+    }
+
+    event Purchase(uint, address);
+    function purchase() external payable {
+        require(msg.value>=price);
+        (bool success, ) = owner.call{ value: msg.value}('');
+        require(success);
+    }
+}
+```
+---
 
 ### Sale
+#### Your Goal: Make a Purchase!
 1. Create an event called Purchase which takes two arguments: a uint for the purchase amount, and an address for the buyer.
 1. Create an external, payable function purchase which allows a buyer to purchase the collectible at the asking price.
 1. To make this purchase happen you'll need to do 3 things:
@@ -171,6 +292,55 @@
     (bool success, ) = anAddress.call{ value: msg.value }("");
     require(success);
     ```
+#### Function Security
+1. Ensure that the value sent matches the price. It it doesn't, revert the transaction. We don't want to allow someone to buy this for cheaper than the asking price!
+1. Ensure that the collectible was marked for sale prior to this transaction. If it wasn't, revert the transaction.
+> The default value for a uint is 0. If you store the price in a uint you can use this as the not-for-sale default value. We will not call this function for a "free purchase".
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Collectible {
+    address owner;
+    uint price;
+
+    event Deployed(address);
+    constructor() {
+        owner = msg.sender;
+        emit Deployed(msg.sender);
+    }
+
+    event Transfer(address, address);
+    function transfer(address recipient) external {
+        require(owner == msg.sender);
+        owner = recipient;
+        emit Transfer(msg.sender, recipient);
+    }
+
+    event ForSale(uint, uint);
+    function markPrice(uint _price) external {
+        require(msg.sender == owner);
+        price = _price;
+        emit ForSale(price, block.timestamp);
+    }
+
+    event Purchase(uint, address);
+    function purchase() external payable {
+        require(msg.value==price);
+        require(price > 0);
+        price = 0;
+        (bool success, ) = owner.call{ value: msg.value}('');
+        require(success);
+        owner = msg.sender;
+        emit Purchase(msg.value, msg.sender);
+    }
+}
+```
+---
+
 ### Indexed
 - We can make it easy to filter on event arguments by adding an ``indexed`` keyword:
     ```solidity
@@ -210,3 +380,49 @@
     ```
     - You'll notice that the address is left-padded with zeroes.
         - Topics are expected as 32 byte hexadecimal strings. The address is only 20 bytes long, so we pad it with zeroes.
+
+#### Your Goal: Index the Addresses
+- Modify all the ``address`` data types in the events to be indexed.
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+contract Collectible {
+    address owner;
+    uint price;
+
+    event Deployed(address indexed);
+    constructor() {
+        owner = msg.sender;
+        emit Deployed(msg.sender);
+    }
+
+    event Transfer(address indexed, address indexed);
+    function transfer(address recipient) external {
+        require(owner == msg.sender);
+        owner = recipient;
+        emit Transfer(msg.sender, recipient);
+    }
+
+    event ForSale(uint, uint);
+    function markPrice(uint _price) external {
+        require(msg.sender == owner);
+        price = _price;
+        emit ForSale(price, block.timestamp);
+    }
+
+    event Purchase(uint, address indexed);
+    function purchase() external payable {
+        require(msg.value==price);
+        require(price > 0);
+        price = 0;
+        (bool success, ) = owner.call{ value: msg.value}('');
+        require(success);
+        owner = msg.sender;
+        emit Purchase(msg.value, msg.sender);
+    }
+}
+```
+---

@@ -4,6 +4,37 @@
 - We'll also need to understand the memory allocation, whether it is fixed size or it can be dynamically resized. 
 - Don't you worry! We'll bring these concepts to light in this coding tutorial. 
 
+---
+### Table of Contents
+1. [Fixed Sum](#fixed-sum)
+    - [Fixed Arrays](#fixed-arrays)
+    - [Retrieve Elements](#retrieve-elements)
+    - [For Loops](#for-loops)
+    - [Data Location](#data-location)
+    - [calldata](#calldata)
+    - [memory](#memory)
+    - [storage](#storage)
+    - [Value vs Reference](#value-vs-reference)
+    - [Further Reading](#further-reading)
+    - [Your Goal: Find the Sum](#your-goal-find-the-sum)
+1. [Dynamic Sum](#dynamic-sum)
+    - [Dynamically Summed](#dynamically-summed)
+    - [Your Goal: Sum Dynamic Array](#your-goal-sum-dynamic-array)
+1. [Filter to Storage](#filter-to-storage)
+    - [Storage Arrays](#storage-arrays)
+    - [Your Goal: Filter Even Numbers](#your-goal-filter-even-numbers)
+1. [Filter to Memory](#filter-to-memory)
+    - [Memory Arrays](#memory-arrays)
+    - [Filter Numbers over 5 in Memory](#filter-numbers-over-5-in-memory)
+    - [Your Goal: Filter Even Numbers](#your-goal-filter-even-numbers-1)
+1. [Stack Club 1](#stack-club-1)
+    - [Stack Club](#stack-club)
+    - [Your Goal: Add Members](#your-goal-add-members)
+1. [Stack Club 2](#stack-club-2)
+    - [Pop](#pop)
+    - [Your Goal: Remove Members](#your-goal-remove-members)
+    - [Function Security](#function-security)
+---
 ### Fixed Sum
 #### Fixed Arrays
 - Fixed sized arrays have a set amount of values at compile-time.
@@ -103,6 +134,30 @@ contract Contract {
 #### Further Reading
 - If you want more resources on how smart contract stoage works, check out this guide on [What is Smart Contract Storage Layout?](https://docs.alchemy.com/docs/smart-contract-storage-layout).
 
+#### Your Goal: Find the Sum
+1. Create a pure, external function ``sum`` which takes a fixed size array of **five unsigned integers**.
+1. Find the sum of the unsigned integers and return it as a ``uint``.
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.4;
+
+contract Contract {
+    function sum(uint[5] memory numbers)
+        external
+        pure
+        returns (uint total)
+    {
+        for (uint i=0; i<numbers.length; i++) {
+            total += numbers[i];
+        }
+    }
+}
+```
+---
+
 ### Dynamic Sum
 #### Dynamically Summed
 - We can also create arrays in Solidity where the size is unknown at compile-time.
@@ -120,6 +175,28 @@ contract Contract {
     ```
     - Here we are able to log each address that is sent to the ``logFriends`` function.
 - We use the ``length`` member available on the array to determine the number of elements inside the dynamic sized array and then we use number indexes to retrieve the address.
+#### Your Goal: Sum Dynamic Array
+1. Create a pure, external function ``sum`` which takes a dynamic size array of unsigned integers.
+1. Find the sum of the unsigned integers and return it as a ``uint``.
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.4;
+
+contract Contract {
+    function sum(uint[] calldata numbers)
+        external
+        pure
+        returns (uint total)
+    {
+        for(uint i; i<numbers.length;i++) {
+            total += numbers[i];
+        }
+    }
+}
+```
+---
 
 ### Filter to Storage
 #### Storage Arrays
@@ -140,6 +217,29 @@ contract Contract {
 }
 ```
 - As you might expect the ``length`` member adjusts when new elements are pushed onto the end of the array.
+
+#### Your Goal: Filter Even Numbers
+1. Create a public, dynamic sized array of unsigned integers as a state variable called ``evenNumbers``.
+1. Create an external function called ``filterEven`` which takes an dynamic size array of unsigned integers as its only argument. Find all of the even numbers in this array and push them into the ``evenNumbers`` storage array.
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.4;
+
+contract Contract {
+    uint[] public evenNumbers;
+
+    function filterEven(uint[] memory numbers) external {
+        for (uint i =0; i<numbers.length; i++) {
+            if (numbers[i]%2==0) {
+                evenNumbers.push(numbers[i]);
+            }
+        }
+    }
+}
+```
+---
 
 ### Filter to Memory
 #### Memory Arrays
@@ -195,12 +295,84 @@ contract Contract {
 ```
 - This is quite a bit tougher to do without the ``push`` member function.
     - We need to first find the number of elements over 5 in the passed-in array so that we can initialize the return array at that size.
+
+#### Your Goal: Filter Even Numbers
+1. Create a pure, external function called ``filterEven`` which takes an dynamic size array of unsigned integers as its only argument.
+1. Find all the even numbers and add them to a new array in memory. This array should **contain only** the even numbers.
+1. Return this new array.
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.4;
+
+contract Contract {
+    function filterEven(uint[] calldata numbers)
+        external
+        pure
+        returns (uint[] memory filtered)
+    {
+        uint elements;
+        for(uint i =0; i<numbers.length; i++) {
+
+            if (numbers[i]%2==0) {
+                elements ++;
+            }
+        }
+        filtered = new uint[](elements);
+        uint index = 0;
+        for (uint i=0; i<numbers.length;i++) {
+            if (numbers[i]%2==0) {
+                filtered[index] = numbers[i];
+                index ++;
+            }
+        }
+    }
+}
+```
+---
+
 ### Stack Club 1
 #### Stack Club
 - This ``StackClub`` contract will have many members like a **club** or an organization would.
     - We'll track these members by keeping a list of addresses.
 - Members will be added by pushing their address to the top of the list.
     - Members will be removed by popping the most recent one off of the list. A Last-In-First-Out structure, just like a **stack**!
+
+#### Your Goal: Add Members
+1. Create a dynamic sized array of addresses called ``members``
+1. Create an external function ``addMember`` which has a single parameter: an ``address`` for a new member.
+1. Create a public view function ``isMember`` that takes an ``address`` and returns a ``bool`` indicating whether the ``address`` is a member or not.
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.4;
+
+contract StackClub {
+    address[] members;
+
+    function addMember(address _member) external {
+        members.push(_member);
+    }
+
+    function isMember(address _member)
+        public
+        view
+        returns (bool find)
+    {
+        for (uint i=0; i<members.length; i++) {
+            if (members[i] == _member) {
+                find = true;
+            }
+        }
+    }
+}
+```
+---
+
  ### Stack Club 2
  #### Pop
  - Storage arrays also have access the pop member variable:
@@ -220,3 +392,49 @@ contract Contract {
 }
 ```
 - As you can see, pop will take the top element off the storage array.
+
+#### Your Goal: Remove Members
+1. Create a constructor which will add the deployer address as the first member of the stack club.
+1. Create a ``removeLastMember`` function which will remove the last member added to the club.
+
+#### Function Security
+1. Ensure that the ``removeLastMember`` function can only be called by an existing member
+1. Ensure that ``addMember`` can only be called by an existing member
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.4;
+
+contract StackClub {
+    address[] members;
+
+    constructor() {
+        members.push(msg.sender);
+    }
+
+    function addMember(address _address) external {
+        require(isMember(msg.sender));
+        members.push(_address);
+    }
+
+    function removeLastMember() external {
+        require(isMember(msg.sender));
+        members.pop();
+    }
+
+    function isMember(address _member)
+        public
+        view
+        returns (bool find)
+    {
+        for (uint i=0; i<members.length; i++) {
+            if (members[i] == _member) {
+                find = true;
+            }
+        }
+    }
+}
+```
+---

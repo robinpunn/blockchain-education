@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Alchemy, Network } from "alchemy-sdk";
-import Input from "../components/HomePage/Input";
 import SingleTxInfo from "../components/SingleTransactionPage/SingleTxInfo";
 import SingleTxParties from "../components/SingleTransactionPage/SingleTxParties";
 import SingleTxValues from "../components/SingleTransactionPage/SingleTxValues";

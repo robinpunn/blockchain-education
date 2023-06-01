@@ -25,6 +25,25 @@
         mapping (address => Account) accounts;
     }
     ```
+---
+### Table of Contents
+1. [Vote Storage](#vote-storage)
+    - [Structs](#structs-1)
+    - [Alternate Struct Initialization](#alternate-struct-initialization)
+    - [Your Goal: Create a Vote](#your-goal-create-a-vote)
+1. [Vote Memory](#vote-memory)
+    - [Structs in Calldata and Memory](#structs-in-calldata-and-memory)
+    - [Structs in ABI](#structs-in-abi)
+    - [Your Goal: Return Memory Vote](#your-goal-return-memory-vote)
+1. [Vote Array](#vote-array)
+    - [Struct Arrays](#struct-arrays)
+    - [Your Goal: Vote Array](#your-goal-vote-array)
+1. [Choice Lookup](#choice-lookup)
+    - [DRY Code](#dry-code)
+    - [Your Goal: Find Vote](#your-goal-find-vote)
+1. [Single Vote](#single-vote)
+    - [Your Goal: Vote Once](#your-goal-vote-once)
+---
 
 ### Vote Storage
 #### Structs
@@ -97,6 +116,33 @@ Hero hero = Hero(Directions.Up, 100, true);
     - Perhaps this would be a different story!
         - Code readability should be a major factor here.
         - Your fellow developers (and your future self) will thank you for keeping your code clear!
+
+#### Your Goal: Create a Vote
+1. Create a new struct called ``Vote`` that contains two properties: a ``Choices choice`` and an ``address voter``.
+1. Then create a public state variable called ``vote`` which is of the ``Vote`` type.
+1. Finally, in the ``createVote`` function create a new instance of ``Vote`` and store it in the state variable ``vote``. Use the ``choice`` passed in as an argument and the ``msg.sender`` for the vote properties.
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.4;
+
+contract Contract {
+	enum Choices { Yes, No }
+
+	struct Vote {
+		Choices choice;
+		address voter;
+	}
+
+	Vote public vote;
+
+	function createVote(Choices choice) external {
+		vote = Vote(choice, msg.sender);
+	}
+}
+```
+---
 
 ### Vote Memory
 #### Structs in Calldata and Memory
@@ -229,6 +275,36 @@ Hero hero = Hero(Directions.Up, 100, true);
     -  The first set of components belongs to the ``struct Contract.Person``, which contains a ``Sport`` and a ``string``.
     - Then we have the nested set of components for the Sport which contains a ``string`` and a ``bool``.
 
+#### Your Goal: Return Memory Vote
+1. Create an external, view function called ``createVote`` which takes ``Choices`` value as a parameter and returns an instance of type ``Vote``.
+1. This function should use the ``Choices`` value and the ``msg.sender`` as the values to create the vote.
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.4;
+pragma experimental ABIEncoderV2;
+
+contract Contract {
+	enum Choices { Yes, No }
+
+	struct Vote {
+		Choices choice;
+		address voter;
+	}
+
+	function createVote(Choices choice)
+		external
+		view
+		returns (Vote memory)
+	{
+		return Vote(choice, msg.sender);
+	}
+}
+```
+---
+
 ### Vote Array
 #### Struct Arrays
 - We can create an array of struct types, just like we would with any other data type!
@@ -251,6 +327,32 @@ Account[] accounts;
     console.log(accounts[0].balance); // 100
     ```
     - Of course, push only works on storage arrays, as we learned in the lesson on arrays!
+#### Your Goal: Vote Array
+1. Create a public state array of the Vote data type called votes.
+1. In the createVote function use the choice parameter and the msg.sender to create a new vote and push it onto the array of votes.
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.4;
+
+contract Contract {
+	enum Choices { Yes, No }
+
+	struct Vote {
+		Choices choice;
+		address voter;
+	}
+
+	Vote[] public votes;
+
+	function createVote(Choices choice) external {
+		votes.push(Vote(choice, msg.sender));
+	}
+}
+```
+---
 
 ### Choice Lookup
 #### DRY Code
@@ -287,3 +389,119 @@ Account[] accounts;
     // 2. ensure the voter address is the same
     bool voteFound2 = vote.voter == voterAddress;
     ```
+#### Your Goal: Find Vote
+1. Create an external, view function ``hasVoted`` which takes an ``address`` and returns a ``bool`` indicating if the address has cast a vote or not.
+1. Create an external, view function ``findChoice`` which takes an ``address`` and returns a ``Choices`` value indicating the choice on the vote cast by the address. For this function there is no need to worry about the case where a vote was not cast.
+
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.4;
+
+contract Contract {
+	enum Choices { Yes, No }
+
+	struct Vote {
+		Choices choice;
+		address voter;
+	}
+
+	Vote none = Vote(Choices(0), address(0));
+
+	Vote[] public votes;
+
+	function createVote(Choices choice) external {
+		votes.push(Vote(choice, msg.sender));
+	}
+
+	function findVote(address voter)
+		internal
+		view
+		returns(Vote storage)
+	{
+		for (uint i=0; i<votes.length; i++) {
+			if (votes[i].voter == voter) {
+				return votes[i];
+			}
+		}
+		return none;
+	}
+
+	function hasVoted(address voted)
+		external
+		view
+		returns (bool cast)
+	{
+		cast = findVote(voted).voter == voted;
+	}
+
+	function findChoice(address voted)
+		external
+		view
+		returns (Choices)
+	{
+		return findVote(voted).choice;
+	}
+}
+```
+---
+
+### Single Vote
+#### Your Goal: Vote Once
+1. Each address should only be allowed to call ``createVote`` once.
+1. If they try again, the transaction should be reverted.
+---
+**SOLUTION**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.4;
+
+contract Contract {
+	enum Choices { Yes, No }
+
+	struct Vote {
+		Choices choice;
+		address voter;
+	}
+
+	Vote none = Vote(Choices(0), address(0));
+
+	Vote[] public votes;
+
+	function createVote(Choices choice) external {
+		require(findVote(msg.sender).voter != msg.sender); //or require(!hasVoted(msg.sender))
+		votes.push(Vote(choice, msg.sender));
+	}
+
+	function findVote(address voter)
+		internal
+		view
+		returns(Vote storage)
+	{
+		for (uint i=0; i<votes.length; i++) {
+			if (votes[i].voter == voter) {
+				return votes[i];
+			}
+		}
+		return none;
+	}
+
+	function hasVoted(address voted)
+		external
+		view
+		returns (bool cast)
+	{
+		cast = findVote(voted).voter == voted;
+	}
+
+	function findChoice(address voted)
+		external
+		view
+		returns (Choices)
+	{
+		return findVote(voted).choice;
+	}
+}
+```
+---

@@ -12,25 +12,28 @@ describe("Game5", function () {
   //create a function using a while lopp that will create a wallet below the threshold and send it 1 either
   async function createWalletBelowThreshold() {
     const threshold = "0x00FfFFfFFFfFFFFFfFfFfffFFFfffFfFffFfFFFf";
-    let wallet = ethers.Wallet.createRandom();
-    while (wallet.address > threshold) {
-      wallet = ethers.Wallet.createRandom();
+    let winner;
+    while (!winner) {
+      const wallet = ethers.Wallet.createRandom().connect(ethers.provider);
+      const address = await wallet.getAddress();
+
+      if (address < threshold) {
+        winner = address;
+        const [signer] = await ethers.getSigners();
+        await signer.sendTransaction({
+          to: wallet.address,
+          value: ethers.utils.parseEther("1.0"),
+        });
+        return wallet;
+      }
     }
-    const provider = ethers.getDefaultProvider();
-    const winner = ethers.Wallet.createRandom();
-    const winnerWallet = new ethers.Wallet(winner.privateKey, provider);
-    await winnerWallet.sendTransaction({
-      to: wallet.address,
-      value: ethers.utils.parseEther("1.0"),
-    });
-    return wallet;
   }
 
   it("should be a winner", async function () {
     const { game } = await loadFixture(deployContractAndSetVariables);
-    const winner = await createWalletBelowThreshold();
+    const winnerW = await createWalletBelowThreshold();
 
-    await game.connect(winner).win();
+    await game.connect(winnerW).win();
 
     // leave this assertion as-is
     assert(await game.isWon(), "You did not win the game");

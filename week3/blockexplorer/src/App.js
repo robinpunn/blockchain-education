@@ -32,36 +32,24 @@ function App() {
   const [transactionHash, setTransactionHash] = useState(null);
   const [viewAddress, setViewAddress] = useState(null);
 
-  useEffect(() => {
-    console.log("Fetching Ethereum Price...");
-    const fetchData = async () => {
-      try {
-        const response = await fetch(
-          "https://api.coingecko.com/api/v3/coins/ethereum?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false"
-        );
-        const data = await response.json();
-        setEthereumPrice(data.market_data.current_price.usd);
-        setMarketCap(data.market_data.market_cap.usd);
-        // console.log("Ethereum Price:", ethereumPrice, "Market Cap:", marketCap);
-      } catch (error) {
-        console.log(error);
-      }
-    };
+  const fetchHomeData = async () => {
+    try {
+      // Fetch Ethereum Price
+      const response = await fetch(
+        "https://api.coingecko.com/api/v3/coins/ethereum?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false"
+      );
+      const data = await response.json();
+      setEthereumPrice(data.market_data.current_price.usd);
+      setMarketCap(data.market_data.market_cap.usd);
 
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    async function fetchBlocks() {
+      // Fetch Blocks
       const latestBlock = await alchemy.core.getBlockNumber();
-
       const blockPromises = [];
       for (let i = 0; i < 10; i++) {
         const blockNumber = latestBlock - i;
         const blockPromise = alchemy.core.getBlock(blockNumber);
         blockPromises.push(blockPromise);
       }
-
       const blocks = await Promise.all(blockPromises);
       const finalizedBlock = await alchemy.core
         .getBlock(latestBlock)
@@ -74,29 +62,28 @@ function App() {
       setFinalizedBlock(finalizedBlock);
       setSafeBlock(safeBlock);
 
-      console.log(
-        "blocks",
-        blocks,
-        "finalized",
-        finalizedBlock,
-        "safe",
-        safeBlock
-      );
-    }
-    fetchBlocks();
-  }, []);
-
-  useEffect(() => {
-    async function fetchData() {
+      // Fetch Block Number and Gas Price
       const [blockNumber, gas] = await Promise.all([
         alchemy.core.getBlockNumber(),
         alchemy.core.getGasPrice(),
       ]);
       setBlockNumber(blockNumber);
       setGas(parseInt(gas, 16) / Math.pow(10, 11));
-    }
 
-    fetchData();
+      // Fetch Block Transactions
+      if (blockNumber) {
+        const block = await alchemy.core.getBlockWithTransactions(blockNumber);
+        setTransactions(block.transactions);
+      }
+
+      console.log("Data fetched successfully!");
+    } catch (error) {
+      console.log("Error fetching data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchHomeData();
   }, []);
 
   useEffect(() => {
@@ -132,6 +119,7 @@ function App() {
 
   const navigateToHome = () => {
     setPage("home");
+    fetchHomeData();
   };
 
   const navigateToBlockPage = (block) => {

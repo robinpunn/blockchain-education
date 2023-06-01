@@ -1,5 +1,4 @@
 import React from "react";
-import Input from "../components/HomePage/Input";
 import BlockHashTime from "../components/BlockPage/BlockHashTime";
 import BlockFeeGas from "../components/BlockPage/BlockFeeGas";
 import BlockTxs from "../components/BlockPage/BlockTxs";

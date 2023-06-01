@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Alchemy, Network } from "alchemy-sdk";
-import Input from "../components/HomePage/Input";
 /* 
 getBalance 
 getTokenBalances
