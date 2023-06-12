@@ -1,0 +1,20 @@
+{ 
+  "description": "This NFT proves I've created and deployed my first ERC20 smart contract on Rinkeby with Alchemy Road to Web3",
+  "external_url": "Alchemy.com/?a=roadtoweb3weekone",
+  "image": "https://ipfs.filebase.io/ipfs/QmNfvdYEGQA9AM5mSKXRHzJz2GA8nwSxpAs75DuJvdQs2F",
+  "name": "Road to Web3 Week1", 
+  "attributes": [
+        {
+            "trait_type": "Phase 1", 
+            "value": "Beginner"
+        }, 
+        {
+            "trait_type": "Website", 
+            "value": "Alchemy.com"
+        }, 
+        {
+            "trait_type": "Token Standard", 
+            "value": "ERC-721"
+        }
+    ]
+}

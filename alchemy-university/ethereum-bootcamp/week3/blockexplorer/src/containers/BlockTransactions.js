@@ -15,8 +15,8 @@ const BlockTransactions = ({
   };
   return (
     <div className="block-transactions">
-      <table>
-        <thead>
+      <table className="block-table">
+        <thead className="block-head">
           <tr>
             <th>Txn Hash</th>
             <th>Block Number</th>
@@ -25,7 +25,7 @@ const BlockTransactions = ({
             <th>Gas Fees</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="block-body">
           {transactionReceipts.map((receipt) => (
             <tr key={receipt.transactionHash}>
               <td onClick={() => transactionClick(receipt.transactionHash)}>
