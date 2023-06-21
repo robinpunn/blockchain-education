@@ -9,7 +9,7 @@
       src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"
       type="application/javascript"
     ></script>
-    <script>
+    <!-- <script>
       const MoodContractAddress = "0xAB32180EA08ccd7827409B29437afE841ed8F451";
 
       const MoodContractABI = [
@@ -73,7 +73,7 @@
         const setMoodPromise = MoodContract.setMood(mood);
         await setMoodPromise;
       }
-    </script>
+    </script> -->
     <title>My First dApp</title>
   </head>
   <body>
@@ -82,9 +82,10 @@
       <p>Here we can set or get the mood:</p>
       <label for="mood">Input Mood:</label> <br />
       <input type="text" id="mood" />
-      <button onclick="getMood()">Get Mood</button>
-      <button onclick="setMood()">Set Mood</button>
+      <button id="getmood">Get Mood</button>
+      <button id="setmood">Set Mood</button>
       <p id="showMood"></p>
+      <script type="module" src="contract.js"></script>
     </div>
   </body>
 </html>

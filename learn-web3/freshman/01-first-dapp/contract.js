@@ -1,5 +1,9 @@
 const { ethers } = window;
 
+// document.addEventListener("DOMContentLoaded", () => {
+
+// });
+
 const MoodContractAddress = "0xAB32180EA08ccd7827409B29437afE841ed8F451";
 
 const MoodContractABI = [
@@ -60,3 +64,9 @@ async function setMood() {
   const setMoodPromise = MoodContract.setMood(mood);
   await setMoodPromise;
 }
+
+const getMoodButton = document.getElementById("getmood");
+const setMoodButton = document.getElementById("setmood");
+
+getMoodButton.addEventListener("click", getMood);
+setMoodButton.addEventListener("click", setMood);
