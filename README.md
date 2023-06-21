@@ -7,3 +7,5 @@
 ---
 
 ### [Alchemy University](https://github.com/robinpunn/blockchain-education/tree/main/alchemy-university)
+
+### [LearnWeb3](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3)
