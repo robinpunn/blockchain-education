@@ -6,4 +6,4 @@
 + [NFT Tutorial](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/01-freshman/03-Nft-Tutorial)
 
 ### [Sophmore](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/02-sophmore)
-+ [First Dapp](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/01-freshman/01-nft-collection)
++ [First Dapp](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/02-sophmore/01-nft-collection)
