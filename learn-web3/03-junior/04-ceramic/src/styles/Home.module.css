@@ -1,0 +1,63 @@
+.main {
+  min-height: 100vh;
+}
+
+.navbar {
+  height: 10%;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding-top: 1%;
+  padding-bottom: 1%;
+  padding-left: 2%;
+  padding-right: 2%;
+  background-color: orange;
+}
+
+.content {
+  height: 80%;
+  width: 100%;
+  padding-left: 5%;
+  padding-right: 5%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.flexCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.connection {
+  margin-top: 2%;
+}
+
+.mt2 {
+  margin-top: 2%;
+}
+
+.subtitle {
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.button {
+  background-color: azure;
+  padding: 0.5%;
+  border-radius: 10%;
+  border: 0px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background-color: beige;
+}
