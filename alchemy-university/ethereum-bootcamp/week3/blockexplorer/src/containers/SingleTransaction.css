@@ -1,0 +1,5 @@
+.singletx-hash, .singletx-block, .singletx-confirmations, .singletx-hash-to, .singletx-hash-from, .singletx-value, .singletx-fee, .singletx-price {
+    display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}

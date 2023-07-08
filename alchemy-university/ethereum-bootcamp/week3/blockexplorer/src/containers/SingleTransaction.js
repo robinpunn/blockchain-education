@@ -3,6 +3,7 @@ import { Alchemy, Network } from "alchemy-sdk";
 import SingleTxInfo from "../components/SingleTransactionPage/SingleTxInfo";
 import SingleTxParties from "../components/SingleTransactionPage/SingleTxParties";
 import SingleTxValues from "../components/SingleTransactionPage/SingleTxValues";
+import "./SingleTransaction.css";
 
 const settings = {
   apiKey: process.env.REACT_APP_ALCHEMY_API_KEY,
@@ -12,7 +13,11 @@ const settings = {
 //   https://docs.alchemy.com/reference/alchemy-sdk-api-surface-overview#api-surface
 const alchemy = new Alchemy(settings);
 
-const SingleTransaction = ({ transactionHash, onClickAddress }) => {
+const SingleTransaction = ({
+  transactionHash,
+  onClickAddress,
+  ethereumPrice,
+}) => {
   const [singleTx, setSingleTx] = useState(null);
   const [gasReceipt, setGasReceipt] = useState(null);
 
@@ -35,7 +40,7 @@ const SingleTransaction = ({ transactionHash, onClickAddress }) => {
   }, [transactionHash]);
 
   return (
-    <div>
+    <div className="single-tx-page">
       {singleTx && gasReceipt && (
         <>
           <SingleTxInfo singleTx={singleTx} />
@@ -43,7 +48,11 @@ const SingleTransaction = ({ transactionHash, onClickAddress }) => {
             singleTx={singleTx}
             onClickAddress={onClickAddress}
           />
-          <SingleTxValues singleTx={singleTx} gasReceipt={gasReceipt} />
+          <SingleTxValues
+            singleTx={singleTx}
+            gasReceipt={gasReceipt}
+            ethereumPrice={ethereumPrice}
+          />
         </>
       )}
     </div>

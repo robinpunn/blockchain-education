@@ -188,6 +188,7 @@ function App() {
           <SingleTransaction
             transactionHash={transactionHash}
             onClickAddress={navigateToAddress}
+            ethereumPrice={ethereumPrice}
           />
         </>
       )}

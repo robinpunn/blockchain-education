@@ -5,11 +5,17 @@
 }
 
 .title {
-  width: 35%
+  width: 35%;
+  color: rgb(168, 168, 168);
 }
 .value {
   width: 65%;
   text-align: left;
+  color:aliceblue
+}
+
+.block-head > h3 {
+  color: rgb(168, 168, 168);
 }
 
 @media (min-width: 44rem) {
