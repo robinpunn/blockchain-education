@@ -13,14 +13,15 @@ const settings = {
 //   https://docs.alchemy.com/reference/alchemy-sdk-api-surface-overview#api-surface
 const alchemy = new Alchemy(settings);
 
-const ViewAddress = ({ viewAddress }) => {
+const ViewAddress = ({ viewAddress, ethereumPrice }) => {
   const [balance, setBalance] = useState(null);
   const [tokens, setTokens] = useState(null);
   const [transfers, setTransfers] = useState(null);
   useEffect(() => {
     const fetchTransaction = async () => {
       try {
-        const balance = await alchemy.core.getBalance(viewAddress);
+        const balanceWei = await alchemy.core.getBalance(viewAddress);
+        const balance = balanceWei / 1e18;
         const tokens = await alchemy.core.getTokenBalances(viewAddress);
         const transfers = await alchemy.core.getAssetTransfers({
           fromAddress: viewAddress,
@@ -36,18 +37,25 @@ const ViewAddress = ({ viewAddress }) => {
 
     fetchTransaction();
   }, [viewAddress]);
+
+  // const fetcTokenData = async () => {
+  //   try {
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
   return (
     <>
       {balance && tokens && transfers && (
         <div>
-          {console.log(
-            "balance:",
-            balance,
-            "tokens:",
-            tokens,
-            "transfers:",
-            transfers
-          )}
+          <h4>Address: {viewAddress}</h4>
+          <div>
+            <p>Balance: {balance} ETH</p>
+            <p>ETH Value: ${(balance * ethereumPrice).toFixed(2)}</p>
+          </div>
+
+          <p>Tokens: {tokens.tokenBalances.length}</p>
+          <p>Transfers: {transfers.transfers.length}</p>
         </div>
       )}
     </>

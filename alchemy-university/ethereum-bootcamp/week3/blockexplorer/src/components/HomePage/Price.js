@@ -4,7 +4,7 @@ const Price = ({ ethereumPrice }) => {
   return (
     <div className="price">
       <p>Ether</p>
-      <p>{ethereumPrice}</p>
+      <p>${ethereumPrice}</p>
     </div>
   );
 };

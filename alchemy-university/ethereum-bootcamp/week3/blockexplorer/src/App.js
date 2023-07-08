@@ -193,7 +193,10 @@ function App() {
       )}
       {page === "viewAddress" && (
         <>
-          <ViewAddress viewAddress={viewAddress} />
+          <ViewAddress
+            viewAddress={viewAddress}
+            ethereumPrice={ethereumPrice}
+          />
         </>
       )}
     </div>

@@ -1,7 +1,10 @@
 import React from "react";
 
-const Transactions = ({ transactions }) => {
+const Transactions = ({ transactions, onClickAddress }) => {
   const latestTransactions = transactions.slice(0, 10);
+  const handleClick = (address) => {
+    onClickAddress(address);
+  };
   return (
     <div className="transactions-container">
       <div className="header">
@@ -14,11 +17,11 @@ const Transactions = ({ transactions }) => {
               <p>TX#: {tx.hash.substring(0, 15)}...</p>
             </div>
             <div className="to-from">
-              <p>
+              <p onClick={() => handleClick(tx.from)}>
                 From: {tx.from.substring(0, 3)}...
                 {tx.from.substring(tx.from.length - 3)}
               </p>
-              <p>
+              <p onClick={() => handleClick(tx.to)}>
                 To: {tx.to.substring(0, 3)}...
                 {tx.to.substring(tx.to.length - 3)}
               </p>

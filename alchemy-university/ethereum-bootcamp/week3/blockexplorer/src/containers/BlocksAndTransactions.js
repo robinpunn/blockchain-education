@@ -3,11 +3,19 @@ import Blocks from "../components/HomePage/Blocks";
 import Transactions from "../components/HomePage/Transactions";
 import "./BlocksAndTransactions.css";
 
-const BlocksAndTransactions = ({ transactions, blocks, onClickBlock }) => {
+const BlocksAndTransactions = ({
+  transactions,
+  blocks,
+  onClickBlock,
+  onClickAddress,
+}) => {
   return (
     <div className="lower-container">
       <Blocks blocks={blocks} onClickBlock={onClickBlock} />
-      <Transactions transactions={transactions} />
+      <Transactions
+        transactions={transactions}
+        onClickAddress={onClickAddress}
+      />
     </div>
   );
 };
