@@ -1,8 +1,19 @@
 import React from "react";
 
-const Blocks = ({ blocks, onClickBlock }) => {
-  const handleClick = (block) => {
+const Blocks = ({
+  blocks,
+  onClickBlock,
+  onClickAddress,
+  onClickTransactionCount,
+}) => {
+  const handleClickBlock = (block) => {
     onClickBlock(block);
+  };
+  const handleClickAddress = (address) => {
+    onClickAddress(address);
+  };
+  const handleClickTx = (tx) => {
+    onClickTransactionCount(tx);
   };
   return (
     <div className="blocks-container">
@@ -13,11 +24,27 @@ const Blocks = ({ blocks, onClickBlock }) => {
         {blocks.map((block) => (
           <div className="block" key={block.number}>
             <div className="number">
-              <p onClick={() => handleClick(block)}> Block: {block.number}</p>
+              <p>
+                {" "}
+                Block:{" "}
+                <span onClick={() => handleClickBlock(block)}>
+                  {block.number}
+                </span>
+              </p>
             </div>
             <div className="fee-txns">
-              <p>Fee: {block.baseFeePerGas.toString()}</p>
-              <p>{block.transactions.length} txns</p>
+              <p>
+                Miner:{" "}
+                <span onClick={() => handleClickAddress(block.miner)}>
+                  {block.miner.substring(0, 5)}...
+                </span>
+              </p>
+              <p>
+                {" "}
+                <span onClick={() => handleClickTx(block.transactions)}>
+                  {block.transactions.length} txns
+                </span>
+              </p>
             </div>
           </div>
         ))}

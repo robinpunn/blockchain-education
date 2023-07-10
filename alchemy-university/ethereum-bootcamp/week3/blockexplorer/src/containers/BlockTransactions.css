@@ -1,5 +1,6 @@
-/* .block-transactions {
+ .block-transactions {
     margin-top: 20px;
+    color: wheat;
   }
   
   table {
@@ -8,15 +9,13 @@
   }
   
   thead th {
-    background-color: #f2f2f2;
+    text-align: left;
+    border: 1px solid rgba(204,204,204,0.25);
     padding: 10px;
   }
   
   tbody td {
-    border: 1px solid #ccc;
+    border: 1px solid rgba(204,204,204,0.25);
     padding: 10px;
   }
   
-  tbody tr:nth-child(even) {
-    background-color: #f9f9f9;
-  } */

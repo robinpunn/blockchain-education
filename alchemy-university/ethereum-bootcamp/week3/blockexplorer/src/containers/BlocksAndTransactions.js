@@ -7,12 +7,20 @@ const BlocksAndTransactions = ({
   transactions,
   blocks,
   onClickBlock,
+  onClickTransaction,
   onClickAddress,
+  onClickTransactionCount,
 }) => {
   return (
     <div className="lower-container">
-      <Blocks blocks={blocks} onClickBlock={onClickBlock} />
+      <Blocks
+        blocks={blocks}
+        onClickTransactionCount={onClickTransactionCount}
+        onClickBlock={onClickBlock}
+        onClickAddress={onClickAddress}
+      />
       <Transactions
+        onClickTransaction={onClickTransaction}
         transactions={transactions}
         onClickAddress={onClickAddress}
       />

@@ -61,6 +61,14 @@
     margin: 0;
 }
 
+.hash > p> span:hover,
+.number > p > span:hover,
+.fee-txns > p > span:hover,
+.to-from > p > span:hover{
+    cursor: pointer;
+    color: #ffffff;
+}
+
 @media (min-width: 40rem) {
     .lower-container {
       display: flex;

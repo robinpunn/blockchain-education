@@ -155,10 +155,13 @@ function App() {
               blockNumber={blockNumber}
               finalizedBlock={finalizedBlock}
               safeBlock={safeBlock}
+              onClickBlock={navigateToBlockPage}
             />
             <BlocksAndTransactions
               blocks={blocks}
               transactions={transactions}
+              onClickTransactionCount={navigateToBlockTransactions}
+              onClickTransaction={navigateToSingleTransaction}
               onClickBlock={navigateToBlockPage}
               onClickAddress={navigateToAddress}
             />

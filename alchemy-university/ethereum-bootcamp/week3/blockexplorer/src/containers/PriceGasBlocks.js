@@ -14,6 +14,7 @@ const PriceGasBlocks = ({
   blockNumber,
   finalizedBlock,
   safeBlock,
+  onClickBlock,
 }) => {
   let displayBlockNumber = blockNumber;
   if (typeof blockNumber === "string" && blockNumber.startsWith("0x")) {
@@ -30,11 +31,14 @@ const PriceGasBlocks = ({
       </div>
       <div className="upper-blocks">
         <div className="final-safe">
-          <Final finalizedBlock={finalizedBlock} />
-          <Safe safeBlock={safeBlock} />
+          <Final finalizedBlock={finalizedBlock} onClickBlock={onClickBlock} />
+          <Safe safeBlock={safeBlock} onClickBlock={onClickBlock} />
         </div>
         {blockNumber ? (
-          <BlockNumber blockNumber={displayBlockNumber} />
+          <BlockNumber
+            blockNumber={displayBlockNumber}
+            onClickBlock={onClickBlock}
+          />
         ) : (
           <div>Loading...</div>
         )}

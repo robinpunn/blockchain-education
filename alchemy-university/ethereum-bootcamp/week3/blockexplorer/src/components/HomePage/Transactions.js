@@ -1,9 +1,12 @@
 import React from "react";
 
-const Transactions = ({ transactions, onClickAddress }) => {
+const Transactions = ({ transactions, onClickAddress, onClickTransaction }) => {
   const latestTransactions = transactions.slice(0, 10);
-  const handleClick = (address) => {
+  const handleClickAddress = (address) => {
     onClickAddress(address);
+  };
+  const handleClickTransaction = (transaction) => {
+    onClickTransaction(transaction);
   };
   return (
     <div className="transactions-container">
@@ -14,16 +17,24 @@ const Transactions = ({ transactions, onClickAddress }) => {
         {latestTransactions.map((tx) => (
           <div className="transaction" key={tx.hash}>
             <div className="hash">
-              <p>TX#: {tx.hash.substring(0, 15)}...</p>
+              <p onClick={() => handleClickTransaction(tx.hash)}>
+                TX#: <span>{tx.hash.substring(0, 15)}...</span>
+              </p>
             </div>
             <div className="to-from">
-              <p onClick={() => handleClick(tx.from)}>
-                From: {tx.from.substring(0, 3)}...
-                {tx.from.substring(tx.from.length - 3)}
+              <p onClick={() => handleClickAddress(tx.from)}>
+                From:{" "}
+                <span>
+                  {tx.from.substring(0, 3)}...
+                  {tx.from.substring(tx.from.length - 3)}
+                </span>
               </p>
-              <p onClick={() => handleClick(tx.to)}>
-                To: {tx.to.substring(0, 3)}...
-                {tx.to.substring(tx.to.length - 3)}
+              <p onClick={() => handleClickAddress(tx.to)}>
+                To:{" "}
+                <span>
+                  {tx.to.substring(0, 3)}...
+                  {tx.to.substring(tx.to.length - 3)}
+                </span>
               </p>
             </div>
           </div>
