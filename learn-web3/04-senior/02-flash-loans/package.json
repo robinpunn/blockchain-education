@@ -1,0 +1,23 @@
+{
+  "name": "02-flash-loans",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "hardhat": "^2.16.1"
+  },
+  "dependencies": {
+    "@aave/core-v3": "^1.18.0",
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.4.1",
+    "@openzeppelin/contracts": "^4.9.2",
+    "dotenv": "^16.3.1",
+    "ethers": "^6.6.2"
+  }
+}
