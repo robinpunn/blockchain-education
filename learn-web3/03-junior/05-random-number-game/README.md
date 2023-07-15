@@ -1,13 +1,9 @@
-# Sample Hardhat Project
+# [Secure on-chain randomness using Chainlink VRFs](https://learnweb3.io/degrees/ethereum-developer-degree/junior/secure-on-chain-randomness-using-chainlink-vrfs/)
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+### What is an oracle?
+- An oracle sends data from the outside world to a blockchain's smart contract and vice-versa.
+- Smart contract can then use this data to make a decision and change its state.
+- They act as bridges between blockchains and the external world.
+- However it is important to note that the blockchain oracle is not itself the data source but its job is to query, verify and authenticate the outside data and then further pass it to the smart contract.
 
-Try running some of the following tasks:
-
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
-```
+### This project uses Chainlink VRF (Verifiable Random Function) to create random numbers

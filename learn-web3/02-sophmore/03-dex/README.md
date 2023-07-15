@@ -1,13 +1,10 @@
-# Sample Hardhat Project
+# [Build your own decentralized exchange like Uniswap v1](https://learnweb3.io/degrees/ethereum-developer-degree/sophomore/build-your-own-decentralized-exchange-like-uniswap-v1/)
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+### Making an ERC-20 Token
 
-Try running some of the following tasks:
+### Making the Exchange Contract
 
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
-```
+### Test on Etherscan
+- Adding Liquidity
+- Swap
+- Removing Liquidity

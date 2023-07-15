@@ -1,13 +1,4 @@
-# Sample Hardhat Project
+# [Run code from other contracts inside your own using delegatecall](https://learnweb3.io/degrees/ethereum-developer-degree/senior/run-code-from-other-contracts-inside-your-own-using-delegatecall/)
+- ``.delegatecall()`` is a method in Solidity used to call a function in a target contract from an original contract. However, unlike other methods, when the function is executed in the target contract using ``.delegatecall()``, the context is passed from the original contract i.e. the code executes in the target contract, but variables get modified in the original contract.
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
 
-Try running some of the following tasks:
-
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
-```

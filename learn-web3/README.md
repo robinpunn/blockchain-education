@@ -20,3 +20,12 @@
 
 ### [Senior](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-Senior)
 + [Merkle Trees](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-senior/01-merkle-trees)
++ [Flash Loans](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-senior/02-flash-loans)
++ [Re-entrancy](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-senior/03-re-entrancy)
++ [Private Data](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-senior/04-private-data)
++ [Delegate Call](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-senior/05-delegate-call)
++ [Randomness](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-senior/06-randomness)
++ [Denial of Service](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-senior/07-denial-of-service)
++ [tx.origin](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-senior/08-tx-origin)
++ [Malicious Contracts](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-senior/09-malicious-contracts)
++ [Meta Transactions](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-senior/10-meta-transactions)
