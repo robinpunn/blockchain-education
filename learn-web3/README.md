@@ -29,3 +29,5 @@
 + [tx.origin](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-senior/08-tx-origin)
 + [Malicious Contracts](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-senior/09-malicious-contracts)
 + [Meta Transactions](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-senior/10-meta-transactions)
++ [Flash Bots](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-senior/11-flashbots)
++ [Upgradeable Contracts](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3/04-senior/12-upgradeable-contracts)
