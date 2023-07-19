@@ -12,3 +12,5 @@
 ### [LearnWeb3](https://github.com/robinpunn/blockchain-education/tree/main/learn-web3)
 
 ### [Ethernaut](https://github.com/robinpunn/blockchain-education/tree/main/ethernaut)
+
+### [Securuem](https://github.com/robinpunn/blockchain-education/tree/main/secureum)
