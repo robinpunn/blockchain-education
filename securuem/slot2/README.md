@@ -23,6 +23,27 @@
     18. [Mutability and Gas](#18-mutability-and-gas)
     19. [Functions](#19-functions)
     20. [Parameters](#20-parameters)
+2. [Block 2](#block-2)
+	21. [Return Variables](#21-return-variables)
+	22. [Modifiers](#22-modifiers)
+	23. [Function Visibility](#23-function-visibility)
+	24. [Function Mutability](#24-function-mutability)
+	25. [Function Overloading](#25-function-overloading)
+	26. [Free Functions](#26-free-functions)
+	27. [Events](#27-events)
+	28. [Indexed Parameters](#28-indexed-parameters)
+	29. [Emit](#29-emit)
+	30. [Structs](#30-structs)
+	31. [Enums](#31-enums)
+	32. [Constructor](#32-constructor)
+	33. [Receive Function](#33-receive-function)
+	34. [Fallback Function](#34-fallback-function)
+	35. [Statically Typed](#35-statically-typed)
+	36. [Types](#36-types)
+	37. [Value Type](#37-value-type)
+	38. [Reference Type](#38-reference-type)
+	39. [Default Values](#39-default-values)
+	40. [Scoping](#40-scoping)
 ---
 
 ### [Block 1](https://www.youtube.com/watch?v=5eLqFac5Tkg)
@@ -175,3 +196,185 @@
 - Parameters are how the caller of the functions sends data into the function
 - Used/assigned similar to local variables within the function
 - The function specifies the parameter, the caller sends in arguments that get assigned to these parameters in the context of the function
+
+### [Block 2](https://www.youtube.com/watch?v=TCl1IcGl_3I)
+#### 21. Return Variables
+- Return variables are specified after the ``returns`` keyword
+- Solidity functions can return single return variable or multiple variables
+	- These variables can be named or unnamed
+- Treated like local variables within the context of the function
+- In the case of unnamed return variables, an explicit return statement needs to be used to return that variable as a return value that goes to the context of the caller function
+- The caller calls the callee
+	- The caller specifies arguments that get assigned to the respective parameters of the callee function
+	- The callee function works with these parameters, implements logic, and returns values back to the caller
+#### 22. Modifiers
+- Function modifiers are something unique and specific to solidity
+- They are declared using the modifier keyword
+	- ``modifier mod() {Checks;_;}``
+	- ``function foo() mod {}
+		- ``mod -> foo()``
+		- Whenever foo is called, it first goes to the modifier
+- The modifiers implements some preconditions before the function's logic is executed
+- If the ``_;`` is placed before the modifier logic, then the function the modifier is applied to gets executed before the modifier logic
+- Very often used to implement access control checks
+#### 23. Function Visibility
+- Similar to state variables, functions also have the concept of visibility: public, internal, external, private
+- ``public`` functions are part of the contract interface
+	- can be called internally or via messages
+- ``external`` functions are also part of the contract interface
+	- can only be called from outside the contract
+- ``internal`` functions can only be called inside the contract or inside contracts derived from the contract
+- ``private`` functions can only be accessed within the contract where they are defined
+- Visibility: Access control has security Implications
+#### 24. Function Mutability
+- Like state variables, functions have a concept of mutability
+	- This affects what state they can read and modify
+- There are two function mutability specifiers: view and pure
+- ``view`` functions are only allowed to read state and they cannot modify
+	- Enforced at the EVM level using STATICCALL opcode
+	- There are various action considered to be state modifying that ``view`` functions cannot execute:
+		- writing to state variables
+		- emitting events
+		- creating other contracts
+		- using SELFDESTRUCT
+		- sending ether to other contracts
+		- calling other functions not marked view or pure
+		- using low level calls and using inline assembly that contain certain opcodes
+- ``pure`` functions cannot read or modify contract state
+	- The inability to modify is enforced at the EVM level
+	- The inability to read cannot be enforced by the EVM as there are no specific opcodes for that behavior
+	- Actions that ``pure`` functions cannot execute:
+		- reading from state variables
+		- accessing the balance of contracts
+		- accessing members of block transaction or message
+		- calling other functions not marked pure
+		- using inline assembly that contain certain opcodes
+- Mutability: Write/Read has security implications
+#### 25. Function Overloading
+- Solidity supports the concept of function overloading
+	- Supports multiple functions within a contract to have the same name but with different parameters
+- Overloaded functions are selected by matching the function declarations  within the current scope to the arguments supplied in the function call
+	- Depending on the number and type of arguments, the correct function is chosen even if there are other functions with the same name
+- Return variables are not considered for the process of resolving overloading
+#### 26. Free Functions
+- Free functions are functions that are defined at the file level (outside contracts)
+- Different from the contract functions that are defined within the scope of the contract
+- Free functions have implicit internal visibility
+-  Code is included in all the contracts that call them similar to internal library functions
+- These type of functions are not very commonly seen
+#### 27. Events
+- An abstraction built on top of the EVM logging functionality
+	- Emitting events cause the arguments that are supplied to them to be stored in the transactions log (the log is a special data structure in the blockchain)
+- The log stays as long as the block is accessible
+- The log and the event data is not accessible from within the contracts
+- Logs are meant to be accessed off chain using RPC (remote procedure call) access
+- Applications off chain can subscribe and listen to events through RPC interface
+- From a security perspective, these events play an important role when it comes to auditing and logging ...
+	- ... ?? for offchain tools to really know what the state of a contract is and monitor the state along with all the transitions that happen because of the transaction??
+#### 28. Indexed Parameters
+- Up to 3 parameters of every event can be specified as being indexed by using the ``indexed`` keyword
+	- This causes those parameters to be stored in a special data structure known as topics instead of the data part of the log
+- Using topics allows one to search and filter those topics in a very optimal manner
+- Indexed parameters are commonly seen (ERC-20)
+- Use a little more gas than non-indexed but they allow for faster search and query
+#### 29. Emit
+- Events are triggered by using the ``emit`` keyword
+	- ``emit Deposit(msg.sender, _id, msg.value)``
+- From a security perspective, it is critical for the developers to emit the correct event and also to use the correct parameters that are required by that event
+	- Can be easy to miss because it is harder to be tested and not really critical to the control flow of the contract
+#### 30. Structs
+- Structs are custom data structures that can group together several variables of same or different types to create something unique to the contract
+- Various members of structs are accessed using dot notation
+- An aggregate type commonly used to pack together custom data structures
+#### 31. Enums
+- Another user defined custom type
+- Use to represent a finite set of constant integer values as represented by the members of the enum
+- Every ``enum`` needs to have a minimum of 1 member and a max of 256 members
+- An enum actually represents the underlying integer value
+	- ``enum ActionChoices {GoLeft, GoRight};``
+		- ``ActionChoices choice;
+		- ``choice = ActionChoices.GoRight``
+- Mainly used to improve readability
+	- Rather than using integer values, devs can use specific names... which under the hood are associated with integer values
+#### 32. Constructor
+- A concept that is unique to Solidity in that it applies to smart contracts and the way they are created
+- Constructors initialize the contract state on creation
+- A constructor is a special function that gets triggered when a contract is created
+- The constructor is optional and there can be only one constructor for every contract
+	- Specified by using the ``constructor`` keyword
+- Once the constructor is finished executing, the final code is stored on the blockchain
+	- The deployed code does not include the constructor code or any of the internal functions that are called within the constructor
+- From a security perspective, we can examine what the initializations will do to the contract state, otherwise default values would be used for state variables
+#### 33. Receive Function
+- A function that gets triggered automatically whenever there is an ether transfer made to the contract via send/transfer primitives
+- Triggered when a transaction targets a contract with empty calldata
+- Only one receive function for every contract
+	- cannot have any arguments
+	- cannot return anything
+	- has an external visibility and payable state mutability
+		- Function with ``payable`` can receive ether as part of a transaction
+- send/transfer primitives are designed to only transfer 2300 gas
+	- The reason for this is to mitigate the risk of reentrancy attacks
+	- The minimal amount of gas does not allow the receive function to do much more than basic logging using events
+- From a security context, receive function affects the ether balance of a contract and any assumptions in the contract logic that depends on the contract's ether balance
+#### 34. Fallback Function
+- Similar to the receive function but with some differences
+- Gets triggered when none of the functions in the contract match the function signature specified in the transaction
+- Also gets triggered if there was no data supplied in the transaction and there is no receive function
+- There can only be one fallback function for a contract
+- The function can receive and return data
+- Visibility is external and it needs the payable specifier if meant to receive ether
+- send/transfer can only be supplied with 2300 gas
+- Similar to receive, the security implications are regarding the contract balance of ether
+#### 35. Statically Typed
+- Solidity is statically typed... the type of the variables used in a contract need to be specified in the code explicitly at compile time
+- This is in contrast to dynamically typed languages where types are optional at compile time and are required only to be associated with the runtime values during execution
+- Statically typed languages perform compile-time type checking according to the language rules
+- Other examples of statically typed: C, C++, Java, Rust, Go, Scala
+- This helps improve the security of contracts
+#### 36. Types
+- Solidity has two categories of types: value and reference
+- Variables of value types are passed by value
+	- Whenever they are used, they are copied from one location to another
+- Variables of reference types are passed by reference
+	- Can be modified via multiple names all of which point to or reference the same underlying variable
+- From a security perspective, this really affects which state is being updated and state transitions that are affected by the transaction
+#### 37. Value Type
+- Variable type that is passed by value... copied when used as function arguments/assignments of expressions
+- There are different value types in Solidity:
+	- Booleans
+	- Integers
+	- Address
+	- Enums
+	- Fixed size byte arrays
+	- Literals
+	- Functions
+	- Contracts??
+- From a security perspective, value types can be though of as being somewhat safer because a copy of the original variable is made... the original value is not modified
+	- Check the assumptions of the persistence of the value
+#### 38. Reference Type
+- Passed by reference... meaning there can be multiple names for a variable all pointing to the same underlying variable state
+- There are three reference types:
+	- Arrays
+	- Structs
+	- Mappings
+- From a security perspective, reference types can be risky due to unintentional modification
+#### 39. Default Values
+- Variables that are declared but not initialized have default values
+- In Solidity, the default value is the zero-state of that particular type
+	- Boolean: false (0)
+	- Integer: 0
+	- Address: 0
+	- Enum: First Member
+- From a security perspective, this becomes important because variables that are declared an not initialized end up with these default values and in some cases, such as an address type, the zero value has a special meaning in Ethereum... and that can affect the security properties depending on how those variables are used
+#### 40. Scoping
+- Fundamental to every programming language... affects variable visibility
+	- Where variables can be used in relation to where they are declared
+- Solidity used to scoping rules of the [C99 standard](https://en.wikipedia.org/wiki/C99)
+- In Solidity, variables are visible right after the point of declaration until the end of the smallest curly bracket block that contains that declaration
+	- As an exception to this rule, variables declared in the initialization of a for loop are only visible until the end of the for loop
+- Variables that are parameters (function parameters, modifier parameters, catch parameters) are visible inside the code block that follows the body of the function or modifier parameter and the catch block for a catch parameter
+- Variables and other items declared outside of a code block (such as functions, contracts, state variables, user defined types) are visible even before they are declared
+	- We can see the usage of state variables even before they are declared within the context of a contract
+		- This is what allows functions to be called recursively
+- From a security perspective, understanding scoping becomes important when we are doing data flow analysis
