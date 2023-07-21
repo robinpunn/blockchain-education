@@ -1,6 +1,117 @@
 ## Slot 1
 
-### Block 1
+---
+### Table of Contents
+1. [Block 1](#block-1)
+	1. [What is Ethereum?](#1-what-is-ethereum)
+	2. [Turing Complete](#2-turing-complete)
+	3. [Infrastructure](#3-infrastructure)
+	4. [Properties](#4-properties)
+	5. [Purpose](#5-purpose)
+	6. [Vs Bitcoin Script](#6-vs-bitcoin-script)
+	7. [Vs Bitcoin Blockchain](#7-vs-bitcoin-blockchain)
+	8. [Core Components](#8-core-components)
+	9. [More Core Components](#9-more-core-components)
+	10. [Halting Problem](#10-halting-problem)
+	11. [Gas Metering](#11-gas-metering)
+	12. [Gas Mechanism](#12-gas-mechanism)
+	13. [DApp](#13-dapp)
+	14. [Web 2.0 vs Web 3.0](#14-web-20-vs-web-30)
+	15. [Ethereum Triad](#15-ethereum-triad)
+	16. [Decentralization](#16-decentralization)
+	17. [Native Currency](#17-native-currency)
+	18. [Cryptography](#18-cryptography)
+	19. [ECDSA](#19-ecdsa)
+	20. [Private Key](#20-private-key)
+2. [Block 2](#block-2)
+	21. [Public Key](#21-public-key)
+	22. [Ethereum State](#22-ethereum-state)
+	23. [Ethereum Account](#23-ethereum-account)
+	24. [Account Types](#24-account-types)
+	25. [EOA Ownership](#25-eoa-ownership)
+	26. [EOA](#26-eoa)
+	27. [Contract Account](#27-contract-account)
+	28. [Smart Contracts](#28-smart-contracts)
+	29. [Keccak-26](#29-keccak-256)
+	30. [EOA Address](#30-eoa-address)
+	31. [Transaction](#31-transaction)
+	32. [Transaction Properties](#32-transaction-properties)
+	33. [Transaction Components](#33-transaction-components)
+	34. [Nonce](#34-nonce)
+	35. [gasPrice](#35-gasprice)
+	36. [gasLimit](#36-gaslimit)
+	37. [recipient](#37-recipient)
+	38. [value](#38-value)
+	39. [Data](#39-data)
+	40. [v,r,s](#40-vrs)
+3. [Block 3](#block-3)
+	41. [Signature Purpose](#41-signature-purpose)
+	42. [Contract Creation](#42-contract-creation)
+	43. [Transactions vs Messages](#43-transactions-vs-messages)
+	44. [Transactions and Blockchain](#44-transactions-and-blockchain)
+	45. [Block](#45-block)
+	46. [Ethereum Node/Client](#46-ethereum-nodeclient)
+	47. [Ethereum Miners](#47-ethereum-miners)
+	48. [Block Gas Limit](#48-block-gas-limit)
+	49. [Ghost](#49-ghost)
+	50. [Consensus](#50-consensus)
+	51. [Ethereum State](#51-ethereum-state)
+	52. [Ethereum PoW](#52-ethereum-pow)
+	53. [Block Header](#53-block-header)
+	54. [State Root](#54-state-root)
+	55. [Tx Receipt](#55-tx-receipt)
+	56. [Tx Gas](#56-tx-gas)
+	57. [EVM](#57-evm)
+	58. [Ethereum Code](#58-ethereum-code)
+	59. [EVM Architecture](#59-evm-architecture)
+	60. [Stack](#60-stack)
+4. [Block 4](#block-4)
+	61. [Memory](#61-memory)
+	62. [Storage](#62-storage)
+	63. [Calldata](#63-calldata)
+	64. [EVM Architecture](#64-evm-architecture)
+	65. [EVM Ordering](#65-evm-ordering)
+	66. [Instruction Set](#66-instruction-set)
+	67. [Stop and Arithmetic](#67-stop-and-arithmetic)
+	68. [Comparison and Bitwise Logic](#68-comparison-and-bitwise-logic)
+	69. [SHA3](#69-sha3)
+	70. [Environmental Information](#70-environmental-information)
+	71. [Block Information](#71-block-information)
+	72. [Stack, Memory, Storage, and Flow](#72-stack-memory-storage-and-flow)
+	73. [Push Operations](#73-push-operations)
+	74. [Duplication Operations](#74-duplication-operations)
+	75. [Exchange Operations](#75-exchange-operations)
+	76. [Logging Operations](#76-logging-operations)
+	77. [System Operations](#77-system-operations)
+	78. [Gas Costs](#78-gas-costs)
+	79. [Transaction Reverts](#79-transaction-reverts)
+	80. [Transaction Data](#80-transaction-data)
+5. [Block 5](#block-5)
+	81. [ABI](#81-abi)
+	82. [Function Selector](#82-function-selector)
+	83. [Block Explorer](#83-block-explorer)
+	84. [Mainnet](#84-mainnet)
+	85. [EIP](#85-eip)
+	86. [Eth 2.0](#86-eth-20)
+	87. [Immutable Code](#87-immutable-code)
+	88. [Web3](#88-web3)
+	89. [Languages](#89-languages)
+	90. [Onchain vs Offchain](#90-onchain-vs-offchain)
+	91. [Open Source and Transparent](#91-open-source-and-transparent)
+	92. [Unstoppable and Immutable](#92-unstoppable-and-immutable)
+	93. [Pseudonymity and DAOs](#93-pseudonymity-and-daos)
+	94. [Arch and Lang Tools](#94-arch-lang-tools)
+	95. [Byazantine Threat Model](#95-byzantine-threat-model)
+	96. [Keys and Tokens](#96-keys-and-tokens-5116)
+	97. [Composability](#97-composability)
+	98. [Timescale](#98-timescale)
+	99. [Test in Prod](#99-test-in-prod)
+	100. [SSDLC Audits](#100-ssdlc---audits)
+	101. [State of Audits](#101-state-of-audits)
+6. [Quiz](#quiz-1)
+---
+
+### [Block 1](https://www.youtube.com/watch?v=44qhIBMGMoM)
 #### 1. What is Ethereum?
 - Ethereum is a  blockchain: [Whitepaper](https://ethereum.org/en/whitepaper/)
 	- The white paper proposes Ethereum to be a next generation blockchain
@@ -132,7 +243,7 @@
 - The public key is used to derive the address of an Ethereum account
 
 
-### Block 2
+### [Block 2](https://www.youtube.com/watch?v=zIeBfuXxuWs)
 #### 21. Public Key
 - The public key is not meant to be a secret
 - It is derived from the private key
@@ -254,7 +365,7 @@
 - v can be 27/28 or chainIDx2 + 35/36
 	- chainID is the identifier of the blockchain (Ethereum mainnet: chainID = 1)
 
-### Block 3
+### [Block 3](https://www.youtube.com/watch?v=ltvTIr4K63s&t)
 #### 41. Signature Purpose
 - The ECDSA signature has 3 purposes:
 	- Authorization
@@ -404,7 +515,7 @@
 - Most EVM instructions operate with the stack
 - There are stack specific operations: PUSH/POP/SWAP/DUP
 
-### Block 4
+### [Block 4](https://www.youtube.com/watch?v=MFoxW07ICKs&t)
 #### 61. Memory
 - The second component of the EVM architecture is memory
 - Memory in EVM is volatile
@@ -617,7 +728,7 @@
 	- They are encoded according to ABI
 - ABI - Application Binary Interface
 
-### Block 5
+### [Block 5](https://www.youtube.com/watch?v=I-TjCtjDs1M)
 #### 81. ABI
 - Application Binary Interface
 - The contract's interface that is specified in a very standard way so that contracts can interact with each other
