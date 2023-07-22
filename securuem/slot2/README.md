@@ -44,6 +44,27 @@
 	38. [Reference Type](#38-reference-type)
 	39. [Default Values](#39-default-values)
 	40. [Scoping](#40-scoping)
+3. [Block 3](#block-3)
+	41. [Boolean](#41-boolean)
+	42. [Integers](#42-integers)
+	43. [Integer Arithmetic](#43-integer-arithmetic)
+	44. [Fixed Point](#44-fixed-point)
+	45. [Address](#45-address)
+	46. [Address Members](#46-address-members)
+	47. [Transfer](#47-transfer)
+	48. [Send](#48-send)
+	49. [External Calls](#49-external-calls)
+	50. [Contract Type](#50-contract-type)
+	51. [Bytes Arrays](#51-bytes-arrays)
+	52. [Literal](#52-literals)
+	53. [Enums](#53-enums)
+	54. [Function Types](#54-function-types)
+	55. [Data Location](#55-data-location)
+	56. [Data Locations and Assignments](#56-data-location-and-assignments)
+	57. [Arrays](#57-arrays)
+	58. [Array Members](#58-array-members)
+	59. [bytes and string](#59-bytes-and-string)
+	60. [Memory Arrays](#60-memory-arrays)
 ---
 
 ### [Block 1](https://www.youtube.com/watch?v=5eLqFac5Tkg)
@@ -378,3 +399,205 @@
 	- We can see the usage of state variables even before they are declared within the context of a contract
 		- This is what allows functions to be called recursively
 - From a security perspective, understanding scoping becomes important when we are doing data flow analysis
+
+
+### [Block 3](https://www.youtube.com/watch?v=6VIJpze1jbU)
+#### 41. Boolean
+- Boolean types are declared using the ``bool`` keyword
+	- They can have two possible values: true or false
+- Five operators that can operate on boolean types:
+	- ``!``: not... logical negation
+	- ``==``: eq
+	- ``!=``: inequality
+	- ``&&``: and
+	- ``||``: or
+- Logical conjunction (&&) and logical disjunction (||) apply short circuiting rules
+	- If using the or operator, if the first value is evaluated as true, the second value won't be evaluated
+	- If using the and operator, if the first value is false, the second value won't be evaluated
+- From a security perspective, booleans are used extensively in smart contracts... they affect the control flow
+	- Make sure the correct operator is being used
+#### 42. Integers
+- Use the ``uint``/``int`` (unsigned/signed) keywords
+- They come in sized of 8 bits to 256 bits
+	- ``uint8``, ``uint16``, ...``uint256``
+	- ``int8``, ``int16``, ...``int256``
+- They have various operators
+	- Arithmetic
+	- Comparative
+	- Bit
+	- Shift
+- From a security perspective, they affect data flow of contract logic
+	- Underflow/overflow is critical to security
+#### 43. Integer Arithmetic
+- Arithmetic that operates on integer operands
+- Integers in Solidity are restricted to a certain range of value
+	- ``uint256``... range: 0 -> 2^256-1
+		- anything beyond this range would be an overflow or underflow
+- Overflow/Underflow causes wrapping
+	- When a number is out of range, it "wraps" to the other side
+	- In the case of ``uint256``, if a number is at the max value of that range and the contract incremented by 1, it would go back to 0
+- For the versions of Solidity below 0.8.0, the best practice was to use OpenZeppelin SafeMath library
+	- Made operating on integer values safe with respect to overflows and underflows
+- Solidity >= 0.8.0 introduced overflow and underflow check for integers
+	- Can switch from the default checked arithmetic vs unchecked arithmetic
+#### 44. Fixed Point
+- For numbers that have an integer part and a fractional part the location of the decimal point indicates if it is fixed or floating
+	- If the position of the decimal point can change, it is referred to as a floating point type
+	- If the position is fixed for all variables of that type, then it is known as fixed point arithmetic
+- There is no real support for this in Solidity?
+- For fixed point arithmetic, a library is required
+#### 45. Address
+- The ``address`` type in Solidity refers to the underlying Ethereum account address (the EOA or the contract account)
+- Addresses are 20 bytes in size
+- They come on two types:
+	- plain address types
+	- address payable type (can receive ether)
+- There are different operators that operate on address types:
+	- ``==``
+	- ``!=``
+	- ``<``
+	- ``<=``
+	- ``>``
+	- ``>=``
+- Converting an address payable to a plain address is safe as an implicit conversion?
+- An address type converted to an address payable type should be an explicit conversion
+- From a security perspective, address roles play a critical role
+#### 46. Address Members
+- Address types have different members that can you different aspects of the underlying address type:
+	- balance: gives balance of address in wei
+	- code: gives the code at the address
+	- codehash: gives hash of the code at the address
+	- transfer/send: applicable to address payable types... make calls to the address specified with a limited gas stipend of 2300 units (not adjustable, hard coded by Solidity to address reentrancy attacks)
+- Used to make low level calls to the specified address:
+	- call
+	- delegatecall: callee account executes its logic with the state of the caller account
+	- staticcall: the callee contract address can access the state but cannot modify the state
+- Address members play a huge role when it comes to security because they deal with balances, external calls, reentrancy
+#### 47. transfer
+- The transfer function is used to transfer ether to the destination address
+- This transfer triggers the receive or fallback function of the target contract
+- Supplied with 2300 gas subsidy by default
+	- Fixed amount that can't be changed
+	- If the target contract uses more than 2300 gas, the transaction fails, it reverts, and an exception is caused
+- From a security perspective, this primitive prevents reentrancy
+#### 48. send
+- The send primitive is similar to transfer, but it is a lower level counter part of transfer
+- Used for ether transfers, like transfer it triggers receive/fallback
+- Has a 2300 gas subsidy, but it does not result in a failure if the target contract uses more than 2300 gas... just returns a boolean indicating failure
+- From a secuirty perspective... used to mitigate reentrancy... the caller has to check the return value to make sure it went through
+#### 49. External Calls
+- Three primitives: call, delegatecall, staticcall
+- Use to interface with contracts that do no adhere to the api or where the developer wants more control over such calls
+	- They all take single bytes memory parameter
+	- Return a success boolean and data in the form of bytes memory
+	- Can use functions such as abi encode?, encode path?, encode with selector?, encode with signature?... to encode structured data as part of the arguments
+	- Can use gas and value modifiers to specify the amount of gas and ether for these calls (applicable to call primitive, not delegatecall or staticcall)
+- delegatecall is used when the caller contract wants to use the logic specified by the callee contract but with the state and other aspects of the caller contract
+	- so the code of callee is used, but all other aspects(storage, balance, message sender) are taken from the caller contract
+	- purpose of delegatecall is to enable usecases such as libraries or proxy upgradability
+- staticcall is used when we want the called function in the callee contract to look at or read the state of the caller contract but not modify it in any way
+- The use of external calls have different types of security implications
+	- These are low level calls that should be avoided in most cases unless absolutely required and there are no alternatives available ( could call out to external contracts that are untrusted )
+#### 50. Contract Type
+- Every contract that is declared is its own type and these contract types can explicitly be converted to and from address types
+- Contract types do not have any operators supported
+- The only members are external functions and public state variables
+#### 51. Bytes Arrays
+- These types are used to store arrays of raw bytes
+- Two types:
+	- fixed-size byte array
+		- bytes1, bytes2, ...bytes32
+	- ``byte[]``
+		- used for storing byte arrays where we don't know the fixed size in advance
+		- due to padding rules in EVM, it wastes 31 bytes of space for every element that's stored in it
+	- better to use the byte type vs the bytes type???
+- Will come across this in contracts when trying to store raw bytes such as in the case of hashes
+#### 52. Literals
+- Solidity supports 5 types of literals:
+	- Address: hexadecimal literals that pass the address checksum test
+		- Every "nibble"(hexadecimal character) in a hexadecimal address is half a byte
+		- So a 40 character address literal is 20 bytes
+		- checksum makes sure there are no typographical errors when using addresses ([EIP55](https://eips.ethereum.org/EIPS/eip-55))
+	- Rational/Integer
+		- Integer literals have a sequence of numbers from 0-9 range
+		- decimal fraction literals are formed by using a decimal point with one number on each side
+		- scientific notation is supported where the base can have fractions and exponent cannot
+		- underscores can be used to separate digits (used to help with readability)
+	- String
+		- Written with either double quotes or single quotes
+		- They can only contain printable ascii characters and a set of escape characters
+	- Unicode
+		- Have to be prefixed with the keyword unicode
+		- can contain any utf-8 sequence
+	- Hexadecimals
+		- Hexadecimal digits prefixed with the keyword hex enclosed in double or single quotes
+- The usage of all these literals is in the context of constants
+#### 53. Enums
+- A way to create user defined types
+- Must have atleast 1 member up to a max of 256
+- The default value of an enum is the first member
+- In smart contracts, enums are used to represent the names of various states within the context of the contract logic
+- Used to help improve readability
+#### 54. Function Types
+- Function types are types used to indicate that variables represent actual functions
+- These variables can be used just like any other variables
+	- They can assigned as functions because of the function type??
+	- They can be sent as arguments to other functoins
+	- They can be used to return values from other functions
+- They come in two types, internal and external
+	- Internal functions can only be called inside the current contract
+	- external functions consist of an address of the contract where they are relevant and a function signature
+- Usage of function types is minimal in most of the contracts we will see??
+#### 55. Data Location
+- Reference types (structs, arrays, mappings) allow for a specification of their data location
+	- An additional annotation that indicates where that reference type variable is stored
+- Three locations (not including the 4th... stack) affect the lifetime or the scope and persistence of the variables stored in those locations:
+	- memory: indicates that the lifetime is limited to the external function call
+	- storage: the lifetime extends to the whole contract (also the location where state variables are stored)
+	- calldata: non-modifiable, non-persistent area where function arguments are stored
+		- required for parameters of external functions but can also be used for other variables
+- Impacts the scope of the variables
+- From a security perspective, this affects the persistence of those variables
+#### 56. Data Location and Assignments
+- The data location annotation affects persistency in the scope in which they are relevant but also affects assignment semantics
+- Assignment semantics: During an assignment is a copy of the variable being created or simply a reference??
+	- Storage and memory assignments always creates an independent copy
+	- Memory to memory assignments only create references
+	- storage to storage assignments only create a reference
+	- All other variants create a copy
+- If a copy were to be created, any modifications to the copy only affects the copy and not the original variable
+- If a reference was created, then the new variable being modified will affect the original variable... both of them are just different names pointing to the same underlying data
+#### 57. Arrays
+- Arrays come in two types
+	- Static: the size of the array is known at compile time
+		- ``T[k]``
+	- Dynamic
+		- ``T[]``
+- The elements of these arrays can be of any type that is supported by Solidity
+- Indices are zero based (first element is stored at 0)
+- If arrays are accessed past their length, Solidity automatically reverts that access and creates an exception
+- Arrays are commonly used in smart contracts
+	- Check if the correct index is being used
+	- Check for off by one if they are being accessed beyond or below their indices
+	- If an array is very long and the elements are complex, the amount of gas used can end up causing a denial of service attack
+#### 58. Array Members
+- ``length``, ``push``, ``push(x)``, ``pop``
+	- length: returns the number of elements in the array
+	- push: appends a 0 initialized element at the end of the array... returns a reference to that element
+	- push(x): appends the specified x element to the end of the array... returns nothing
+	- pop: removes an element from the end of the array and implicitly calls delete on that removed element
+- Security considerations would involve considering the length of the array, off by one accesses, push and pop semantics
+#### 59. bytes and string
+- bytes are used to store arbitrary byte data or arbitrary length
+	- If we know the size of the array, we can used fixed size byte arrays (bytes1...)
+	- If we don't know the size, we can just use ``bytes`` or ``byte[]``
+		- Preferable to use ``bytes`` over ``byte[]`` as ``byte[]`` will require a lot of gas
+- the string type is equivalent to the bytes types... string == byte
+	- string does not allow accessing the length or index of the string
+- Solidity doesn't have built in string functions, but there are third party libraries
+#### 60. Memory Arrays
+- Arrays that are created in memory
+- Can have a dynamic length and are created using the ``new`` operator
+ - As opposed to storage arrays, it's not possible to resize memory arrays... no push
+ - Either have to calculate the size in advance, or copy the old array in to a new array
+	 - ``uint[] memory a = new uint[](7)``
