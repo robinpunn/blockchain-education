@@ -65,6 +65,27 @@
 	58. [Array Members](#58-array-members)
 	59. [bytes and string](#59-bytes-and-string)
 	60. [Memory Arrays](#60-memory-arrays)
+4. [Block 4](#block-4)
+	61. [Array Literals](#61-array-literals)
+	62. [Array Gas Costs](#62-array-gas-costs)
+	63. [Array Slices](#63-array-slices)
+	64. [Struct Types](#64-struct-types)
+	65. [Mapping Types](#65-mapping-types)
+	66. [Shorthand Operators](#66-shorthand-operators)
+	67. [Delete](#67-delete)
+	68. [Implicit Coversions](#68-implicit-conversions)
+	69. [Explicit Conversions](#69-explicit-conversions)
+	70. [Conversions Literals](#70-conversions-literals)
+	71. [Ether Units](#71-ether-units)
+	72. [Time Units](#72-time-units)
+	73. [Block and Tx Properties](#73-block-and-tx-properties)
+	74. [Msg Values](#74-msg-values)
+	75. [Randomness Source](#75-randomness-source)
+	76. [Blockhash](#76-blockhash)
+	77. [ABI Encodin/Decoding](#77-abi-encodingdecoding)
+	78. [Error Handling](#78-error-handling)
+	79. [Math/Crypto Functions](#79-mathcrypto-functions)
+	80. [erecover Malleability](#80-ecrecover-malleability)
 ---
 
 ### [Block 1](https://www.youtube.com/watch?v=5eLqFac5Tkg)
@@ -601,3 +622,200 @@
  - As opposed to storage arrays, it's not possible to resize memory arrays... no push
  - Either have to calculate the size in advance, or copy the old array in to a new array
 	 - ``uint[] memory a = new uint[](7)``
+
+
+### [Block 4](https://www.youtube.com/watch?v=WgU7KKKomMk)
+#### 61. Array Literals
+- Comma separated list of one or more expressions enclosed in square brackets
+- Statically sized memory arrays whose length is the number of expressions used within them
+- The base type of the arrays is the type of the first expression of that list such that all other expressions can be converted to the first expression
+	- If that isn't possible, it's a type error and indicated by Solidity
+- Fixed-size memory arrays cannot be assigned to dynamically sized memory arrays within Solidity
+#### 62. Array Gas Costs
+- Arrays have ``push()`` and ``pop()`` operations
+- Increasing the length of a storage array by calling push has constant gas cost because storage is zero initialized
+- The gas cost of ``pop()`` depends on the size of the element being removed
+- If the element being removed happens to be an entire array, then it can be very expensive because it includes explicitly clearing the removed elements which is similar to calling delete on each one of them
+#### 63. Array Slices
+- Solidity supports the notion of array slices
+- Array slices are views that are supported on contiguous array portions of existing arrays
+	- They are not a separate type in Solidity but they can be used in intermediate expressions to extract useful portions of existing arrays as required by the logic within the smart contract
+	- ``X[start:end] -> X[start]`` to ``X[end -1]``
+		- If start is greater than end or end is greater than the length of the array an exception is thrown
+		- Start and end values are optional where start defaults to 0 and end defaults to the length of the array
+- Do no have any members that are supported
+- Only supports array slices for calldata arrays
+#### 64. Struct Types
+- User defined aggregate types
+	- The developer can combine different variables of value/reference types into one unit
+- Used very extensively in smart contracts
+- Structs can be used inside mapping and inside arrays and structs themselves can contain mappings and arrays
+- Struct types cannot contain members of the same struct type
+#### 65. Mapping Types
+- Mapping types define key value pairs
+	- ``mapping(_Key => _value) _Var;``
+- The key type in a mapping can be any built in value type with some restrictions
+	- Other user defined or complex types such as mappings structs or array types are not allowed to be used as keys
+- Value types can be any type including mappings, arrays, and structs
+- The key data is not stored in a mapping... it is only used to look up the value by taking a keccak-256 hash of that key data
+- There is no concept of length or a concept of key/value being "set"? in the mapping
+- They can only have a storage data location
+	- Only allowed for state variables
+- Cannot be used as parameters or return values of contract functions that are publicly visible
+- You can't iterate over mappings... can't enumerate keys and and get the resulting values
+	- By implementing another data structure on top of mappings, we can iterate over that data structure rather than the mapping
+- Very commonly encountered in smart contracts to store associations between different data structures
+#### 66. Shorthand Operators
+- Solidity supports shorthand operations which are concise notations of slightly longer expressions
+	- ``a += e`` is the same as ``a = a +  e ``
+	- ``-=``
+	- ``*=``
+	- ``/=``
+	- ``%=``
+	- ``|=``
+	- ``&=``
+	- ``^=``
+- Similar shorthand for increments and decrements
+	- Expression -> Previous Value
+		- ``a++`` is ``a = a + 1``
+		-  ``a--`` is ``a = a - 1``
+	- Expression -> Modified Value
+		- ``++a``
+		- ``--a``
+#### 67. Delete
+- Solidity supports the delete keyword that can be used within smart contracts to reclaim the underlying storage of a variable when it is no longer required
+- Applying this keyword on a variable a of a particular type, assigns the initial value of that type to a
+	- ``delete a`` -> assigns initial value to a
+		- integers -> 0
+		- dynamic arrays -> length 0
+		- static arrays -> same length but elements are set to initial value
+		- arr[x] -> deletes item x
+		- structs -> all the members are reset to initial value
+		- mappings -> no effect from delete... but we can delete keys
+#### 68. Implicit Conversions
+- Every programming language that supports different types supports the concept of conversions... variables of different types can be converted between each other
+	- Some conversions can happen implicitly where the conversion happens by the compiler
+		- Happens when the conversion makes sense semantically and there is no information that is lost (a safe conversion applied by the compiler)
+		- Such conversion happen during assignments of variables, when variables are passed as arguments to functions (and the parameter types of those functions are of a different type than the arguments applied)
+		- uint8 -> uint16
+		- int 128 -> int256
+#### 69. Explicit Conversions
+- Type conversion is applied by the developer
+- The compiler cannot deduce or prove the type safety of such conversions and they may result in unexpected behavior
+- There are various rules to explicit conversions
+	- when an integer is converted to a smaller type, the higher order bits are cut off
+	- when an integer is converted to a larger type, the higer order end (left) is padded
+	- converting bytes to a smaller size cuts off bytes to the right, lower order cut off
+	- converting bytes to a larger size pads bytes to the right, lower order padded
+#### 70. Conversions Literals
+- Solidity supports conversions between literals... possible between literals and elementary types with various rules that apply
+- Decimals/Hex can be implicitly converted to any integer type that's large enough to represent it without getting truncated
+- Decimal number literals cannot be implicitly converted to fixed size byte arrays
+- Hexadecimal number literals can be converted to fixed size byte arrays only if the size of the hex digits fits the size of the bytes type exactly
+- String literals and hex string literals can be implicitly converted to fixed-size byte arrays but only if the number of characters matches the size of the bytes type
+#### 71. Ether Units
+- Ether has 18 decimals and the smallest unit is a wei
+	- There are various names given for different powers of wei
+- A literal number can be given a suffix of wei, gwei (giga wei... 10^9), or ether (10^18)
+- Used to define subdenominations of ether
+	- 1 wei == 1
+	- 1 gwie == 1e9
+	- 1 ether == 1e18
+- They are used when contracts want to manipulate different denominations of ether in the context of the logic
+#### 72. Time Units
+- Solidity supports the concept of time units
+	- Contracts may want to work with different notions of time for various types of logic
+- Solidity supports different suffixes that represent time and these can be applied to literal numbers
+	- seconds
+	- minutes
+	- hours
+	- days
+	- weeks
+- The base unit for time is seconds
+	- 1== 1 second
+- These suffixes cannot be directly applied onto variables
+- If time units are to be applied to variables, the the variable needs to be multiplied with the time uint
+	- ``daysAfter`` * 1 days
+#### 73. Block and Tx Properties
+- Solidity allows accessing various block and transaction properties within smart contracts
+- Block
+	- Hash: gives the hash of the specified block (only the most recent 256)
+	- ChainID: gives the current ID of the chain
+	- Number: the sequence number of the block
+	- Timestamp: the number of seconds since the unix epoch
+	- Coinbase: address controlled by the miner, beneficiary address where tx fees go
+	- Difficulty: difficulty related to proof of work
+	- GasLimit: gasLimit related to block
+- Msg:
+	- Value: the amount of ether that was sent as part of the transaction
+	- Data: access to the complete call data sent in the transaction
+	- Sender: sender of the current call
+	- Sig: the function identifier of the first 4 bytes of the call data representing the function selector
+- Tx:
+	- Gasprice: gas price used in the transaction
+	- Gasleft: the amount of gas left in the transaction after all the computation
+	- Origin: the sender of the transaction (representing the EOA)
+#### 74. Msg Values
+- msg.value represents the amount of ether sent in wei as part of the transaction
+- msg.sender is the sender's address
+- every external call made changes the sender
+- every external call made can also change the message value
+#### 75. Randomness Source
+- block.timestamp and blockhash are not good sources of randomness
+- Both of these values can be influenced by the miners mining the blocks
+- The only aspects of timestamps that are garunteed is
+	- that the current block's timestamp must be strictly larger than the timestamp of the last block
+	- and it will be somewhere between the timestamp of two consecutive blocks in the canonical blockchain
+- Devs should not rely on the block timestamp or the block hash as a source of randomness
+  #### 76. Blockhash
+  - Solidity supports a blockhash primitive where the block number can be specified to obtain the corresponding hash
+- Possible only for the most recent 256 blocks excluding the current block
+	- For all other historical blocks, the value returned is 0
+#### 77. ABI Encoding/Decoding
+- Solidity supports multiple functions in these categories
+	- abi.encode(...): take arguments and encode them with respect to abi
+	- abi.decode(...): take arguments and decode them with respect to abi
+	- abi.encodeWithSelector(...): encodes with function selector
+	- abi.encodeWithSignature(...): encodes with signature
+	- abi.encodePacked(...): takes the arguments and performs the encoding in a packed fashion (no padding applied between the arguments supplied)
+- Packed encoding can be ambiguous
+#### 78. Error Handling
+- One of the most fundamental and critical aspects of programming language's security
+- Errors during program execution are what result in security vulnerabilities
+	- Errors from user inputs when they interact with the smart contract and inputs are not as expected
+	- Errors due to assumptions made within the smart contract that are not valid for the various control and data flows that happen during program execution
+	- Can be related to programming variants
+- Solidity supports multiple primitives for error handling
+- Let the developer assert or require that certain conditions must be held
+	- assert(bool condition) -> Panic/revert
+		- assert specifies a condition as its argument... if the condition isn't met, a panic error is raised
+		- a panic error reverts all the state changes made so far in the transaction
+		- assert is meant to be used for internal errors
+	- require(bool condition [ , string memory message]) -> error/revert
+		- require also evaluates a condition that is specified at runtime... if the condition evaluates to false, the error reverts all the state changes made so far
+		- meant to be used for errors in inputs from users or from external components that contract interacts with
+		- takes an optional string as an argument which is a message that gets printed on error
+	- revert([string memory message]) -> Abort/revert
+		- unconditionally aborts execution when triggered and reverts all state changes
+		- takes an optional string that prints as an error message
+- ``assert()`` is meant to be used for internal errors (conditions meant to be true as program invariants throughout the execution of the smart contract) and it raises a panic error
+- ``require()`` is meant to be used for external error, errors coming in because of user inputs or errors resulting from interactions with external components... require takes an optional string whereas assert doesn't support this optional string
+- best practice is to use require in most cases?
+#### 79. Math/Crypto Functions
+- Solidity supports addition and multiplication with modulus
+	- ``addmod()`` and ``mulmod()``
+- Supports keccak256 hashing functions
+	- ``keccak256(bytes memory)``
+- Supports standardized version of sha256(bytes memory) and a older hashing function ripe message digest
+	- ``sha256(bytes memory)``
+	- ``ripemd160(bytes memory)``
+- Supports elliptic curve recover primitive which takes the hash of a message as an argument along with the ecdsa signature components v, r, and s... returns the address associated with the public key
+	- ``ecrecover(bytes 32 hash, uint8 v, bytes32 r, bytes32 s)``
+	- used in various smart contracts to recover the address
+#### 80. ecrecover Malleability
+- ecrecover is susceptible to "malleability"... non uniqueness
+	- a valid signature can be converted into a second valid signature without requiring knowledge of the private key to generate those signatures
+	- this can result in replay attack... a second valid signature can be used by the user/attacker to bypass the contract logic
+- The reason for this malleability is the math behind the elliptic curve cryptogrpahy
+	- For the signature values of v,r,and s... s can be in the lower order range or in the higher order range... ecrecover doesn't prevent s from being in one of these ranges
+- If the smart contract logic requires the signature to be unique, the best practice is to use the ecdsa wrapper from OpenZeppelin that enforces the s value to be in the lower range
