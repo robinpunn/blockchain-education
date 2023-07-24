@@ -86,6 +86,29 @@
 	78. [Error Handling](#78-error-handling)
 	79. [Math/Crypto Functions](#79-mathcrypto-functions)
 	80. [erecover Malleability](#80-ecrecover-malleability)
+5. [Block 5](#block-5)
+	81. [Contract Related](#81-contract-related)
+	82. [selfdestruct](#82-selfdestruct)
+	83. [Contract Type](#83-contract-type)
+	84. [Integer Type](#84-integer-type)
+	85. [Control Structures](#85-control-stuctures)
+	86. [Exceptions](#86-exceptions)
+	87. [Low Level Calls](#87-low-level-calls)
+	88. [Assert](#88-assert)
+	89. [Panic](#89-panic)
+	90. [Require](#90-require)
+	91. [Error](#91-error)
+	92. [Revert](#92-revert)
+	93. [try/catch](#93-trycatch)
+	94. [catch Blocks](#94-catch-blocks)
+	95. [try/catch State Change](#95-trycatch-state-change)
+	96. [External Call Failure](#96-external-call-failure)
+	97. [Programming Style](#97-programming-style)
+	98. [Code Layout](#98-code-layout)
+	99. [Code Layout(more)](#99-code-layout-more)
+	100. [Naming Convention](#100-naming-convention)
+	101. [Naming(more)](#101-naming-more)
+6. [Quiz 2](#quiz-2)
 ---
 
 ### [Block 1](https://www.youtube.com/watch?v=5eLqFac5Tkg)
@@ -819,3 +842,608 @@
 - The reason for this malleability is the math behind the elliptic curve cryptogrpahy
 	- For the signature values of v,r,and s... s can be in the lower order range or in the higher order range... ecrecover doesn't prevent s from being in one of these ranges
 - If the smart contract logic requires the signature to be unique, the best practice is to use the ecdsa wrapper from OpenZeppelin that enforces the s value to be in the lower range
+
+### [Block 5](https://www.youtube.com/watch?v=_oN7XuyhoZA&t)
+#### 81. Contract Related
+- Solidity supports contract related primitives
+	- this: refers to the current contract
+		- can be explicitly converted to an address type
+	- selfdestruct(address payable recipient)
+		- there is a selfdestruct instruction in the EVM
+		- this is a high level wrapper on top of that instruction
+		- it takes a single argument, address type, specifying the recipient
+		- destroys contract and all the funds are sent to the recipient address
+#### 82. selfdestruct
+- The recipient address in this primitive does not execute the receive function when it is triggered
+- If the recipient address is a contract and it specifies a receive function, the receive function doesn't get triggered when selfdestruct is executed
+	- The logic within the receive function could be set to where it triggers when ether is received, but selfdestruct would not trigger it
+- The contract gets destroyed by selfdestruct only at the end of the transaction
+	- If for some reason a revert is triggered during the selfdestruct execution, the selfdestuct will be undone
+#### 83. Contract Type
+- Solidity supports primitives related to the contract type
+- type(x)... x -> contract
+	- type(C).name: returns the name of the contract
+	- type(C).creationCode: creation bytecode of contract?
+	- type(C).runtimeCode: runtime bytecode of contract?
+	- type(I).interfaceId: returns the identifier for the interface specified
+#### 84. Integer Type
+- Solidity also supports primitives for integer types
+- type(x)... x-> integer
+	- type(T).min: smallest value representable by the type T
+	- type(T).max: largest value representable by the type T
+		- ``type(uint8).max == 255``
+#### 85. Control Stuctures
+- There is control flow to the sequence of instructions as specified in the high level language that gets translated into machine code by the compiler
+- Solidity supports
+	- if/else
+	- while/do
+	- for/break/continue/return
+- The same as found in other languages but Solidity has some differences
+	- parenthesis cannot be omitted for conditionals
+	- curly braces can be omitted for single statement bodies
+  - There is no type conversion from a non boolean to a boolean
+	  - ``if(1)`` is not convertible to the boolean true
+#### 86. Exceptions
+- Solidity supports the concept of exceptions to a great extent
+- Exceptions are used to handle errors and these exceptions are state reverting
+	- The exception undoes all the changes to state of the smart contract during the current transaction
+	- Flags an error to the caller
+- When exceptions happen within subcalls in the call heirarchy during runtime, they bubble up
+	- Exceptions are rethrown at the higher calls automatically
+- When it comes to send and low level calls such as send, call, delegatecall, and staticcall, return a boolean as their first return value instead of an exception bubbling up
+	- Exception behavior is different than the standard message calls
+- Exceptions that happen in external calls made during contract execution can be caught using the try/catch statement
+	- These exceptions can contain data that is passed back to the caller
+		- The data consists of a function selector (which functions the exception happened in) and also some other abi encoded data that gives more information about the exception
+- Solidity supports two error signatures:
+	- Error(string) -> Regular
+		- Meant to be used for "regular" error conditions, takes a string argument
+	- Panic(uint256) -> Assertions
+		- Panic is used for errors that should not be present in bug free code
+		- Program invariants are being violated
+#### 87. Low-level Calls
+- call/staticcall/delegatecall
+- If these calls are made to contract accounts that do not exist, they still return true based on the design of the EVM
+	- This can have serious side effects
+	- The mitigation for the behavior is to check for contract existence and have the logic handle it appropriately  if they do not exist
+#### 88. Assert
+- ``assert() -> Panic(uint256)``
+- Assert is meant to be used for the program invariants that should never be violated within the smart contract if it does not have bugs
+- Normal, bug-free code should never cause Panic
+- copared to ``require()``, assert should only be used for programing (in?)variants and for things like checking invalid external inputs or invalid interactions  with external dependencies
+#### 89. Panic
+- Panic exception is generated in various situations in Solidity and the error code supplied with the error data indicates the kind of panic
+- There are many error codes:
+	- 0x01: false argument
+	- 0x11: overflow/underflow
+	- 0x12: div/mod by 0
+	- 0x31: ``pop()`` Empty array
+	- 0x32: out-of-bounds access for array
+#### 90. Require
+- ``require() -> Error([string])``
+- The require primitive either creates an error of type error string, or an error without any error data
+- Used to detect invalid conditions during runtime that cannot be prevented at compile time
+	- Input validations
+	- checking return values from calls made to external contracts
+- Takes an optional message string that is output when the conditions fails
+#### 91. Error
+- Error(string)... ``require(Arg == false)``...``revert([String])``
+- Generated when require executes and its argument evaluates to false
+	- Error string is also generated in other situations such as
+		- an external call made to a contract that contains no code
+		- or if the contract receives ether via a public function without the payable modifier
+		- or if the contract receives ether via a public getter function
+#### 92. Revert
+- There are two ways to explicitly trigger a revert
+	- revert CustomError(arg1,...)
+	- rever([String])
+- Execution is aborted and all the state changes made as part of the transaction are diverted or reversed
+#### 93. try/catch
+- try/catch syntax:
+	- ``try Expr [returns()] {...}``
+	- ``catch <Block> {...}``
+- Which block gets executed depends on whether or not there was a failure
+	- No errors, succes block gets executed
+	- If there is an error, the catch block gets executed
+#### 94. catch Blocks
+- Solidity supports different kinds of catch blocks depending on the error type
+	- catch Error(string reason): executed by a revert with a reason string
+	- catch Panic(uint errorCode): failing assert, divison by zero, numerous other things like out-of-bound array accesses, underflow/overflow
+	- catch(bytes lowLevelData): executed if error signature does not match any other clause
+	- catch: if not interested in type of error data, can use just a catch block
+#### 95. try/catch State Change
+- The success block gets executed when there are no errors/exceptions in the external call
+- If execution reaches the success block that means there were no errors in the external call and all the state changes in the context of the external call are committed to the state of the contract
+- If the execution reaches the catch or error blocks, then the state changes in the external call will be reverted
+- try/catch can also revert due to decoding/low level failures
+#### 96. External Call Failure
+- The failures in the try/catch primitive can happen for many reasons
+- We can't assume that the error message is coming directly from the contract that was called in the external call
+	- The error could have happened deeper down in the call chain
+	- The error is forwarded to the point it was received
+	- Errors can be due to an OOG(out of gas)
+#### 97. Programming Style
+- The various aspects of Solidity discussed so far such as the syntactic and semantic aspects are rules that are enforced in Solidity grammar
+- Programming style is coding convention which can be subjective
+- Programming style is fundamentally about consistency
+	- It affects the readability and maintainability of code
+- If different styles are used within the same project, this significantly affects readability and maintainability
+	- Both of which have a significant aspect on security
+- Two main categories of programming style:
+	- Layout
+	- Naming
+#### 98. Code Layout
+- Refers to the physical layout of the various programming elements within a source code file
+	- Indentation -> 4 spaces
+	- Spaces are preferred over tabs (don't mix them)
+	- Blank lines used to surround declarations -> 2
+	- Max line length -> 79/99
+	- Wrapped lines for encoding use in the source files??
+	- Src file: UTF-8/ASCII
+	- Import statements kept at the top of the file
+	- Ordering of functions within the contract
+		- constructor
+		- external
+		- public
+		- internal
+		- private
+#### 99. Code Layout (more)
+- Whitespaces in expressions
+- Control structures
+- Function declarations
+- mappings
+- Variable declarations
+- Strings are recommended to be used with double quotes
+- Operators and spaces
+- Ordering of different programming elements within Solidity files:
+	- pragma
+	- import
+	- contract
+	- types
+	- state
+	- vars
+	- events
+	- functions
+#### 100. Naming Convention
+- There are different types of names:
+	- lc: lower case
+	- l_c: lower case with underscore
+	- UC: upper case
+	- U_C: upper case with underscore
+	- CW: capitalized words
+	- C_W: capitalized words with underscore
+	- mC: mixed case (camelCase??)
+- All of the different types are recommended to be used with different program elements
+- A general rule is to avoid letters that can be confused with different numerals
+	- Avoid: L, I, O
+- Contracts and libraries should be names with CW style and they should match their filenames
+	- If a file has multiple contracts/libraries, filename should match the core contract
+- Structs should use CW
+- Events should use CW
+- functions should use mC
+- All of these conventions affect readability/maintainability... there is no effect on the syntax/semantics of the contract
+#### 101. Naming (more)
+- Function Args should use mC
+- Local/State Vars should use mC
+- Contant should use U_C
+- modifier should use mC
+- Enum should use CW
+-  Avoid naming collisions with reserved words
+
+
+### Quiz 2
+##### Q1 Solidity language is
+	A) Statically typed
+	B) Object-oriented
+	C) Supports inheritance
+	D) Supports inline assembly
+	<details>
+
+	<summary>Answer</summary>
+
+	A,B,C,D
+
+	</details>
+
+	##### Q2 Which of the following is/are correct?
+	A) A Solidity file with pragma solidity ^0.6.5; can be compiled with compiler version 0.6.6
+	B) A Solidity file with pragma solidity 0.6.5; can only be compiled with compiler version 0.6.5
+	C) A Solidity file with pragma solidity ^0.6.5; can be compiled with compiler version 0.7.0
+	D) A Solidity file with pragma solidity >0.6.5 <0.7.0; can be compiled with compiler version 0.7.0
+	<details>
+
+	<summary>Answer</summary>
+
+	C,D
+
+	</details>
+
+	##### Q3 Which of the following is/are true?
+	A) Constant state variables can be initialized within a constructor
+	B) Immutable state variables are allocated a storage slot
+	C) Gas costs for constant and immutable variables is lower
+	D) Only value types can be immutable
+	<details>
+
+	<summary>Answer</summary>
+
+	A,B,C
+
+	</details>
+
+	##### Q4 Solidity functions
+	A) Can be declared only inside contracts
+	B) Can have named return variables
+	C) Can have unnamed parameters
+	D) Can be recursive
+	<details>
+
+	<summary>Answer</summary>
+
+	B, C, D
+
+	</details>
+
+	##### Q5 Function visibility
+	A) Goes from private-internal-external-public in decreasing restrictive order (i.e. private being the most restrictive)
+	B) Goes from internal-private-external-public in decreasing restrictive order (i.e. internal being the most restrictive)
+	C) May be omitted to default to internal in the latest 0.8.0+ compiler versions
+	D) None of the above
+	<details>
+
+	<summary>Answer</summary>
+
+	A
+
+	</details>
+
+	##### Q6 Function foo() uses block.number. Which of the following is/are always true about foo()?
+	A) It should be marked as pure
+	B) It should be marked as view
+	C) It should be marked as payable
+	D) Cannot determine mutability based only on this information
+	<details>
+
+	<summary>Answer</summary>
+
+	D
+
+	</details>
+
+	##### Q7 Which of the following is/are true about events?
+	A) Events are meant for off-chain applications
+	B) Events can be accessed only by the emitting contract
+	C) Indexing event parameters creates searchable topics
+	D) A maximum of three events can have indexed parameters
+	<details>
+
+	<summary>Answer</summary>
+
+	A,C
+
+	</details>
+
+	##### Q8 A contract can receive Ether via
+	A) msg.value to payable functions
+	B) selfdestruct destination
+	C) coinbase transaction
+	D) receive() or fallback() functions
+	<details>
+
+	<summary>Answer</summary>
+
+	A,B,C,D
+
+	</details>
+
+	##### Q9 receive() and fallback() functions
+	A) Can rely only on 2300 gas in the worst case
+	B) May receive Ether with payable mutability
+	C) Are mandatory for all contracts
+	D) Must have external visibility
+	<details>
+
+	<summary>Answer</summary>
+
+	A,B,D
+
+	</details>
+
+	##### Q10 Which of the below are value types?
+	A) Address
+	B) Enum
+	C) Struct
+	D) Contract
+	<details>
+
+	<summary>Answer</summary>
+
+	A,B,D
+
+	</details>
+
+	##### Q11 The default value of
+	A) Bool is false
+	B) Address is 0
+	C) Statically-sized array depends on the underlying type
+	D) Enum is its first member
+	<details>
+
+	<summary>Answer</summary>
+
+	A,B,C,D
+
+	</details>
+
+	##### Q12 Address types
+	A) Can always receive Ether
+	B) Have members for balance, call, code
+	C) Can be converted to uint160 or contract types
+	D) Can be added and subtracted
+	<details>
+
+	<summary>Answer</summary>
+
+	B, C
+
+	</details>
+
+	##### Q13 transfer and send primitives
+	A) Are used for Ether transfers
+	B) Trigger the receive() or fallback() functions of address
+	C) Always return a value to be checked
+	D) Provide only 2300 gas
+	<details>
+
+	<summary>Answer</summary>
+
+	A,B,D
+
+	</details>
+
+	##### Q14 Which of the following is/are true for call/delegatecall/staticcall primitives?
+	A) They are used to call contracts
+	B) They only revert without returning success/failure
+	C) Delegatecall retains the msg.sender and msg.value of caller contract
+	D) Staticcall reverts if the called contract reads contract state of caller
+	<details>
+
+	<summary>Answer</summary>
+
+	A,C
+
+	</details>
+
+	##### Q15 If we have an array then its data location can be
+	A) memory and its persistence/scope will be the function of declaration
+	B) storage and its persistence/scope will be the entire contract
+	C) calldata and it will only be readable
+	D) None of the above
+	<details>
+
+	<summary>Answer</summary>
+
+	A, B, C
+
+	</details>
+
+	##### Q16 The impact of data location of reference types on assignments is
+	A) storage assigned to storage (local variable) makes a copy
+	B) memory assigned to memory makes a copy
+	C) memory assigned to storage creates a reference
+	D) None of the above
+	<details>
+
+	<summary>Answer</summary>
+
+	D
+
+	</details>
+
+	##### Q17 Which of the following is/are valid control structure(s) in Solidity (excluding YUL)?
+	A) if
+	B) else
+	C) elif
+	D) switch
+	<details>
+
+	<summary>Answer</summary>
+
+	A,B
+
+	</details>
+
+	##### Q18 The gas left in the current transaction can be obtained with
+	A) tx.gas()
+	B) gasleft()
+	C) msg.gas()
+	D) block.gaslimit()
+	<details>
+
+	<summary>Answer</summary>
+
+	B
+
+	</details>
+
+	##### Q19 Which of the following is/are valid function specifier(s)?
+	A) internal
+	B) pure
+	C) payable
+	D) immutable
+	<details>
+
+	<summary>Answer</summary>
+
+	A,B,C
+
+	</details>
+
+	##### Q20 Integer overflows/underflows in Solidity
+	A) Are never possible because of the language design
+	B) Are possible but prevented by compiler added checks (version dependent)
+	C) Are possible but prevented by correctly using certain safe math libraries
+	D) Are possible without any mitigation whatsoever
+	<details>
+
+	<summary>Answer</summary>
+
+	B,C
+
+	</details>
+
+	##### Q21 Arrays in Solidity
+	A) Can be fixed size or dynamic
+	B) Are zero indexed
+	C) Have push, pop and length members
+	D) None of the above
+	<details>
+
+	<summary>Answer</summary>
+
+	A,B,C
+
+	</details>
+
+	##### Q22 Structs in Solidity
+	A) Are user-defined type
+	B) Are reference types
+	C) Can contain or be contained in arrays and mappings
+	D) None of the above
+	<details>
+
+	<summary>Answer</summary>
+
+	A,B,C
+
+	</details>
+
+	##### Q23 Which of the following is true about mapping types in mapping(_KeyType => _ValueType)?
+	A) _KeyType can be any value or reference type
+	B) _ValueType can be any value or reference type
+	C) Can only have storage (not memory) as data location
+	D) Can be iterated over natively (i.e. without implementing another data structure)
+	<details>
+
+	<summary>Answer</summary>
+
+	B,C
+
+	</details>
+
+	##### Q24 if a = 1 then which of the following is/are true?
+	A) a += 1 makes the value of a = 2
+	B) b = ++a makes the value of b = 1
+	C) a -= 1 makes the value of a = 1
+	D) b = a-- makes the value of b = 1
+	<details>
+
+	<summary>Answer</summary>
+
+	A, D
+
+	</details>
+
+	##### Q25 delete varName; has which of the following effects?
+	A) varName becomes 0 if varName is an integer
+	B) varName becomes true if varName is a boolean
+	C) No effect if varName is a mapping
+	D) Resets all struct members to their default values irrespective of their types
+	<details>
+
+	<summary>Answer</summary>
+
+	A,C
+
+	</details>
+
+	##### Q26 Conversions in Solidity have the following behavior
+	A) Implicit conversions are never allowed
+	B) Explicit conversion of uint16 to uint8 removes higher-order bits
+	C) Explicit conversion of uint16 to uint32 adds lower-order padding
+	D) Explicit conversions are checked by compiler for safety
+	<details>
+
+	<summary>Answer</summary>
+
+	B
+
+	</details>
+
+	##### Q27 If the previous block number was 1000 on Ethereum mainnet, which of the following is/are true?
+	A) block.number is 1001
+	B) blockhash(1) returns 0
+	C) block.chainID returns 1
+	D) block.timestamp returns the number of seconds since last block
+	<details>
+
+	<summary>Answer</summary>
+
+	A,B,C
+
+	</details>
+
+	##### Q28 User from EOA A calls Contract C1 which makes an external call (CALL opcode) to Contract C2. Which of the following is/are true?
+	A) tx.origin in C2 returns A’s address
+	B) msg.sender in C2 returns A’s address
+	C) msg.sender in C1 returns A’s address
+	D) msg.value in C2 returns amount of Wei sent from A
+	<details>
+
+	<summary>Answer</summary>
+
+	A,C
+
+	</details>
+
+	##### Q29 For error handling
+	A) require() is meant to be used for input validation
+	B) require() has a mandatory error message string
+	C) assert() is meant to be used to check invariants
+	D) revert() will abort and revert state changes
+	<details>
+
+	<summary>Answer</summary>
+
+	A,C,D
+
+	</details>
+
+	##### Q30 The following is/are true about ecrecover primitive
+	A) Takes a message hash and ECDSA signature values as inputs
+	B) Recovers and returns the public key of the signature
+	C) Is susceptible to malleable signatures
+	D) None of the above
+	<details>
+
+	<summary>Answer</summary>
+
+	A, C
+
+	</details>
+
+	##### Q31 When Contract A attempts to make a delegatecall to Contract B but a prior transaction to Contract B has executed a selfdestruct
+	A) The delegatecall reverts
+	B) The delegatecall returns a failure
+	C) The delegatecall returns a success
+	D) This scenario is not practically possible
+	<details>
+
+	<summary>Answer</summary>
+
+	C
+
+	</details>
+
+	##### Q32 In Solidity, selfdestruct(address)
+	A) Destroys the contract whose address is given as argument
+	B) Destroys the contract executing the selfdestruct
+	C) Sends address’s balance to the calling contract
+	D) Sends executing contract’s balance to the address
+	<details>
+
+	<summary>Answer</summary>
+
+	B,D
+
+	</details>
