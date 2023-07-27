@@ -43,6 +43,27 @@
 	138. [Solidity 0.6.0 New Features](#138-solidity-060-new-features)
 	139. [Solidity 0.7.0 Breaking](#139-solidity-070-breaking)
 	140. [Solidity 0.7.0 Changes](#140-solidity-070-changes)
+3. [Block 3](#block-3)
+	141. [Solidity 0.7.0 Removed](#141-solidity-070-removed)
+	142. [Solidity 0.8.0 Breaking](#142-solidity-080-breaking)
+	143. [Solidity 0.8.0 Restrictions](#143-solidity-080-restrictions)
+	144. [Zero Address Check](#144-zero-address-check)
+	145. [tx.origin Check](#145-txorigin-check)
+	146. [Arithmetic Check](#146-arithmetic-check)
+	147. [OpenZeppelin Libraries](#147-open-zeppelin-libraries)
+	148. [OpenZeppelin ERC20](#148-openzeppelin-erc20)
+	149. [OpenZeppelin SafeERC20](#149-openzeppelin-safeerc20)
+	150. [OpenZeppelin TokenTimelock](#150-openzeppelin-tokentimelock)
+	151. [OpenZeppelin ERC721](#151-openzeppelin-erc721)
+	152. [OpenZeppelin ERC777](#152-openzeppelin-erc777)
+	153. [OpenZeppelin ERC1155](#153-openzeppelin-erc1155)
+	154. [OpenZeppelin Ownable](#154-openzeppelin-ownable)
+	155. [OpenZeppelin AccessControl](#155-openzeppelin-accesscontrol)
+	156. [OpenZeppelin Pausable](#156-openzeppelin-pausable)
+	157. [OpenZeppelin ReentrancyGuard](#157-openzeppelin-reentrancyguard)
+	158. [OpenZeppelin PullPayment](#158-openzeppelin-pullpayment)
+	159. [OpenZeppelin Address](#159-156-openzeppelin-address)
+	160. [OpenZeppelin Arrays](#160-openzeppelin-arrays)
 ---
 
 ### [Block 1](https://www.youtube.com/watch?v=3bFgsmsQXrE)
@@ -317,3 +338,331 @@
 	- Disallow . in user-defined function and variable names in inline assembly.
 		- It is still valid if you use Solidity in Yul-only mode.
 	- Slot and offset of storage pointer variable x are accessed via x.slot and x.offset instead of x_slot and x_offset.
+
+### [Block 3](https://www.youtube.com/watch?v=C0zBhTgppLQ)
+#### 141. Solidity 0.7.0 Removed
+- If a struct or array contains a mapping, it can only be used in storage.
+	- Previously, mapping members were silently skipped in memory, which is confusing and error-prone.
+- Assignments to structs or arrays in storage do not work if they contain mappings.
+	- Previously, mappings were silently skipped during the copy operation, which is misleading and error-prone.
+- Visibility (public / external) is not needed for constructors anymore:
+	- To prevent a contract from being created, it can be marked abstract.
+	- This makes the visibility concept for constructors obsolete.
+- Type Checker:
+	- Disallow virtual for library functions:
+		- Since libraries cannot be inherited from, library functions should not be virtual.
+- Multiple events with the same name and parameter types in the same inheritance hierarchy are disallowed.
+- using A for B only affects the contract it is mentioned in.
+	- Previously, the effect was inherited.
+	- Now, you have to repeat the using statement in all derived contracts that make use of the feature.
+- Shifts by signed types are disallowed.
+	- Previously, shifts by negative amounts were allowed, but reverted at runtime.
+- The finney and szabo denominations are removed.
+	- They are rarely used and do not make the actual amount readily visible.
+	- Instead, explicit values like 1e20 or the very common gwei can be used.
+- The keyword var cannot be used anymore.
+	- Previously, this keyword would parse but result in a type error and a suggestion about which type to use. Now, it results in a parser error.
+
+#### 142. Solidity 0.8.0 Breaking
+- Arithmetic operations revert on underflow and overflow.
+	- You can use unchecked { ... } to use the previous wrapping behaviour.
+	- Checks for overflow are very common, so they are the default to increase readability of code, even if it comes at a slight increase of gas costs.
+- ABI coder v2 is activated by default.
+	- You can choose to use the old behaviour using _pragma abicoder v1;_.
+	- The pragma _pragma experimental ABIEncoderV2;_ is still valid, but it is deprecated and has no effect.
+	- If you want to be explicit, please use _pragma abicoder v2;_ instead.
+- Exponentiation is right associative, i.e., the expression _a**b**c_ is parsed as _a**(b**c)_.
+	- Before 0.8.0, it was parsed as _(a**b)**c_.
+	- This is the common way to parse the exponentiation operator.
+- Failing assertions and other internal checks like division by zero or arithmetic overflow do not use the invalid opcode but instead the revert opcode.
+	- More specifically, they will use error data equal to a function call to Panic(uint256) with an error code specific to the circumstances.
+	- This will save gas on errors while it still allows static analysis tools to distinguish these situations from a revert on invalid input, like a failing require.
+- If a byte array in storage is accessed whose length is encoded incorrectly, a panic is caused.
+	- A contract cannot get into this situation unless inline assembly is used to modify the raw representation of storage byte arrays.
+- If constants are used in array length expressions, previous versions of Solidity would use arbitrary precision in all branches of the evaluation tree.
+	- Now, if constant variables are used as intermediate expressions, their values will be properly rounded in the same way as when they are used in run-time expressions.
+- The type byte has been removed. It was an alias of bytes1.
+#### 143. Solidity 0.8.0 Restrictions
+- Explicit conversions from negative literals and literals larger than type(uint160).max to address are disallowed.
+- Explicit conversions between literals and an integer type T are only allowed if the literal lies between type(T).min and type(T).max.
+	- In particular, replace usages of uint(-1) with type(uint).max.
+- Explicit conversions between literals and enums are only allowed if the literal can represent a value in the enum.
+- Explicit conversions between literals and address type (e.g. address(literal)) have the type address instead of address payable.
+	- One can get a payable address type by using an explicit conversion, i.e., payable(literal).
+- Address literals have the type _address_ instead of _address payable_.
+	- They can be converted to address payable by using an explicit conversion
+- Function call options can only be given once,
+	- i.e. c.f{gas:10000}{value: 1}() is invalid and has to be changed to c.f{gas: 10000, value: 1}()
+- The global functions log0, log1, log2, log3 and log4 have been removed.
+	- These are low-level functions that were largely unused.
+	- Their behaviour can be accessed from inline assembly.
+- enum definitions cannot contain more than 256 members.
+	- This will make it safe to assume that the underlying type in the ABI is always uint8.
+- Declarations with the name this, super and _ are disallowed, with the exception of public functions and events.
+- The global variables _tx.origin_ and _msg.sender_ have the type address instead of address payable.
+	- One can convert them into address payable by using an explicit conversion.
+- Explicit conversion into address type always returns a non-payable address type
+- The _chainid_ builtin in inline assembly is now considered view instead of pure
+#### 144. Zero-Address Check
+- The first of three categories of  security checks is the zero-address check
+- address(0) which is 20-bytes of 0’s is treated specially in Solidity contracts because the private key corresponding to this address is unknown.
+	- Ether and tokens sent to this address cannot be retrieved and setting access control roles to this address also won’t work (no private key to sign transactions).
+	- Therefore zero addresses should be used with care and checks should be implemented for user-supplied address parameters.
+#### 145. tx.origin Check
+- The second category of security checks is the transaction origin check
+- Recall that Ethereum has two types of accounts: Externally Owned Account (EOA) and Contract Account.
+	- Transactions can originate only from EOAs.
+	- In situations where contracts would like to determine if the _msg.sender_ was a contract or not, checking if _msg.sender_ is equal to _tx.origin_ is an effective check.
+#### 146. Arithmetic Check
+- The third category of checks are arithmetic checks
+- Until Solidity version 0.8.0 which introduced checked arithmetic by default, arithmetic was unchecked and therefore susceptible to overflows and underflows which could lead to critical vulnerabilities.
+- The recommended best-practice for such contracts is to use OpenZeppelin’s SafeMath library for arithmetic.
+#### 147. Open Zeppelin Libraries
+- OpenZeppelin’s smart contract libraries are perhaps the most commonly used libraries in smart contract projects.
+- They are widely used, time-tested, and have been optimized over time
+- One of the most common libraries is the SafeMath library
+	- Others include contracts for popular token standards, access control, security, proxies and other utilities.
+#### 148. OpenZeppelin ERC20
+- Implements the popular ERC20 token standard.
+- The functions are:
+	- _constructor(string name_, string symbol_)_:
+		- Sets the values for name and symbol.
+		- The default value of decimals is 18.
+		- To select a different value for decimals you should overload it.
+		- All three of these values are immutable: they can only be set once during construction.
+	-  _name()_ → _string_:
+		- Returns the name of the token.
+	-  _symbol()_ → _string_:
+		- Returns the symbol of the token, usually a shorter version of the name.
+	-  _decimals()_ → _uint8_:
+		- Returns the number of decimals used to get its user representation.
+		- For example, if decimals equals 2, a balance of 505 tokens should be displayed to a user as 5.05 (505 / 10 ** 2).
+		- Tokens usually opt for a value of 18, imitating the relationship between Ether and Wei.
+		- This is the value ERC20 uses, unless this function is overridden.
+	- _totalSupply()_:
+		- Returns the amount of tokens in existence.
+	- _balanceOf(address account)_ → _uint256_:
+		- Returns the amount of tokens owned by account
+	- _transfer(address recipient, uint256 amount)_ → _bool_:
+		- Moves amount tokens from the caller’s account to recipient.
+		- Returns a boolean value indicating whether the operation succeeded.
+		- Emits a Transfer event.
+	- _allowance(address owner, address spender)_ → _uint256_:
+		- Returns the remaining number of tokens that spender will be allowed to spend on behalf of owner through transferFrom.
+		- This is zero by default.
+		- This value changes when approve or transferFrom are called.
+	- _approve(address spender, uint256 amount)_ → _bool_:
+		- Sets amount as the allowance of spender over the caller’s tokens.
+		- Returns a boolean value indicating whether the operation succeeded.
+		- Emits an Approval event.
+		- Warning:
+			- changing an allowance with this method brings the risk that someone may use both the old and the new allowance by unfortunate transaction ordering.
+			- One possible solution to mitigate this race condition is to first reduce the spender’s allowance to 0 and set the desired value afterwards: https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+	- _transferFrom(address sender, address recipient, uint256 amount)_ → _bool_:
+		- Moves amount tokens from sender to recipient using the allowance mechanism. amount is then deducted from the caller’s allowance.
+		- Returns a boolean value indicating whether the operation succeeded. Emits a Transfer event.
+	-  _increaseAllowance(address spender, uint256 addedValue)_ → _bool_ (Non-standard):
+		- Atomically increases the allowance granted to spender by the caller.
+		- This is an alternative to approve that can be used as a mitigation for the warning above.
+		- Emits an Approval event indicating the updated allowance.
+		- Requirement is that spender cannot be the zero address.
+	-  _decreaseAllowance(address spender, uint256 subtractedValue)_ → _bool_ (Non-standard):
+		- Atomically decreases the allowance granted to spender by the caller.
+		- This is an alternative to approve that can be used as a mitigation for the warning described above.
+		- Emits an Approval event indicating the updated allowance.
+		- Requirements are:
+			1) spender cannot be the zero address.
+			2) spender must have allowance for the caller of at least subtractedValue.
+- The different extensions/presets are:
+	- OpenZeppelin ERC20Burnable:
+		- Extension of ERC20 that allows token holders to destroy both their own tokens and those that they have an allowance for, in a way that can be recognized off-chain (via event analysis).
+	- OpenZeppelin ERC20Capped:
+		- Extension of ERC20 that adds a cap to the supply of tokens and enforces it in the mint function.
+	- OpenZeppelin ERC20Pausable:
+		- ERC20 token with pausable token transfers, minting and burning.
+		- Useful for scenarios such as preventing trades until the end of an evaluation period, or having an emergency switch for freezing all token transfers in the event of a large bug.
+		- The __beforeTokenTransfer()_ internal function enforces the not paused condition.
+	- OpenZeppelin ERC20Snapshot:
+		- This contract extends an ERC20 token with a snapshot mechanism.
+		- When a snapshot is created, the balances and total supply at the time are recorded for later access.
+		- This can be used to safely create mechanisms based on token balances such as trustless dividends or weighted voting.
+		- Snapshots are created by the internal __snapshot_ function, which will emit the Snapshot event and return a snapshot id.
+		- To get the total supply at the time of a snapshot, call the function _totalSupplyAt_ with the snapshot id.
+		- To get the balance of an account at the time of a snapshot, call the _balanceOfAt_ function with the snapshot id and the account address.
+	- OpenZeppelin ERC20PresetFixedSupply:
+		- ERC20 token, including:
+			1) Preminted initial supply
+			2) Ability for holders to burn (destroy) their tokens
+			3) No access control mechanism (for minting/pausing) and hence no governance.
+				- This contract uses _ERC20Burnable_ contract to include burn capabilities
+	- OpenZeppelin ERC20PresetMinterPauser:
+		- ERC20 token, including:
+			1) ability for holders to burn (destroy) their tokens
+			2) a minter role that allows for token minting (creation)
+			3) a pauser role that allows to stop all token transfers.
+				- This contract uses _AccessControl_ contract to lock permissioned functions using the different roles.
+				- The account that deploys the contract will be granted the minter and pauser roles, as well as the default admin role, which will let it grant both minter and pauser roles to other accounts.
+#### 149. OpenZeppelin SafeERC20
+- SafeERC20 is a utility that affects:
+	- transfer, transferFrom, approve, increaseAllowance, decreaseAllownace
+	- they are expected to return a boolean value
+	- However, some contracts may chose not to return a boolean, revert, or do nothing
+		- These differing return values have resulted in security vulnerabilities
+		- SafeERC20 uses wrappers to address this
+- Wrappers around ERC20 operations that throw on failure when the token contract implementation returns false.
+- Tokens that return no value and instead revert or throw on failure are also supported with non-reverting calls assumed to be successful.
+- Adds _safeTransfer_, _safeTransferFrom_, _safeApprove_, _safeDecreaseAllowance_, and _safeIncreaseAllowance_.
+#### 150. OpenZeppelin TokenTimelock
+- A token holder contract that will allow a beneficiary to extract the tokens after a given release time.
+- Useful for simple vesting schedules like "advisors get all of their tokens after 1 year".
+#### 151. OpenZeppelin ERC721
+- Implements the popular ERC721 Non-Fungible Token Standard. The functions are:
+	- _balanceOf(address owner)_ → _uint256 balance_:
+		- Returns the number of tokens in owner's account.
+	- _ownerOf(uint256 tokenId)_ → _address owner_:
+		- Returns the owner of the tokenId token. Requirements: tokenId must exist.
+	- _transferFrom(address from, address to, uint256 tokenId)_:
+		- Transfers tokenId token from from to to.
+		- Requirements:
+			- from cannot be the zero address.
+			- to cannot be the zero address.
+			- tokenId token must be owned by from.
+			- If the caller is not from, it must be approved to move this token by either approve or setApprovalForAll.
+		- Emits a Transfer event.
+	- _safeTransferFrom(address from, address to, uint256 tokenId)_:
+		- Safely transfers tokenId token from from to to, checking first that contract recipients are aware of the ERC721 protocol to prevent tokens from being forever locked.
+		- Requirements:
+			1) from cannot be the zero address
+			2) to cannot be the zero address.
+			3) tokenId token must exist and be owned by from
+			4) If the caller is not from, it must be have been allowed to move this token by either approve or setApprovalForAll
+			5) If to refers to a smart contract, it must implement IERC721Receiver.onERC721Received, which is called upon a safe transfer.
+		- Emits a Transfer event. (The use of this function is encouraged over the related but unsafe transferFrom function.)
+	-  _approve(address to, uint256 tokenId)_:
+		- Gives permission to to to transfer tokenId token to another account.
+		- The approval is cleared when the token is transferred.
+		- Only a single account can be approved at a time, so approving the zero address clears previous approvals.
+		- Requirements:
+			1) The caller must own the token or be an approved operator
+			2) tokenId must exist.
+		- Emits an Approval event.
+	- _getApproved(uint256 tokenId)_ → _address operator_:
+		- Returns the account approved for tokenId token.
+		- Requirements: tokenId must exist.
+	-  _setApprovalForAll(address operator, bool _approved)_:
+		- Approve or remove operator as an operator for the caller.
+		- Operators can call transferFrom or safeTransferFrom for any token owned by the caller.
+		- Requirements:
+			- The operator cannot be the caller.
+		- Emits an ApprovalForAll event.
+	- _isApprovedForAll(address owner, address operator)_ → _bool_:
+		- Returns if the operator is allowed to manage all of the assets of owner.
+- The different extensions/presets/utilities are:
+	- OpenZeppelin ERC721Burnable:
+		- ERC721 Token that can be irreversibly burned (destroyed).
+	- OpenZeppelin ERC721Enumerable:
+		- This implements an optional extension of ERC721 defined in the EIP that adds enumerability of all the token ids in the contract as well as all token ids owned by each account.
+	- OpenZeppelin ERC721Pausable:
+		- ERC721 token with pausable token transfers, minting and burning.
+		- Useful for scenarios such as preventing trades until the end of an evaluation period, or having an emergency switch for freezing all token transfers in the event of a large bug.
+	- OpenZeppelin ERC721URIStorage:
+		- ERC721 token with storage based token URI management.
+	- OpenZeppelin ERC721PresetMinterPauserAutoId:
+		- ERC721 token, including:
+			1) ability for holders to burn (destroy) their tokens
+			2) a minter role that allows for token minting (creation)
+			3) a pauser role that allows to stop all token transfers
+			4) token ID and URI autogeneration.
+		- This contract uses AccessControl to lock permissioned functions using the different roles.
+			- The account that deploys the contract will be granted the minter and pauser roles, as well as the default admin role, which will let it grant both minter and pauser roles to other accounts.
+	- OpenZeppelin ERC721Holder:
+		- Implementation of the IERC721Receiver interface.
+		- Accepts all token transfers.
+#### 152. OpenZeppelin ERC777
+- Like ERC20, ERC777 is a standard for fungible tokens with improvements such as getting rid of the confusion around decimals, minting and burning with proper events, among others, but its killer feature is receive hooks. ERC777 is backwards compatible with ERC20 (See [here](https://eips.ethereum.org/EIPS/eip-777))
+	- A hook is simply a function in a contract that is called when tokens are sent to it, meaning accounts and contracts can react to receiving tokens.
+		- This enables a lot of interesting use cases, including atomic purchases using tokens (no need to do approve and transferFrom in two separate transactions), rejecting reception of tokens (by reverting on the hook call), redirecting the received tokens to other addresses, among many others.
+	- Both contracts and regular addresses can control and reject which token they send by registering a tokensToSend hook. (Rejection is done by reverting in the hook function.)
+	- Both contracts and regular addresses can control and reject which token they receive by registering a tokensReceived hook. (Rejection is done by reverting in the hook function.)
+	- The tokensReceived hook allows to send tokens to a contract and notify it in a single transaction, unlike ERC-20 which requires a double call (approve/transferFrom) to achieve this.
+	- Furthermore, since contracts are required to implement these hooks in order to receive tokens, no tokens can get stuck in a contract that is unaware of the ERC777 protocol, as has happened countless times when using ERC20s.
+	- It mandates that decimals always returns a fixed value of 18, so there’s no need to set it ourselves
+	- Has a concept of  _defaultOperators_ which are special accounts (usually other smart contracts) that will be able to transfer tokens on behalf of their holders
+	- Implements _send_ (besides _transfer_) where if the recipient contract has not registered itself as aware of the ERC777 protocol then transfers to it are disabled to prevent tokens from being locked forever.
+		- Accounts can be notified of tokens being sent to them by having a contract implement this _IERC777Recipient_ interface and registering it on the ERC1820 global registry.
+#### 153. OpenZeppelin ERC1155
+- is a novel token standard that aims to take the best from previous standards to create a fungibility-agnostic and gas-efficient token contract.
+	- The distinctive feature of ERC1155 is that it uses a single smart contract to represent multiple tokens at once
+	- Accounts have a distinct balance for each token id, and non-fungible tokens are implemented by simply minting a single one of them.
+	- This approach leads to massive gas savings for projects that require multiple tokens. Instead of deploying a new contract for each token type, a single ERC1155 token contract can hold the entire system state, reducing deployment costs and complexity.
+	- Because all state is held in a single contract, it is possible to operate over multiple tokens in a single transaction very efficiently. The standard provides two functions, _balanceOfBatch_ and _safeBatchTransferFrom_, that make querying multiple balances and transferring multiple tokens simpler and less gas-intensive.
+#### 154. OpenZeppelin Ownable
+- Provides a basic access control mechanism, where there is an account (an owner) that can be granted exclusive access to specific functions.
+	- By default, the owner account will be the one that deploys the contract.
+	- This can later be changed with _transferOwnership_.
+- This module is used through inheritance.
+- It will make available the modifier _onlyOwner_, which can be applied to your functions to restrict their use to the owner.
+#### 155. OpenZeppelin AccessControl
+- Provides a general role based access control mechanism.
+- Multiple hierarchical roles can be created and assigned each to multiple accounts.
+- Roles can be used to represent a set of permissions.
+	- _hasRole_ is used to restrict access to a function call.
+	- Roles can be granted and revoked dynamically via the _grantRole_ and _revokeRole_ functions which can only be called by the role’s associated admin accounts.
+#### 156. OpenZeppelin Pausable
+- Allows teams to execute a "guarded launch"
+	- Helps in anticipating potential emergencies allowing a pause to handle the emergency
+- Provides an emergency stop mechanism using functions pause and unpause that can be triggered by an authorized account.
+- This module is used through inheritance.
+- It will make available the modifiers _whenNotPaused_ and _whenPaused_, which can be applied to the functions of your contract.
+- Only the functions using the modifiers will be affected when the contract is paused or unpaused.
+#### 157. OpenZeppelin ReentrancyGuard:
+- Used to mitigate the risk from reentrancy
+	- Vulnerability that was exploited during the DAO hack
+	- If a smart contract is marking an external call to any other function of an external contract where that external contract is potentially untrusted, that contract can potentially make a nested call to the calling contract, "re-entering" the function that made the call
+		- This can trigger logic multiple times where the intended behavior was to only trigger once
+- Prevents reentrant calls to a function.
+- Inheriting from ReentrancyGuard will make the _nonReentrant_ modifier available, which can be applied to functions to make sure there are no nested (reentrant) calls to them.
+#### 158. OpenZeppelin PullPayment:
+- Payments between two contracts can done by either the paying contract pushing the payment to the receiver account or the receiving contract doing a pull of the payment from the paying contract
+- Provides a pull-payment strategy, where the paying contract doesn’t invoke any functions on the receiver account which must withdraw its payments itself.
+- Pull-payments are often considered the best practice when it comes to sending Ether, security-wise.
+	- It prevents recipients from blocking execution and eliminates reentrancy concerns.
+#### 159. 156. OpenZeppelin Address:
+- Collection of functions related to the address type:
+	- _isContract(address account)_ → _bool_:
+		- Returns true if account is a contract.
+			- It is unsafe to assume that an address for which this function returns false is an externally-owned account (EOA) and not a contract.
+			- Among others, isContract will return false for the following types of addresses:
+				1) an externally-owned account
+				2) a contract in construction
+				3) an address where a contract will be created
+				4) an address where a contract lived, but was destroyed
+        - _sendValue(address payable recipient, uint256 amount)_:
+	        - Replacement for Solidity’s transfer:
+		        - sends amount wei to recipient, forwarding all available gas and reverting on errors.
+		- EIP1884 increases the gas cost of certain opcodes, possibly making contracts go over the 2300 gas limit imposed by transfer, making them unable to receive funds via transfer.
+			- sendValue removes this limitation.
+        -  _functionCall(address target, bytes data)_ → _bytes_:
+	        - Performs a Solidity function call using a low level call.
+	        - A plain `call` is an unsafe replacement for a function call:
+		        - use this function instead.
+		- If target reverts with a revert reason, it is bubbled up by this function (like regular Solidity function calls).
+		- Returns the raw returned data.
+		- Requirements:
+			- target must be a contract.
+			- calling target with data must not revert.
+        - _functionCallWithValue(address target, bytes data, uint256 value)_ → _bytes_:
+	        - Same as functionCall, but also transferring value wei to target.
+	        - Requirements:
+		        1) the calling contract must have an ETH balance of at least value.
+		        2) the called Solidity function must be payable.
+        - _functionStaticCall(address target, bytes data)_ → _bytes_:
+	        - Same as functionCall, but performing a static call.
+        - _functionDelegateCall(address target, bytes data)_ → _bytes_:
+	        - Same as functionCall, but performing a delegate call.
+#### 160. OpenZeppelin Arrays
+- Collection of functions related to array types:
+    - _findUpperBound(uint256[] array, uint256 element)_ → _uint256_:
+	    - Searches a sorted array and returns the first index that contains a value greater or equal to element.
+	    - If no such index exists (i.e. all values in the array are strictly less than element), the array length is returned.
+	    - Time complexity O(log n). array is expected to be sorted in ascending order, and to contain no repeated elements.
