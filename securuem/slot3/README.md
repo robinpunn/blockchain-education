@@ -64,6 +64,27 @@
 	158. [OpenZeppelin PullPayment](#158-openzeppelin-pullpayment)
 	159. [OpenZeppelin Address](#159-156-openzeppelin-address)
 	160. [OpenZeppelin Arrays](#160-openzeppelin-arrays)
+4. [Block 4](#block-4)
+	161. [OpenZeppelin Context](#161-openzeppelin-context)
+	162. [OpenZeppelin Counters](#162-openzeppelin-counters)
+	163. [OpenZeppelin CREATE2](#163-openzeppelin-create2)
+	164. [OpenZeppelin Multicall](#164-openzeppelin-multicall)
+	165. [OpenZeppelin Strings](#165-openzeppelin-strings)
+	166. [OpenZeppelin ECDSA](#166-openzeppelin-ecdsa)
+	167. [OpenZeppelin Merkleproof](#167-openzeppelin-merkleproof)
+	168. [OpenZeppelin SignatureChecker](#168-openzeppelin-signaturechecker)
+	169. [OpenZeppelin EIP712](#169-openzeppelin-eip712)
+	170. [OpenZeppelin Escrow](#170-160-openzeppelin-escrow)
+	171. [OpenZeppelin ConditoinalEscrow](#171-openzeppelin-conditionalescrow)
+	172. [OpenZeppelin RefundEscrow](#172-openzeppelin-refundescrow)
+	173. [OpenZeppelin ERC165](#173-openzeppelin-erc165)
+	174. [OpenZeppelin Math](#174-openzeppelin-math)
+	175. [OpenZeppelin SafeMath](#175-openzeppelin-safemath)
+	176. [OpenZeppelin SignedSafeMath](#176-openzeppelin-signedsafemath)
+	177. [OpenZeppelin SafeCast](#177-openzeppelin-safecast)
+	178. [OpenZeppelin EnumberableMap](#178-openzeppelin-enumerablemap)
+	179. [OpenZeppelin EnumerableSet](#179-openzeppelin-enumerableset)
+	180. [OpenZeppelin Bitmaps](#180-openzeppelin-bitmaps)
 ---
 
 ### [Block 1](https://www.youtube.com/watch?v=3bFgsmsQXrE)
@@ -666,3 +687,257 @@
 	    - Searches a sorted array and returns the first index that contains a value greater or equal to element.
 	    - If no such index exists (i.e. all values in the array are strictly less than element), the array length is returned.
 	    - Time complexity O(log n). array is expected to be sorted in ascending order, and to contain no repeated elements.
+
+### [Block 4](https://www.youtube.com/watch?v=L_9Fk6HRwpU)
+#### 161. OpenZeppelin Context
+- Provides information about the current execution context, including the sender of the transaction and its data.
+	- While these are generally available via _msg.sender_ and _msg.data_, they should not be accessed in such a direct manner, since when dealing with meta-transactions the account sending and paying for execution may not be the actual sender (as far as an application is concerned).
+	- This contract is only required for intermediate, library-like contracts.
+#### 162. OpenZeppelin Counters
+- Provides counters that can only be incremented or decremented by one. This can be used e.g. to track the number of elements in a mapping, issuing ERC721 ids, or counting request ids. Functions are:
+	- current(struct Counters.Counter counter) → uint256
+	- increment(struct Counters.Counter counter)
+	- decrement(struct Counters.Counter counter)
+#### 163. OpenZeppelin Create2
+- The EVM has two instructions, CREATE and CREATE2 that allow contracts to programmatically create other contracts
+	- This is in contrast to sending transactions to the 0 address
+- The CREATE opcode uses the opcode of the deployer contract along with the state of the deployed contract (in the form of the nonce of that contract account) to determine the address of the newly deployed contact
+- The CREATE2 opcode does not use the state of the deployer contract (it does away with using the nonce of the account) and it only uses the bytecode of the newly deployed contract along with a value provided by the deployer contract (known as the salt) to determine the address of the newly deployed contract
+	- The address of the newly deployed becomes deterministic because of the lack of a nonce??
+	- ``deploy(uint256 amount, bytes32 salt, bytes bytecode)``: used to create and deploy a contract
+- Makes usage of the CREATE2 EVM opcode easier and safer.
+- CREATE2 can be used to compute in advance the address where a smart contract will be deployed, which allows for interesting new mechanisms known as 'counterfactual interactions’.
+	- _deploy(uint256 amount, bytes32 salt, bytes bytecode)_ → _address_:
+		- Deploys a contract using CREATE2.
+		- The address where the contract will be deployed can be known in advance via computeAddress.
+		- The bytecode for a contract can be obtained from Solidity with type(contractName).creationCode.
+		- Requirements:
+			1) bytecode must not be empty.
+			2) salt must have not been used for bytecode already.
+			3) the factory must have a balance of at least amount.
+			4) if amount is non-zero, bytecode must have a payable constructor.
+	- _computeAddress(bytes32 salt, bytes32 bytecodeHash)_ → _address_:
+		- Returns the address where a contract will be stored if deployed via deploy.
+		- Any change in the bytecodeHash or salt will result in a new destination address.
+	- _computeAddress(bytes32 salt, bytes32 bytecodeHash, address deployer)_ → _address_:
+		- Returns the address where a contract will be stored if deployed via deploy from a contract located at deployer.
+		- If the deployer is this contract’s address, it returns the same value as computeAddress.
+#### 164. OpenZeppelin Multicall
+- Provides a function to batch together multiple calls in a single external call
+	- _multicall(bytes[] calldata data) external_ → _bytes[]_:
+		- Receives and executes a batch of function calls on this contract
+- Benefit is that it provides less overhead and gas efficiency as multiple calls are packaged in a single call within the same transaction of the same block
+#### 165. OpenZeppelin Strings
+- Allows the performance of basic string operations
+- String operations:
+	-  _toString(uint256 value)_ → _string_:
+		- Converts a uint256 to its ASCII string decimal representation.
+	-  _toHexString(uint256 value)_ → _string_:
+		- Converts a uint256 to its ASCII string hexadecimal representation.
+	- _toHexString(uint256 value, uint256 length)_ → string:
+		- Converts a uint256 to its ASCII string hexadecimal representation with fixed length.
+#### 166. OpenZeppelin ECDSA
+- Provides functions for recovering and managing Ethereum account ECDSA signatures.
+- These are often generated via _web3.eth.sign_, and are a 65 byte array (of type bytes in Solidity) arranged the following way: [[v (1)], [r (32)], [s (32)]].
+- The data signer can be recovered with _ECDSA.recover_, and its address compared to verify the signature
+- Most wallets will hash the data to sign and add the prefix '\x19Ethereum Signed Message:\n', so when attempting to recover the signer of an Ethereum signed message hash, you’ll want to use _toEthSignedMessageHash._
+- The `ecrecover` EVM opcode allows for malleable (non-unique) signatures. _This library prevents that by requiring the `s` value to be in the lower half order, and the `v` value to be either 27 or 28._
+#### 167. OpenZeppelin MerkleProof
+- This deals with verification of Merkle Trees proofs.
+- Merkle trees are data structures where leaves contain the data and all the other nodes in the tree contain a combination of the hashes of their two child nodes
+-  _verify:_
+	- which can prove that some value is part of a Merkle tree.
+	- Returns true if a `leaf` can be proved to be a part of a Merkle tree defined by `root`.
+	- For this, a `proof` must be provided, containing sibling hashes on the branch from the leaf to the root of the tree.
+	- Each pair of leaves and each pair of pre-images are assumed to be sorted.
+#### 168. OpenZeppelin SignatureChecker
+- Provide a single mechanism to verify both private-key (EOA) ECDSA signature and ERC1271 contract signatures.
+- Using this instead of ECDSA.recover in your contract will make them compatible with smart contract wallets such as Argent and Gnosis.
+- Externally Owned Accounts (EOA) can sign messages with their associated private keys, but currently contracts cannot.
+	- This is a problem for many applications that implement signature based off-chain methods, since contracts can't easily interact with them as they do not possess a private key.
+	- ERC 1271 proposes a standard way for any contracts to verify whether a signature on behalf of a given contract is valid.
+- Note: unlike ECDSA signatures, contract signature's are revocable, and the outcome of this function can thus change through time. It could return true at block N and false at block N+1 (or the opposite).
+#### 169. OpenZeppelin EIP712
+- EIP 712 is a standard for hashing and signing of typed structured data.
+- This contract implements the EIP 712 domain separator (__domainSeparatorV4_) that is used as part of the encoding scheme, and the final step of the encoding to obtain the message digest that is then signed via ECDSA (__hashTypedDataV4_).
+- Protocols need to implement the type-specific encoding they need in their contracts using a combination of abi.encode and keccak256.
+	- _constructor(string name, string version)_:
+		 - Initializes the domain separator and parameter caches.
+		 - The meaning of name and version is specified in EIP 712:
+			 1) name is the user readable name of the signing domain, i.e. the name of the DApp or the protocol
+			 2) version: the current major version of the signing domain.
+	- __domainSeparatorV4()_ → _bytes32_:
+		- Returns the domain separator for the current chain.
+		- __hashTypedDataV4(bytes32 structHash)_ → _bytes32_:
+			- Given an already hashed struct, this function returns the hash of the fully encoded EIP712 message for this domain.
+			- This hash can be used together with ECDSA.recover to obtain the signer of a message.
+#### 170. 160. OpenZeppelin Escrow
+- Holds funds designated for a payee until they withdraw them.
+	- The contract that uses this escrow as its payment method should be its owner, and provide public methods redirecting to the escrow's deposit and withdraw if the escrow rules are satisfied.
+- _depositsOf(address payee)_ → _uint256_
+- _deposit(address payee)_: Stores the sent amount as credit to be withdrawn.
+- _withdraw(address payable payee)_:
+	- Withdraw accumulated balance for a payee, forwarding all gas to the recipient.
+#### 171. OpenZeppelin ConditionalEscrow
+- Derived from Escrow and only allows withdrawal if a condition is met by providing the _withdrawalAllowed()_ function which returns whether an address is allowed to withdraw their funds and is to be implemented by derived contracts.
+#### 172. OpenZeppelin RefundEscrow
+- Derived from ConditionalEscrow and holds funds for a beneficiary, deposited from multiple parties.
+- The owner account (that is, the contract that instantiates this contract) may deposit, close the deposit period, and allow for either withdrawal by the beneficiary, or refunds to the depositors.
+#### 173. OpenZeppelin ERC165
+- In Solidity, it’s frequently helpful to know whether or not a contract supports an interface you’d like to use.
+- ERC165 is a standard that helps do runtime interface detection using a lookup table.
+- You can register interfaces using __registerInterface(bytes4)_ and _supportsInterface(bytes4 interfaceId)_ returns a bool indicating if that interface is supported or not.
+#### 174. OpenZeppelin Math
+- Standard math utilities missing in the Solidity language:
+	- _max(uint256 a, uint256 b)_:
+		- Returns the larger of two numbers
+	- _min(uint256 a, uint256 b)_:
+		- Returns the smaller of two numbers
+        - _average(uint256 a, uint256 b)_:
+	        - Returns the average of two numbers.
+	        - The result is rounded towards zero.
+#### 175. OpenZeppelin SafeMath
+- Provides mathematical functions that protect your contract from overflows and underflows.
+- Include the contract with ``using SafeMath for uint256;`` and then call the functions:
+	- myNumber.add(otherNumber):
+		- Returns the addition of two unsigned integers, reverting on overflow. Counterpart to Solidity's `+` operator.
+	- myNumber.sub(otherNumber):
+		- Returns the subtraction of two unsigned integers, reverting on overflow (when the result is negative).
+		- Counterpart to Solidity's `-` operator.
+        - myNumber.div(otherNumber):
+	        - Returns the division of two unsigned integers, reverting on overflow.
+	        - The result is rounded towards zero.
+	        - Counterpart to Solidity's `/` operator.
+        - myNumber.mul(otherNumber):
+	        - Returns the multiplication of two unsigned integers, reverting on overflow.
+	        - Counterpart to Solidity's `*` operator.
+        - myNumber.mod(otherNumber):
+	        - Returns the modulus of two unsigned integers, reverting when dividing by zero.
+	        - Counterpart to Solidity's `%` operator.
+- The corresponding try* functions return results with an overflow flag instead of reverting.
+#### 176. OpenZeppelin SignedSafeMath
+- Provides the same mathematical functions as SafeMath but for signed integers
+	- myNumber.add(otherNumber):
+		- Returns the addition of two signed integers, reverting on overflow.
+		- Counterpart to Solidity's `+` operator.
+        - myNumber.sub(otherNumber):
+	        - Returns the subtraction of two signed integers, reverting on overflow (when the result is negative).
+	        - Counterpart to Solidity's `-` operator.
+        - myNumber.div(otherNumber):
+	        - Returns the division of two signed integers, reverting on overflow.
+	        - The result is rounded towards zero.
+	        - Counterpart to Solidity's `/` operator.
+        - myNumber.mul(otherNumber):
+	        - Returns the multiplication of two signed integers, reverting on overflow.
+	        - Counterpart to Solidity's `*` operator.
+#### 177. OpenZeppelin SafeCast
+- Solidity allows both implicit and explicit casting of types
+	- Explicit casting is where the developers can force the compiler to cast one type into another type where the compiler may not be able to determine that it is safe to do so
+- Wrappers over Solidity's uintXX/intXX casting operators with added overflow checks.
+- Downcasting from uint256/int256 in Solidity does not revert on overflow.
+	- Downcasting is when a developer wants to cast a source type into a target type where the target type has fewer storage bits to represent it than the source type
+		- Because the target type has fewer storage bits, it may not always be safe to do so if the variable of that type actually requires the storage bits being reduced from the source type to the destination type??
+- This can easily result in undesired exploitation or bugs, since developers usually assume that overflows raise errors.
+	- `SafeCast` restores this intuition by reverting the transaction when such an operation overflows.
+- _toUint128(uint256 value) returns (uint128)_:
+	- Returns the downcasted uint128 from uint256, reverting on overflow (when the input is greater than largest uint128).
+	- Similar functions are available for toUint64(uint256 value), toUint32(uint256 value), toUint16(uint256 value), toUint8(uint256 value)
+- _toInt128(int256 value) internal pure returns (int256)_:
+	- Returns the downcasted int128 from int256, reverting on overflow (when the input is less than smallest int128 or greater than largest int128).
+	- Similar functions are available for toInt64(int256 value), toInt32(int256 value), toInt16(int256 value), toInt8(int256 value).
+- _function toInt256(uint256 value) returns (int256)_:
+	- Converts an unsigned uint256 into a signed int256
+- _function toUint256(int256 value)_ returns (uint256):
+	- Converts a signed int256 into an unsigned uint256
+- Similar functions downcasting to 224/96/64/32/16/8 bits for both unsigned and signed.
+#### 178. OpenZeppelin EnumerableMap
+- Library for managing an enumerable variant of Solidity’s mapping type.
+- Maps have the following properties:
+	1) Entries are added, removed, and checked for existence in constant time (O(1))
+	2) Entries are enumerated in O(n).
+		- No guarantees are made on the ordering.
+		- As of v3.0.0, only maps of type uint256 → address (UintToAddressMap) are supported.
+- _set(struct EnumerableMap.UintToAddressMap map, uint256 key, address value)_ → _bool_:
+	- Adds a key-value pair to a map, or updates the value for an existing key.
+	- Returns true if the key was added to the map, that is if it was not already present.
+- _remove(struct EnumerableMap.UintToAddressMap map, uint256 key)_ → _bool_:
+	- Removes a value from a set.
+	- Returns true if the key was removed from the map, that is if it was present.
+- _contains(struct EnumerableMap.UintToAddressMap map, uint256 key)_ → _bool_:
+	- Returns true if the key is in the map.
+- _length(struct EnumerableMap.UintToAddressMap map)_ → _uint256_:
+	- Returns the number of elements in the map.
+- _at(struct EnumerableMap.UintToAddressMap map, uint256 index)_ → _uint256, address_:
+	- Returns the element stored at position index in the set.
+	- Note that there are no guarantees on the ordering of values inside the array, and it may change when more values are added or removed.
+	- Requirements: index must be strictly less than length.
+- _tryGet(struct EnumerableMap.UintToAddressMap map, uint256 key)_ → _bool, address_:
+	- Tries to return the value associated with key.
+	- Does not revert if key is not in the map.
+- _get(struct EnumerableMap.UintToAddressMap map, uint256 key)_ → _address:_
+	- Returns the value associated with key.
+	- Requirements:
+		- key must be in the map.
+#### 179. OpenZeppelin EnumerableSet
+- Library for managing sets of primitive types.
+- Sets have the following properties:
+	1) Elements are added, removed, and checked for existence in constant time (O(1))
+	2) Elements are enumerated in O(n).
+		- No guarantees are made on the ordering.
+		- As of v3.3.0, sets of type bytes32 (Bytes32Set), address (AddressSet) and uint256 (UintSet) are supported.
+- _add(struct EnumerableSet.Bytes32Set set, bytes32 value)_ → _bool_:
+	- Add a value to a set.
+	- Returns true if the value was added to the set, that is if it was not already present.
+- _remove(struct EnumerableSet.Bytes32Set set, bytes32 value)_ → _bool_:
+	- Removes a value from a set.
+	- Returns true if the value was removed from the set, that is if it was present.
+- _contains(struct EnumerableSet.Bytes32Set set, bytes32 value)_ → _bool_:
+	- Returns true if the value is in the set.
+- _length(struct EnumerableSet.Bytes32Set set)_ → _uint256_:
+	- Returns the number of values in the set.
+- _at(struct EnumerableSet.Bytes32Set set, uint256 index)_ → _bytes32_:
+	- Returns the value stored at position index in the set.
+	- Note that there are no guarantees on the ordering of values inside the array, and it may change when more values are added or removed.
+	- Requirements:
+		- index must be strictly less than length.
+- _add(struct EnumerableSet.AddressSet set, address value)_ → _bool_:
+	- Add a value to a set.
+	- Returns true if the value was added to the set, that is if it was not already present.
+- _remove(struct EnumerableSet.AddressSet set, address value)_ → _bool_:
+	- Removes a value from a set.
+	- Returns true if the value was removed from the set, that is if it was present.
+- _contains(struct EnumerableSet.AddressSet set, address value)_ → _bool_:
+	- Returns true if the value is in the set.
+- _length(struct EnumerableSet.AddressSet set)__ → _uint256_:
+	- Returns the number of values in the set.
+- _at(struct EnumerableSet.AddressSet set, uint256 index)_ → _address_:
+	- Returns the value stored at position index in the set.
+	- Note that there are no guarantees on the ordering of values inside the array, and it may change when more values are added or removed.
+	- Requirements:
+		- index must be strictly less than length.
+- _add(struct EnumerableSet.UintSet set, uint256 value)_ → _bool_:
+	- Add a value to a set.
+	- Returns true if the value was added to the set, that is if it was not already present.
+- _remove(struct EnumerableSet.UintSet set, uint256 value)_ → _bool_:
+	- Removes a value from a set. Returns true if the value was removed from the set, that is if it was present.
+- _contains(struct EnumerableSet.UintSet set, uint256 value)_ → _bool_:
+	- Returns true if the value is in the set. O(1).
+- _length(struct EnumerableSet.UintSet set)_ → _uint256_:
+	- Returns the number of values on the set.
+- _at(struct EnumerableSet.UintSet set, uint256 index)_ → _uint256_:
+	- Returns the value stored at position index in the set.
+	- Note that there are no guarantees on the ordering of values inside the array, and it may change when more values are added or removed.
+	- Requirements:
+		- index must be strictly less than length.
+#### 180. OpenZeppelin BitMaps
+- BitMaps are common data structures encountered in computer science where every bit of the underlying type can be thought of as representing a different variable
+- Library for managing uint256 to bool mapping in a compact and efficient way, providing the keys are sequential.
+- struct BitMap: mapping(uint256 => uint256) _data;
+- get(BitMap storage bitmap, uint256 index) → _bool:_
+	- Returns whether the bit at `index` is set.
+- setTo(BitMap storage bitmap, uint256 index, bool value):
+	- Sets the bit at `index` to the boolean `value`
+- function set(BitMap storage bitmap, uint256 index):
+	- Sets the bit at `index`
+- function unset(BitMap storage bitmap, uint256 index):
+	- Unsets the bit at `index`
