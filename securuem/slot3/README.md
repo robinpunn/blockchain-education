@@ -85,6 +85,28 @@
 	178. [OpenZeppelin EnumberableMap](#178-openzeppelin-enumerablemap)
 	179. [OpenZeppelin EnumerableSet](#179-openzeppelin-enumerableset)
 	180. [OpenZeppelin Bitmaps](#180-openzeppelin-bitmaps)
+5. [Block 5](#block-5)
+	181. [OpenZeppelin PaymentSplitter](#181-openzeppelin-paymentsplitter)
+	182. [OpenZeppelin TimelockController](#182openzeppelin-timelockcontroller)
+	183. [OpenZeppelin ERC2771Context](#183-openzeppelin-erc2771context)
+	184. [OpenZeppelin MinimalForwarder](#184-openzeppelin-minimalforwarder)
+	185. [OpenZeppelin Proxy](#185-openzeppelin-proxy)
+	186. [OpenZeppelin ERC1967Proxy](#186-openzeppelin-erc1967proxy)
+	187. [OpenZeppelin TransparentUpgradeableProxy](#187-openzeppelin-transparentupgradeableproxy)
+	188. [OpenZeppelin ProxyAdmin](#188-openzeppelin-proxyadmin)
+	189. [OpenZeppelin BeaconProxy](#189-openzeppelin-beaconproxy)
+	190. [OpenZeppelin UpgradeableBeacon](#190-openzeppelin-upgradeablebeacon)
+	191. [OpenZeppelin Clones](#191-openzeppelin-clones)
+	192. [OpenZeppelin Initializable](#192-openzeppelin-initializable)
+	193. [Dappsys DSProxy](#193-dappsys-dsproxy)
+	194. [Dappsys DSMath](#194-dappsys-dsmath)
+	195. [Dappsys DSAuth](#195-dappsys-dsauth)
+	196. [Dappsys DSGuard](#196-dappsys-dsguard)
+	197. [Dappsys DSRoles](#197-dappsys-dsroles)
+	198. [WETH](#198-weth)
+	199. [UniSwap V2](#199-uniswap-v2)
+	200. [Uniswap V3](#200-uniswap-v3)
+	201. [Chainlink Oracles and Price Feeds](#201-chainlink-oracles--price-feeds)
 ---
 
 ### [Block 1](https://www.youtube.com/watch?v=3bFgsmsQXrE)
@@ -941,3 +963,313 @@
 	- Sets the bit at `index`
 - function unset(BitMap storage bitmap, uint256 index):
 	- Unsets the bit at `index`
+
+### [Block 5](https://www.youtube.com/watch?v=0kx8M4u5980)
+#### 181. OpenZeppelin PaymentSplitter
+- Allows to split Ether payments among a group of accounts.
+	- The sender does not need to be aware that the Ether will be split in this way, since it is handled transparently by the contract.
+- The split can be in equal parts or in any other arbitrary proportion.
+	- The way this is specified is by assigning each account to a number of shares.
+	- Of all the Ether that this contract receives, each account will then be able to claim an amount proportional to the percentage of total shares they were assigned.
+- PaymentSplitter follows a pull payment model.
+	- This means that payments are not automatically forwarded to the accounts but kept in this contract, and the actual transfer is triggered as a separate step by calling the release function
+#### 182. OpenZeppelin TimelockController
+- Acts as a timelocked controller.
+	- Timelocks are time delayed operations
+- When set as the owner of an Ownable smart contract, it enforces a timelock on all _onlyOwner_ maintenance operations.
+	- This gives time for users of the controlled contract to exit before a potentially dangerous maintenance operation is applied.
+- By default, this contract is self administered, meaning administration tasks have to go through the timelock process.
+- The proposer (resp executor) role is in charge of proposing (resp executing) operations.
+- A common use case is to position this TimelockController as the owner of a smart contract, with a multisig or a DAO as the sole proposer.
+- Functions:
+	- _constructor(uint256 minDelay, address[] proposers, address[] executors)_:
+	    - Initializes the contract with a given minDelay.
+	- _receive()_:
+	    - Contract might receive/hold ETH as part of the maintenance process.
+	- _isOperation(bytes32 id)_ → _bool pending_:
+	    - Returns whether an id corresponds to a registered operation.
+	    - This includes both Pending, Ready and Done operations.
+	- _isOperationPending(bytes32 id)_ → _bool pending_:
+	    - Returns whether an operation is pending or not.
+	- _isOperationReady(bytes32 id)_ → _bool ready_:
+	    - Returns whether an operation is ready or not.
+	- _isOperationDone(bytes32 id)_ → _bool done_:
+	    - Returns whether an operation is done or not.
+	- _getTimestamp(bytes32 id)_ → _uint256 timestamp_:
+	    - Returns the timestamp at which an operation becomes ready (0 for unset operations, 1 for done operations).
+	- _getMinDelay()_ → _uint256 duration_:
+	    - Returns the minimum delay for an operation to become valid.
+	    - This value can be changed by executing an operation that calls updateDelay.
+	- _hashOperation(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt)_ → _bytes32 hash_:
+	    - Returns the identifier of an operation containing a single transaction.
+	- _hashOperationBatch(address[] targets, uint256[] values, bytes[] datas, bytes32 predecessor, bytes32 salt)_ → _bytes32 hash_:
+		- Returns the identifier of an operation containing a batch of transactions.
+	- _schedule(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt, uint256 delay)_:
+		- Schedule an operation containing a single transaction.
+		- Emits a CallScheduled event.
+		- Requirements:
+			- the caller must have the 'proposer' role.
+	- _scheduleBatch(address[] targets, uint256[] values, bytes[] datas, bytes32 predecessor, bytes32 salt, uint256 delay)_:
+		- Schedule an operation containing a batch of transactions.
+		- Emits one CallScheduled event per transaction in the batch.
+		- Requirements: the caller must have the 'proposer' role.
+	- _cancel(bytes32 id)_:
+		- Cancel an operation.
+		- Requirements: the caller must have the 'proposer' role.
+	- _execute(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt)_:
+		- Execute an (ready) operation containing a single transaction.
+		- Emits a CallExecuted event.
+		- Requirements: the caller must have the 'executor' role.
+	- _executeBatch(address[] targets, uint256[] values, bytes[] datas, bytes32 predecessor, bytes32 salt)_:
+		- Execute an (ready) operation containing a batch of transactions.
+		- Emits one CallExecuted event per transaction in the batch.
+		- Requirements: the caller must have the 'executor' role.
+	- _updateDelay(uint256 newDelay)_:
+		- Changes the minimum timelock duration for future operations.
+		- Emits a MinDelayChange event.
+		- Requirements:
+			- the caller must be the timelock itself.
+			- This can only be achieved by scheduling and later executing an operation where the timelock is the target and the data is the ABI-encoded call to this function.
+#### 183. OpenZeppelin ERC2771Context
+- A Context variant for [ERC2771](https://eips.ethereum.org/EIPS/eip-2771).
+- ERC2771 provides support for meta transactions, which are transactions that have been:
+	- Authorized by the Transaction Signer.
+		- For example, signed by an externally owned account
+	- Relayed by an untrusted third party that pays for the gas (the Gas Relay)
+- The problem is that for a contract that is not natively aware of meta transactions, the _msg.sender_ of the transaction will make it appear to be coming from the Gas Relay and not the Transaction Signer.
+- A secure protocol for a contract to accept meta transactions needs to prevent the Gas Relay from forging, modifying or duplicating requests by the Transaction Signer.
+- The entities are:
+	- Transaction Signer - entity that signs & sends to request to Gas Relay
+	- Gas Relay - receives a signed request off-chain from Transaction Signer and pays gas to turn it into a valid transaction that goes through Trusted Forwarder
+	- Trusted Forwarder - a contract that is trusted by the Recipient to correctly verify the signature and nonce before forwarding the request from Transaction Signer
+	- Recipient - a contract that can securely accept meta-transactions through a Trusted Forwarder by being compliant with this standard.
+#### 184. OpenZeppelin MinimalForwarder
+- Provides a simple minimal forwarder (as described above) to be used together with an ERC2771 compatible contract.
+- It verifies the nonce and signature of the forwarded request before calling the destination contract.
+	- struct ForwardRequest {address from; address to; uint256 value; uint256 gas; uint256 nonce; bytes data;}
+	- verify(ForwardRequest calldata req, bytes calldata signature) public view → (bool)
+	- execute(ForwardRequest calldata req, bytes calldata signature) → (success, returndata)
+#### 185. OpenZeppelin Proxy
+- This abstract contract provides a fallback function that delegates all calls to another contract using the EVM instruction delegatecall.
+- We refer to the second contract as the implementation behind the proxy, and it has to be specified by overriding the virtual _implementation function.
+	- Additionally, delegation to the implementation can be triggered manually through the _fallback function, or to a different contract through the _delegate function.
+	- The success and return data of the delegated call will be returned back to the caller of the proxy.
+- Functions
+	- __delegate(address implementation)_:
+		- Delegates the current call to implementation.
+		- This function does not return to its internal call site, it will return directly to the external caller.
+        - __implementation()_ → _address_:
+	        - This is a virtual function that should be overridden so it returns the address to which the fallback function and __fallback_ should delegate.
+        - __fallback()_:
+	        - Delegates the current call to the address returned by __implementation()_.
+	        - This function does not return to its internal call site, it will return directly to the external caller.
+        - _fallback()_:
+	        - Fallback function that delegates calls to the address returned by __implementation()_.
+	        - Will run if no other function in the contract matches the call data.
+        - _receive()_:
+	        - Fallback function that delegates calls to the address returned by __implementation()_.
+	        - Will run if call data is empty.
+        - __beforeFallback()_:
+	        - Hook that is called before falling back to the implementation.
+	        - Can happen as part of a manual _fallback call, or as part of the Solidity fallback or receive functions. If overridden, should call _super._beforeFallback()_.
+#### 186. OpenZeppelin ERC1967Proxy
+- Implements an upgradeable proxy.
+- It is upgradeable because calls are delegated to an implementation address that can be changed.
+- This address is stored in storage in the location specified by EIP1967, so that it doesn’t conflict with the storage layout of the implementation behind the proxy.
+- Upgradeability is only provided internally through __upgradeTo_.
+	- _constructor(address _logic, bytes _data)_:
+		- Initializes the upgradeable proxy with an initial implementation specified by _logic.
+		- If _data is nonempty, it’s used as data in a delegate call to _logic.
+		- This will typically be an encoded function call, and allows initializing the storage of the proxy like a Solidity constructor.
+	- __implementation()_ → _address_ _impl_:
+		- Returns the current implementation address.
+	- __upgradeTo(address newImplementation)_:
+		- Upgrades the proxy to a new implementation.
+		- Emits an Upgraded event.
+#### 187. OpenZeppelin TransparentUpgradeableProxy
+- Implements a proxy that is upgradeable by an admin.
+- To avoid proxy selector clashing, which can potentially be used in an attack, this contract uses the transparent proxy pattern.
+	- This pattern implies two things that go hand in hand:
+		- If any account other than the admin calls the proxy, the call will be forwarded to the implementation, even if that call matches one of the admin functions exposed by the proxy itself.
+		- If the admin calls the proxy, it can access the admin functions, but its calls will never be forwarded to the implementation.
+			- If the admin tries to call a function on the implementation it will fail with an error that says "admin cannot fallback to proxy target”.
+- These properties mean that the admin account can only be used for admin actions like upgrading the proxy or changing the admin, so it’s best if it’s a dedicated account that is not used for anything else.
+- This will avoid headaches due to sudden errors when trying to call a function from the proxy implementation.
+	- _constructor(address _logic, address admin_, bytes _data)_:
+		- Initializes an upgradeable proxy managed by _admin, backed by the implementation at _logic, and optionally initialized with _data.
+	- _admin()_ → _address admin__:
+		- Returns the current admin.
+	- _implementation()_ → _address implementation__:
+		- Returns the current implementation.
+	- _changeAdmin(address newAdmin)_:
+		- Changes the admin of the proxy.
+		- Emits an AdminChanged event.
+	- _upgradeTo(address newImplementation)_:
+		- Upgrade the implementation of the proxy.
+	- _upgradeToAndCall(address newImplementation, bytes data)_:
+		- Upgrade the implementation of the proxy, and then call a function from the new implementation as specified by data, which should be an encoded function call.
+		- This is useful to initialize new storage variables in the proxied contract.
+	- __admin()_ → _address adm_:
+		- Returns the current admin.
+	- __beforeFallback()_:
+		- Makes sure the admin cannot access the fallback function.
+#### 188. OpenZeppelin ProxyAdmin
+- This is an auxiliary contract meant to be assigned as the admin of a TransparentUpgradeableProxy.
+	- _getProxyImplementation(contract TransparentUpgradeableProxy proxy)_ → _address_:
+		- Returns the current implementation of proxy.
+		- Requirements:
+			- This contract must be the admin of proxy.
+        - _getProxyAdmin(contract TransparentUpgradeableProxy proxy)_ → _address_:
+	        - Returns the current admin of proxy.
+	        - Requirements:
+		        - This contract must be the admin of proxy.
+        - _changeProxyAdmin(contract TransparentUpgradeableProxy proxy, address newAdmin)_:
+	        - Changes the admin of proxy to newAdmin.
+	        - Requirements:
+		        - This contract must be the current admin of proxy.
+        - _upgrade(contract TransparentUpgradeableProxy proxy, address implementation)_:
+	        - Upgrades proxy to implementation.
+	        - Requirements:
+		        - This contract must be the admin of proxy.
+        - _upgradeAndCall(contract TransparentUpgradeableProxy proxy, address implementation, bytes data)_:
+	        - Upgrades proxy to implementation and calls a function on the new implementation.
+	        - Requirements:
+		        - This contract must be the admin of proxy.
+#### 189. OpenZeppelin BeaconProxy
+- Implements a proxy that gets the implementation address for each call from a UpgradeableBeacon.
+- The beacon address is stored in storage slot uint256(keccak256('eip1967.proxy.beacon')) - 1, so that it doesn’t conflict with the storage layout of the implementation behind the proxy.
+	- _constructor(address beacon, bytes data)_:
+		- Initializes the proxy with beacon.
+		- If data is nonempty, it’s used as data in a delegate call to the implementation returned by the beacon.
+		- This will typically be an encoded function call, and allows initializing the storage of the proxy like a Solidity constructor.
+		- Requirements:
+			- beacon must be a contract with the interface IBeacon.
+        - __beacon()_ → _address beacon_:
+	        - Returns the current beacon address.
+        - __implementation()_ → _address_:
+	        - Returns the current implementation address of the associated beacon.
+        - __setBeacon(address beacon, bytes data)_:
+	        - Changes the proxy to use a new beacon.
+	        - If data is nonempty, it’s used as data in a delegate call to the implementation returned by the beacon.
+	        - Requirements:
+		        1) beacon must be a contract
+		        2) The implementation returned by beacon must be a contract.
+#### 190. OpenZeppelin UpgradeableBeacon
+- Is used in conjunction with one or more instances of BeaconProxy to determine their implementation contract, which is where they will delegate all function calls.
+- An owner is able to change the implementation the beacon points to, thus upgrading the proxies that use this beacon.
+	- _constructor(address implementation_)_:
+		- Sets the address of the initial implementation, and the deployer account as the owner who can upgrade the beacon.
+	- _implementation()_ → _address_:
+		- Returns the current implementation address.
+	- _upgradeTo(address newImplementation)_:
+		- Upgrades the beacon to a new implementation.
+		- Emits an Upgraded event.
+		- Requirements:
+			1) msg.sender must be the owner of the contract
+			2) newImplementation must be a contract.
+#### 191. OpenZeppelin Clones
+- EIP 1167 is a standard for deploying minimal proxy contracts, also known as “clones".
+- To simply and cheaply clone contract functionality in an immutable way, this standard specifies a minimal bytecode implementation that delegates all calls to a known, fixed address.
+- The library includes functions to deploy a proxy using either create (traditional deployment) or create2 (salted deterministic deployment).
+- It also includes functions to predict the addresses of clones deployed using the deterministic method.
+	- _clone(address implementation)_ → _address instance_:
+		- Deploys and returns the address of a clone that mimics the behaviour of implementation.
+		- This function uses the create opcode, which should never revert.
+	- _cloneDeterministic(address implementation, bytes32 salt)_ → _address instance_:
+		- Deploys and returns the address of a clone that mimics the behaviour of implementation.
+		- This function uses the create2 opcode and a salt to deterministically deploy the clone.
+		- Using the same implementation and salt multiple times will revert, since the clones cannot be deployed twice at the same address.
+	- _predictDeterministicAddress(address implementation, bytes32 salt, address deployer)_ → address predicted:
+		- Computes the address of a clone deployed using Clones.cloneDeterministic.
+	- _predictDeterministicAddress(address implementation, bytes32 salt)_ → _address predicted_:
+		- Computes the address of a clone deployed using Clones.cloneDeterministic.
+#### 192. OpenZeppelin Initializable
+- Aids in writing upgradeable contracts, or any kind of contract that will be deployed behind a proxy.
+- Since a proxied contract cannot have a constructor, it is common to move constructor logic to an external initializer function, usually called _initialize_.
+- It then becomes necessary to protect this initializer function so it can only be called once.
+- The initializer modifier provided by this contract will have this effect.
+	- To avoid leaving the proxy in an uninitialized state, the initializer function should be called as early as possible by providing the encoded function call as the _data argument.
+	- When used with inheritance, manual care must be taken to not invoke a parent initializer twice, or to ensure that all initializers are idempotent.
+	- This is not verified automatically as constructors are by Solidity.
+#### 193. Dappsys DSProxy
+- Dappsys is used as an alternative to OpenZeppelin libraries
+- Implements a proxy deployed as a standalone contract which can then be used by the owner to execute code.
+- A user would pass in the bytecode for the contract as well as the calldata for the function they want to execute.
+- The proxy will create a contract using the bytecode.
+- It will then delegatecall the function and arguments specified in the calldata.
+#### 194. Dappsys DSMath
+- Provides arithmetic functions for the common numerical primitive types of Solidity.
+- You can safely add, subtract, multiply, and divide uint numbers without fear of integer overflow.
+- You can also find the minimum and maximum of two numbers.
+- Additionally, this package provides arithmetic functions for two new higher level numerical concepts called _wad_ (18 decimals) and _ray_ (27 decimals).
+	- These are used to represent fixed-point decimal numbers.
+	- A wad is a decimal number with 18 digits of precision and a ray is a decimal number with 27 digits of precision.
+	- These functions are necessary to account for the difference between how integer arithmetic behaves normally, and how decimal arithmetic should actually work.
+- The standard functions are the uint set, so their function names are not  prefixed:
+	- _add_, _sub_, _mul_, _min_, and _max_.
+	- There is no div function, as divide-by-zero checking is built into the Solidity compiler.
+	- The int functions have an _i_ prefix: _imin_ and _imax_.
+	- Wad functions have a _w_ prefix: _wmul_, _wdiv_.
+	- Ray functions have a _r_ prefix: _rmul_, _rdiv_, _rpow_.
+#### 195. Dappsys DSAuth
+- Provides a flexible and updatable auth pattern which is completely separate from application logic.
+- By default, the auth modifier will restrict function-call access to the including contract owner and the including contract itself.
+- The auth modifier provided by DSAuth triggers the internal isAuthorized function to require that the msg.sender is authorized ie. the sender is either:
+	1) the contract owner
+	2) the contract itself or
+	3) has been granted permission via a specified authority.
+#### 196. Dappsys DSGuard
+- Manages an Access Control List which maps source and destination addresses to function signatures.
+- Intended to be used as an authority for DSAuth where it acts as a lookup table for the _canCall_ function to provide boolean answers as to whether a particular address is authorized to call a given function at another address.
+- The ACL is a mapping of _[src][dst][sig] => boolean_ where an address src can be either permitted or forbidden access to a function _sig_ at address _dst_ according to the boolean value.
+- When used as an authority by DSAuth the _src_ is considered to be the _msg.sender_, the _dst_ is the including contract and _sig_ is the function which invoked the auth modifier.
+#### 197. Dappsys DSRoles
+- A role-driven authority for ds-auth which facilitates access to lists of user roles and capabilities.
+- Works as a set of lookup tables for the canCall function to provide boolean answers as to whether a user is authorized to call a given function at given address.
+- DSRoles provides 3 different ways of permitting/forbidding function call access to users:
+	1) Root Users:
+		- any users added to the _root_users whitelist will be authorized to call any function regardless of what roles or capabilities might be defined.
+	1) Public Capabilities:
+		- public capabilities are global capabilities which apply to all users and take precedence over any user specific role-capabilities which might be defined.
+	1) Role Capabilities:
+		- capabilities which are associated with a particular role.
+		- Role capabilities are only checked if the user does not have root access and the capability is not public.
+#### 198. WETH
+- WETH stands for Wrapped Ether.
+- For protocols that work with ERC-20 tokens but also need to handle Ether, WETH contracts allow converting Ether to its ERC-20 equivalent WETH (called wrapping) and vice-versa (called unwrapping).
+- WETH can be created by sending ether to a WETH smart contract where the Ether is stored and in turn receiving the WETH ERC-20 token at a 1:1 ratio.
+- This WETH can be sent back to the same smart contract to be “unwrapped” i.e. redeemed back for the original Ether at a 1:1 ratio.
+- The most widely used WETH contract is [WETH9](https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2#code) which holds more than 7 million Ether for now.
+#### 199. Uniswap V2
+- Uniswap is an automated liquidity protocol powered by a constant product formula and implemented in a system of non-upgradeable smart contracts on the Ethereum blockchain.
+- The automated market making algorithm used by Uniswap is _x*y=k_, where x and y represent a token pair that allow one token to be exchanged for the other as long as the “constant product” formula is preserved i.e. trades must not change the product (k) of a pair’s reserve balances (x and y). Core concepts:
+	1. Pools:
+		 - Each Uniswap liquidity pool is a trading venue for a pair of ERC20 tokens.
+		 - When a pool contract is created, its balances of each token are 0; in order for the pool to begin facilitating trades, someone must seed it with an initial deposit of each token.
+		 - This first liquidity provider is the one who sets the initial price of the pool.
+		 - They are incentivized to deposit an equal value of both tokens into the pool.
+		 - Whenever liquidity is deposited into a pool, unique tokens known as liquidity tokens are minted and sent to the provider’s address.
+		 - These tokens represent a given liquidity provider’s contribution to a pool.
+        2. Swaps:
+	        - allows one to trade one ERC-20 token for another, where one token is withdrawn (purchased) and a proportional amount of the other deposited (sold), in order to maintain the constant _x*y=k_
+        3. Flash Swaps:
+	        - allows one to withdraw up to the full reserves of any ERC20 token on Uniswap and execute arbitrary logic at no upfront cost, provided that by the end of the transaction they either:
+		        1) pay for the withdrawn ERC20 tokens with the corresponding pair tokens
+		        2) return the withdrawn ERC20 tokens along with a small fee
+        4. Oracles:
+	        - enables developers to build highly decentralized and manipulation-resistant on-chain price oracles.
+	        - A price oracle is any tool used to view price information about a given asset.
+	        - Every pair measures (but does not store) the market price at the beginning of each block, before any trades take place i.e. price at the end of the previous block which is added to a single cumulative-price variable weighted by the amount of time this price existed.
+	        - This variable can be used by external contracts to track accurate time-weighted average prices (TWAPs) across any time interval.
+#### 200. Uniswap V3:
+- [Introduces](https://uniswap.org/blog/uniswap-v3/)
+    1. Concentrated liquidity:
+	    - giving individual LPs granular control over what price ranges their capital is allocated to.
+	    - Individual positions are aggregated together into a single pool, forming one combined curve for users to trade against
+    2. Multiple fee tiers:
+	    - allowing LPs to be appropriately compensated for taking on varying degrees of risk
+    3. V3 oracles are capable of providing time-weighted average prices (TWAPs) on demand for any period within the last ~9 days.
+	    - This removes the need for integrators to checkpoint historical values.
+#### 201. Chainlink Oracles & Price Feeds
+- Chainlink Price Feeds provide aggregated data (via its _AggregatorV3Interface_ contract interface) from various high quality data providers, fed on-chain by decentralized oracles on the Chainlink Network.
+- To get price data into smart contracts for an asset that isn’t covered by an existing price feed, such as the price of a particular stock, one can customize Chainlink oracles to call any external API.
