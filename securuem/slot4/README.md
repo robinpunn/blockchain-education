@@ -23,6 +23,27 @@
     18. [Time](#18-time)
     19. [Overflow/underflow](#19-overflowunderflow)
     20. [Divide before Multiply](#20-divide-before-multiply)
+2. [Block 2](#block-2)
+    21. [TOD](#21-tod)
+    22. [ERC20 Approve](#22-erc20-approve)
+    23. [ercrecover](#23-ecrecover)
+    24. [transfer](#24-transfer)
+    25. [ownerOf()](#25-ownerof)
+    26. [Contract Balance](#26-contract-balance)
+    27. [fallback vs receive](#27-fallback-vs-receive)
+    28. [Strict Equalities](#28-strict-equalities)
+    29. [Locked Ether](#29-locked-ether)
+    30. [tx.origin](#30-txorigin)
+    31. [Contract](#31-contract)
+    32. [delete Mapping](#32-delete-mapping)
+    33. [Tautology Contradiction](#33-tautology-contradiction)
+    34. [Boolean Constant](#34-boolean-constant)
+    35. [Boolean Equality](#35-boolean-equality)
+    36. [Contract State Modifications](#36-contract-state-modifications)
+    37. [Return Values](#37-return-values)
+    38. [Account Existence](#38-account-existence)
+    39. [Shadowing Built In](#39-shadowing-built-in)
+    40. [Shadowing State Variables](#40-shadowing-state-variables)
 ---
 
 ### [Block 1](youtube.com/watch?v=OOzyoaYIw2k)
@@ -110,3 +131,90 @@
 #### 20. Divide before Multiply
 - Performing multiplication before division is generally better to avoid loss of precision because Solidity integer division might truncate.
 
+
+### [Block 2](https://www.youtube.com/watch?v=fgXuHaZDenU)
+#### 21. TOD
+- Transaction Order Dependence
+- Transactions submitted by users sit an a data structure known as the mempool
+	- These transactions get picked by miners for inclusion within blocks
+	- The transactions that are picked and the order of those transactions depends on multiple factors such as gas price
+- Race conditions can be forced on specific Ethereum transactions by monitoring the mempool.
+- For example, the classic ERC20 _approve()_ change can be front-run using this method.
+- Do not make assumptions about transaction order dependence.
+#### 22. ERC20 approve()
+- The ERC20 token has a notion of an "owner" of a certain balance of those tokens... there is also the notion of a spender who can be approved be approved by the owner for a certain allowance amount which the spender is allowed to transfer
+	- An owner can ``approve(100)`` and change their mind to ``approve(50)`` but if the sender address is malicious, they can front run the 100 getting 150
+- Use _safeIncreaseAllowance()_ and _safeDecreaseAllowance()_ from OpenZeppelin’s _SafeERC20_ implementation to prevent race conditions from manipulating the allowance amounts.
+#### 23. ecrecover
+- The _ecrecover_ function is susceptible to signature malleability which could lead to replay attacks.
+- Eliptic curve signatures in Ethereum have 3 components
+	- Sig -> (v,r,s)
+- The ecrecover function takes in a message hash and the signature associated with that message has and returns the Ethereum address that corresponds to the private key that was used to create that signature
+	- If the attacker has access to one of these signatures, they can create a second valid signature without having access to the private key
+		- This is due to the range of the s value
+		- ecrecover allows both the upper and lower range for the s value
+- The mitigation is the check that the s component is only in the lower range
+- Consider using OpenZeppelin’s [ECDSA library](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/ECDSA.sol).
+#### 24. transfer()
+- The ERC20 specification says that a transfer function should return a boolean value.
+	- A token contract may not adhere to this standard and it may not return a boolean value and this was okay until 0.4.22
+- Contracts compiled with _solc >= 0.4.22_ interacting with such functions will revert.
+- Use OpenZeppelin’s SafeERC20 wrappers.
+#### 25. ownerOf()
+- Similar to previous pitfal but applies to the ERC721 ownerOf() function
+- The specification states that the function should return and address value
+- Contracts compiled with _solc >= 0.4.22_ interacting with ERC721 _ownerOf()_ that returns a _bool_ instead of _address_ type will revert.
+- Use OpenZeppelin’s ERC721 contracts.
+#### 26. Contract Balance
+- Related to the ether balance of a smart contrat
+- A contract can receive Ether via _payable_ functions, _selfdestruct(), coinbase_ transaction or pre-sent before creation.
+- Contract logic depending on _this.balance_ can therefore be manipulated.
+#### 27. fallback vs receive
+- The differences and similarties between these functions relate to the visibility, mutability, and the way ether transfers are handled
+- Check that all precautions and subtleties of _fallback_/_receive_ functions related to visibility, state mutability and Ether transfers have been considered.
+#### 28. Strict Equalities
+- Use of strict equalities with tokens/Ether can accidentally/maliciously cause unexpected behavior.
+- Consider using ``>=`` or ``<=`` instead of ``==`` for such variables depending on the contract logic.
+#### 29. Locked Ether
+- Locked ether refers to the situation where the contract has an ether balance that gets locked because ether can be sent to the contract via payable functions, but there is no way for users to withdraw that ether
+- Contracts that accept Ether via _payable_ functions but without withdrawal mechanisms will lock up that Ether.
+- Remove _payable_ attribute or add withdraw function.
+#### 30. tx.origin
+- The use of tx.origin is considered dangerous in certain situations
+	- tx.origin gives the address of the EOA that originated the transaction
+- Use of _tx.origin_ for authorization may be abused by a MITM malicious contract forwarding calls from the legitimate user who interacts with it.
+- Use _msg.sender_ instead.
+#### 31. Contract?
+- A smart contract may want to know if the transaction or call made to it is coming from a contract account or an EOA
+	- There are two popular ways to make that determination:
+		- check if code size of the account is > 0
+		- extcodesize > 0
+			- non zero means the account has code, and there is a contract account
+		- msg.sender == tx.origin
+			- if true, msg.sender is an EOA
+- Both have implications that need to be considered.
+#### 32. delete Mapping
+- Deleting a _struct_ that contains a _mapping_ will not delete the _mapping_ contents which may lead to unintended consequences.
+- Best practice is to use an alternative approach such as considering the data structure meant to be deleted as locked to prevent future logic from using the mappings within the struct
+#### 33. Tautology Contradiction
+- A tautology is something that is always true while a contradiction is always false
+- Tautologies (always true) or contradictions (always false) indicate potential flawed logic or redundant checks. e.g. _x >= 0_ which is always true if _x_ is _uint_.
+#### 34. Boolean Constant
+- Use of Boolean constants (_true_/_false_) in code (e.g. conditionals) is indicative of flawed logic.
+#### 35. Boolean Equality
+- Boolean variables can be checked within conditionals directly without the use of equality operators to _true_/_false_.
+#### 36. Contract State Modifications
+- Functions that modify state (in assembly or otherwise) but are labelled _constant_/_pure_/_view_ revert in _solc >=0.5.0_ (work in prior versions) because of the use of _STATICCALL_ opcode.
+- When analyzing the security aspects of a contract it's good to pay attention to the mutability of the functions
+#### 37. Return Values
+- Checking the return values of functions at call sites is a classic software engineering best practice
+- Ensure that return values of low-level calls (_call_/_callcode_/_delegatecall_/_send_/etc.) are checked to avoid unexpected failures.
+	- The low-level call primitives do not revert under exceptional behavior but instead return success or failure as a return value
+#### 38. Account Existence
+- Low-level calls _call_/_delegatecall_/_staticcall_ return true even if the account called is non-existent (per EVM design).
+- Account existence must be checked prior to calling if needed.
+#### 39. Shadowing Built In
+- Local variables, state variables, functions, modifiers, or events with names that shadow (i.e. override) builtin Solidity symbols e.g. _now_ or other declarations from the current scope are misleading and may lead to unexpected usages and behavior.
+#### 40. Shadowing State Variables
+- Shadowing state variables in derived contracts may be dangerous for critical variables such as contract owner (for e.g. where modifiers in base contracts check on base variables but shadowed variables are set mistakenly) and contracts incorrectly use base/shadowed variables.
+- Do not shadow state variables.
