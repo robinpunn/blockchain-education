@@ -44,6 +44,27 @@
     38. [Account Existence](#38-account-existence)
     39. [Shadowing Built In](#39-shadowing-built-in)
     40. [Shadowing State Variables](#40-shadowing-state-variables)
+3. [Block 3](#block-3)
+    41. [Pre-declaration](#41-pre-declaration)
+    42. [Costly Operations](#42-costly-operations)
+    43. [Costly Calls](#43-costly-calls)
+    44. [Block Limit Gas](#44-block-limit-gas)
+    45. [Events](#45-events)
+    46. [Event Parameters](#46-event-parameters)
+    47. [Event Signatures](#47-event-signatures)
+    48. [Unary Expression](#48-unary-expression)
+    49. [Zero Addresses](#49-zero-addresses)
+    50. [Critical Addresses](#50-critical-addresses)
+    51. [assert()](#51-assert)
+    52. [asser() vs required()](#52-assert-vs-require)
+    53. [Keywords](#53-keywords)
+    54. [Visibility](#54-visibility)
+    55. [Incorrect Inheritance](#55-incorrect-inheritance)
+    56. [Missing Inheritance](#56-missing-inheritance)
+    57. [Gas Griefing](#57-gas-griefing)
+    58. [Reference Parameters](#58-reference-parameters)
+    59. [Arbitrary Jump](#59-arbitrary-jump)
+    60. [Hash Collisions](#60-hash-collisions)
 ---
 
 ### [Block 1](youtube.com/watch?v=OOzyoaYIw2k)
@@ -218,3 +239,84 @@
 #### 40. Shadowing State Variables
 - Shadowing state variables in derived contracts may be dangerous for critical variables such as contract owner (for e.g. where modifiers in base contracts check on base variables but shadowed variables are set mistakenly) and contracts incorrectly use base/shadowed variables.
 - Do not shadow state variables.
+
+
+### [Block 3](https://www.youtube.com/watch?v=YVewx1xVROE)
+#### 41. Pre-declaration
+- Usage of a variable before its declaration (either declared later or in another scope) leads to unexpected behavior in _solc < 0.5.0_ but _solc >= 0.5.0_ implements C99-style scoping rules where variables can only be used after they have been declared and only in the same or nested scopes.
+#### 42. Costly Operations
+- Operations such as state variable updates (use SSTOREs) inside a loop cost a lot of gas, are expensive and may lead to out-of-gas errors.
+- Optimizations using local variables are preferred.
+	- Local variables are allocated in memory and memory updates using MSTORE only costs 3 gas units compared to the 5000 to 20000 that storage updates cost
+#### 43. Costly Calls
+- Calls to external contracts inside a loop are dangerous (especially if the loop index can be user-controlled) because it could lead to DoS if one of the calls reverts or execution runs out of gas.
+- Avoid calls within loops, check that loop index cannot be user-controlled or is bounded.
+#### 44. Block Limit Gas
+- Ethereum blocks have a notion of a "block gas limit" which limits the total amount of gas units consumed by all the transactions included in a block to a maximum upper bound
+- Programming patterns such as looping over arrays of unknown size may lead to DoS when the gas cost of execution exceeds the block gas limit.
+- Evaluate loops and ensure expensive operations aren't used inside the loops
+#### 45. Events
+- Events for critical state changes (e.g. owner and other critical parameters) should be emitted for tracking this off-chain.
+- This helps because we can monitor offchain rather than querying the contracts themselves
+- Important for transparency and UX
+#### 46. Event Parameters
+- Parameters are "indexed" with the use of the indexed keyword
+- Parameters of certain events are expected to be indexed (e.g. ERC20 Transfer/Approval events) so that they’re included in the block’s bloom filter for faster access.
+- Failure to do so might confuse off-chain tooling looking for such indexed events.
+- The best practice is to added indexed to critical parameters
+	- This comes at the cost of additional gas usage but allows faster query
+#### 47. Event Signatures
+- Contract types used in events in libraries cause an incorrect event signature hash.
+- Instead of using the type `address` in the hashed signature, the actual contract name was used, leading to a wrong hash in the logs.
+- This is due to a compiler bug introduced in _v0.5.0_ and fixed in _v0.5.8_.
+#### 48. Unary Expression
+- Unary expressions are where an operator is used on a single operand as opposed to two operands (binary expression)
+- Unary expressions such as _x =+ 1_ are likely errors where the programmer really meant to use _x += 1_. Unary _+_ operator was deprecated in _solc v0.5.0_.
+#### 49. Zero Addresses
+- An Ethereum address is 20 bytes and if all this bytes are 0, then it is referred to as a zero address
+- State variables and local variables of address types have a default value of 0
+- Setters of address type parameters should include a zero-address check otherwise contract functionality may become inaccessible or tokens burnt forever.
+#### 50. Critical Addresses
+- Certain addresses in a contract can be considered critical (owner, addresses of other smart contracts used by the dApp)
+- Changing critical addresses in contracts should be a two-step process where the first transaction (from the old/current address) registers the new address (i.e. grants ownership) and the second transaction (from the new address) replaces the old address with the new one (i.e. claims ownership).
+- This gives an opportunity to recover from incorrect addresses mistakenly used in the first step.
+	- If not, contract functionality might become inaccessible.
+#### 51. assert()
+- ``assert()`` should only be used to check or verify program invariants within a smart contract
+- ``assert()`` should not be used to validate user inputs
+	- Should be done by ``require()``
+- Invariants in _assert()_ and _require()_ statements should not modify the state per best practices.
+#### 52. assert() vs require()
+- ``require()`` should be used for checking error conditions on inputs and return values while ``assert()`` should be used for invariant checking.
+- Between _solc 0.4.10_ and _0.8.0_, ``require()`` used ``REVERT (0xfd)`` opcode which refunded remaining gas on failure while ``assert()`` used ``INVALID (0xfe)`` opcode which consumed all the supplied gas.
+#### 53. Keywords
+- Over time, different keywords have been deprecated to favor one over the other
+- Use of deprecated functions/operators such as _block.blockhash()_ for _blockhash()_, _msg.gas_ for _gasleft(), throw_ for _revert()_, _sha3()_ for _keccak256()_, _callcode()_ for _delegatecall(),_ _suicide()_ for _selfdestruct(), constant_ for _view_ or _var_ for _actual type name_ should be avoided to prevent unintended errors with newer compiler versions.
+- For now, they produce compiler warnings... over time these warning may be converted to compiler errors
+- Best practice is to avoid deprecated keywords
+#### 54. Visibility
+- Functions in Solidity have the notion of visibility (public/external/internal/private)
+- Functions without a visibility type specifier are _public_ by default in _solc < 0.5.0_.
+	- This can lead to a vulnerability where a malicious user may make unauthorized state changes.
+	- _solc >= 0.5.0_ requires explicit function visibility specifiers.
+#### 55. Incorrect Inheritance
+- Contracts inheriting from multiple contracts with identical functions should specify the correct inheritance order i.e. more general to more specific to avoid inheriting the incorrect function implementation.
+- If more than one base contract defines an identical function,  the function implementation that gets included in the derived contract depends on the inheritance order
+- Best practice is for order to be from more general to specific
+#### 56. Missing Inheritance
+- A contract might appear (based on name or functions implemented) to inherit from another interface or abstract contract without actually doing so.
+#### 57. Gas Griefing
+- Users submit transactions to a smart contract on the blockchain or they can submit meta transactions that are sent to transaction relayers where the relayer is supposed to pay the gas
+- Transaction relayers need to be trusted to provide enough gas for the transaction to succeed.
+#### 58. Reference Parameters
+- Structs/Arrays/Mappings passed as arguments to a function may be by value (memory) or reference (storage) as specified by the data location (optional before _solc 0.5.0_).
+- Ensure correct usage of memory and storage in function parameters and make all data locations explicit.
+#### 59. Arbitrary Jump
+- Function type variables should be carefully handled and avoided in assembly manipulations to prevent jumps to arbitrary code locations.
+- Assembly, in general, is very tricky to use... it bypasses many security aspects of Solidity such as type safety
+	- If possible, avoid the use of assembly
+#### 60. Hash Collisions
+- using ``abi.encodePacked()`` with multiple variable length arguments can lead to hash collisions
+	- This happens because ``abi.encodePacked()`` does not 0 pad the arguments and it doesn't save any length information for arguments
+- Using ``abi.encodePacked()`` with multiple variable length arguments can, in certain situations, lead to a hash collision.
+- Do not allow users access to parameters used in ``abi.encodePacked()``, use fixed length arrays or use ``abi.encode()``.
