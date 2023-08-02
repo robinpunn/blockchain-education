@@ -65,6 +65,27 @@
     58. [Reference Parameters](#58-reference-parameters)
     59. [Arbitrary Jump](#59-arbitrary-jump)
     60. [Hash Collisions](#60-hash-collisions)
+4. [Block 4](#block-4)
+    61. [Dirty Bits](#61-dirty-bits)
+    62. [Incorrect Shifts](#62-incorrect-shifts)
+    63. [Assembly](#63-assembly)
+    64. [RTLO](#64-rtlo)
+    65. [Constant](#65-constant)
+    66. [Variable Names](#66-variables-names)
+    67. [Uninitialized Variables](#67-uninitialized-variables)
+    68. [Storage Pointers](#68-storage-pointers)
+    69. [Function Pointers](#69-function-pointers)
+    70. [Number Literals](#70-number-literals)
+    71. [Enum](#71-enum)
+    72. [Public Functions](#72-public-functions)
+    73. [Dead Code](#73-dead-code)
+    74. [Return Value](#74-return-value)
+    75. [Unused Variables](#75-unused-variables)
+    76. [Redundant Statements](#76-redundant-statements)
+    77. [Storage Array](#77-storage-array)
+    78. [Constructor Arguments](#78-constructor-arguments)
+    79. [Arrays](#79-arrays)
+    80. [Structs](#80-structs)
 ---
 
 ### [Block 1](youtube.com/watch?v=OOzyoaYIw2k)
@@ -320,3 +341,74 @@
 	- This happens because ``abi.encodePacked()`` does not 0 pad the arguments and it doesn't save any length information for arguments
 - Using ``abi.encodePacked()`` with multiple variable length arguments can, in certain situations, lead to a hash collision.
 - Do not allow users access to parameters used in ``abi.encodePacked()``, use fixed length arrays or use ``abi.encode()``.
+
+### [Block 4](https://www.youtube.com/watch?v=byA3MLLiKMM)
+#### 61. Dirty Bits
+- EVM word size is 256bits or 32bytes
+	- There are multiple types in Solidity whose size is less than 32 bytes
+- Types that do not occupy the full 32 bytes might contain “dirty higher order bits” which does not affect operation on types but gives different results with _msg.data_.
+#### 62. Incorrect Shifts
+- Solidity supports three different shift operations:
+	- shl(x,y): shift left
+	- shr(x,y): shift right
+	- sar(x,y): shift arithmetic right
+- Shift operators (_shl(x, y)_, _shr(x, y)_, _sar(x, y)_) in Solidity assembly apply the shift operation of _x_ bits on _y_ and not the other way around, which may be confusing.
+- Check if the values in a shift operation are reversed.
+#### 63. Assembly
+- The use of assembly is considered a security risk because assembly bypasses multiple security checks such as type safety
+	- Developers use assembly to make operations more optimized and efficient from a gas perspective
+- Use of EVM assembly is error-prone and should be avoided or double-checked for correctness.
+#### 64. RTLO
+- Right to Left Override
+- Malicious actors can use the Right-To-Left-Override unicode character to force RTL text rendering and confuse users as to the real intent of a contract.
+- U+202E character should not appear in the source code of a smart contract.
+#### 65. Constant
+- Constant variables are state variables that has a constant value throughout the duration of the contract
+- Constant state variables should be declared constant to save gas.
+- Reading constant variables doesn't require the expensive SLOAD operation
+- While this is gas saving, it also improves security as constant variables cannot be accidently changed within the function of the contract
+#### 66. Variables names
+- Variables with similar names could be confused for each other and therefore should be avoided.
+#### 67. Uninitialized Variables
+- Uninitialized state/local variables are assigned zero values by the compiler and may cause unintended results e.g. transferring tokens to zero address.
+- Explicitly initialize all state/local variables.
+#### 68. Storage Pointers
+- Uninitialized local storage variables can point to unexpected storage locations in the contract, which can lead to vulnerabilities.
+- _Solc 0.5.0_ and above disallow such pointers.
+#### 69. Function Pointers
+- Calling uninitialized function pointers in constructors of contracts compiled with _solc_ versions _0.4.5-0.4.25_ and _0.5.0-0.5.7_ lead to unexpected behavior because of a compiler bug.
+#### 70. Number Literals
+- Number literals with many digits should be carefully checked as they are prone to error.
+- Best practice is to use Ether/Time suffix supported by Solidity as applicable or use the supported scientific notation
+#### 71. Enum
+- _Solc < 0.4.5_ produced unexpected behavior with out-of-range enums.
+	- Enum{a}... E(1) -> Out of range
+		- Enums are 0 indexed
+- Check enum conversion or use a newer compiler.
+#### 72. Public Functions
+- Functions have 4 visibility specifiers: public, external, internal, private
+- _Public_ functions that are never called from within the contracts should be declared _external_ to save gas.
+	- The arguments of public functions need to be copied from the calldata component of the EVM to the memory component which produces more bytecode... therefore consuming more gas
+#### 73. Dead Code
+- Dead code is any contract code that is unused from the contract's perspective or unreachable from a control flow perspective
+- Dead code increases the code size of the contract which at deployment leads to increased gas costs
+- Dead code may be indicative of programmer error, missing logic or potential optimization opportunity, which needs to be flagged for removal or addressed appropriately.
+#### 74. Return Value
+- Unused return values of function calls are indicative of programmer errors which may have unexpected behavior.
+#### 75. Unused Variables
+- Unused state/local variables may be indicative of programmer error, missing logic or potential optimization opportunity, which needs to be flagged for removal or addressed appropriately.
+#### 76. Redundant Statements
+- Statements with no effects that do not produce code may be indicative of programmer error or missing logic, which needs to be flagged for removal or addressed appropriately.
+#### 77. Storage Array
+- Assigning an array of signed integers to a storage array of different type can lead to data corruption in that array.
+	- This was enabled by ABIEncoderV2 which was a pragma directive that needed to be explicitly specified in older versions (now used by default)
+- This is due to a compiler bug introduced in _v0.4.7_ and fixed in _v0.5.10_.
+#### 78. Constructor Arguments
+- A contract's constructor which takes structs or arrays that contain dynamically sized arrays reverts or decodes to invalid data when ABIEncoderV2 is used.
+- This is due to a compiler bug introduced in _v0.4.16_ and fixed in _v0.5.9_.
+#### 79. Arrays
+- Storage arrays containing structs or other statically sized arrays are not read properly when directly encoded in external function calls or in _abi.encode()_.
+- This is due to a compiler bug introduced in _v0.4.16_ and fixed in _v0.5.10_.
+#### 80. Structs
+- Reading from calldata structs that contain dynamically encoded, but statically sized members can result in incorrect values.
+- This is due to a compiler bug introduced in _v0.5.6_ and fixed in _v0.5.11_.
