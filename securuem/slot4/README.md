@@ -86,6 +86,28 @@
     78. [Constructor Arguments](#78-constructor-arguments)
     79. [Arrays](#79-arrays)
     80. [Structs](#80-structs)
+5. [Block 5](#block-5)
+    81. [Storage](#81-storage)
+    82. [Loads](#82-loads)
+    83. [Arrays](#83-arrays)
+    84. [Escaping](#84-escaping)
+    85. [Shift](#85-shift)
+    86. [byte Instructions](#86-byte-instruction)
+    87. [Assignment](#87-assignment)
+    88. [Private Functions](#88-private-functions)
+    89. [Tuples](#89-tuples)
+    90. [Arrays](#90-arrays)
+    91. [Byte Array](#91-byte-array)
+    92. [Memory Array](#92-memory-array)
+    93. [using for](#93-using-for)
+    94. [Free Functions](#94-free-functions)
+    95. [Initializers](#95initializers)
+    96. [State Variables](#96-state-variables)
+    97. [Import Contracts](#97-import-contracts)
+    98. [selfdestruct](#98-selfdestruct)
+    99. [State Variables in Proxy](#99-state-variables-in-proxy)
+    100. [Function ID](#100-function-id)
+    101. [Proxy Function Shadowing](#101-proxy-function-shadowing)
 ---
 
 ### [Block 1](youtube.com/watch?v=OOzyoaYIw2k)
@@ -412,3 +434,92 @@
 #### 80. Structs
 - Reading from calldata structs that contain dynamically encoded, but statically sized members can result in incorrect values.
 - This is due to a compiler bug introduced in _v0.5.6_ and fixed in _v0.5.11_.
+
+### [Block 5](https://www.youtube.com/watch?v=vyWLO5Dlg50)
+#### 81. Storage
+- Storage structs and arrays with types shorter than 32 bytes can cause data corruption if encoded directly from storage using ABIEncoderV2.
+- This is due to a compiler bug introduced in _v0.5.0_ and fixed in _v0.5.7_.
+#### 82. Loads
+- The Yul optimizer incorrectly replaces _MLOAD_ and _SLOAD_ calls with values that have been previously written to the load location.
+- This can only happen if ABIEncoderV2 is activated and the experimental Yul optimizer has been activated manually in addition to the regular optimizer in the compiler settings.
+- This is due to a compiler bug introduced in _v0.5.14_ and fixed in _v0.5.15_.
+#### 83. Arrays
+- Accessing array slices of arrays with dynamically encoded base types (e.g. multi-dimensional arrays) can result in invalid data being read.
+- This is due to a compiler bug introduced in _v0.6.0_ and fixed in _v0.6.8_.
+#### 84. Escaping
+- String literals containing double backslash characters passed directly to external or encoding function calls can lead to a different string being used when ABIEncoderV2 is enabled.
+- This is due to a compiler bug introduced in _v0.5.14_ and fixed in _v0.6.8_.
+#### 85. Shift
+- Double bitwise shifts by large constants whose sum overflows 256 bits can result in unexpected values.
+- Nested logical shift operations whose total shift size is ``2**256`` or more are incorrectly optimized.
+- This only applies to shifts by numbers of bits that are compile-time constant expressions.
+- This happens when the optimizer is used and _evmVersion >= Constantinople._
+- This is due to a compiler bug introduced in _v0.5.5_ and fixed in _v0.5.6_.
+#### 86. byte Instruction
+- The optimizer incorrectly handles byte opcodes whose second argument is 31 or a constant expression that evaluates to 31.
+- This can result in unexpected values.
+- This can happen when performing index access on _bytesNN_ types with a compile time constant value (not index) of 31 or when using the byte opcode in inline assembly.
+- This is due to a compiler bug introduced in _v0.5.5_ and fixed in _v0.5.7_.
+#### 87. Assignment
+- The Yul optimizer can remove essential assignments to variables declared inside _for_ loops when Yul's _continue_ or _break_ statement is used mostly while using inline assembly with _for_ loops and _continue_ and _break_ statements.
+- This is due to a compiler bug introduced in _v0.5.8_/_v0.6.0_ and fixed in _v0.5.16_/_v0.6.1_.
+#### 88. Private Functions
+- While private methods of base contracts are not visible and cannot be called directly from the derived contract, it is still possible to declare a function of the same name and type and thus change the behaviour of the base contract's function.
+- This is due to a compiler bug introduced in _v0.3.0_ and fixed in _v0.5.17_.
+#### 89. Tuples
+- Tuple assignments with components that occupy several stack slots, i.e. nested tuples, pointers to external functions or references to dynamically sized calldata arrays, can result in invalid values.
+- This is due to a compiler bug introduced in _v0.1.6_ and fixed in _v0.6.6_.
+#### 90. Arrays
+- When assigning a dynamically sized array with types of size at most 16 bytes in storage causing the assigned array to shrink, some parts of deleted slots were not zeroed out.
+- This is due to a compiler bug fixed in _v0.7.3_.
+#### 91. byte Array
+- Copying an empty byte array (or string) from memory or calldata to storage can result in data corruption if the target array's length is increased subsequently without storing new data.
+- This is due to a compiler bug fixed in _v0.7.4_.
+#### 92. Memory Array
+- The creation of very large memory arrays can result in overlapping memory regions and thus memory corruption.
+- This is due to a compiler bug introduced in _v0.2.0_ and fixed in _v0.6.5_.
+#### 93. using for
+- Function calls to internal library functions with calldata parameters called via “_using for”_ can result in invalid data being read.
+- This is due to a compiler bug introduced in _v0.6.9_ and fixed in _v0.6.10_.
+#### 94. Free Functions
+- Free functions are functions that are declared outside of a contract
+- The compiler does not flag an error when two or more free functions (functions outside of a contract) with the same name and parameter types are defined in a source unit or when an imported free function alias shadows another free function with a different name but identical parameter types.
+- This is due to a compiler bug introduced in _v0.7.1_ and fixed in _v0.7.2_.
+#### 95.Initializers
+- Proxy based architecture is used for upgradability and other aspects desired in smart contract applications
+- There is typically a proxy contract that performs a delegatecall to a logic contract
+	- Because of the delegatecall, the logic contract implements logic that executes on the state of the proxy contract
+- Proxy-based upgradeable contracts need to use _public_ initializer functions instead of constructors that need to be explicitly called only once.
+- Preventing multiple invocations of such initializer functions (e.g. via _initializer_ modifier from OpenZeppelin’s _Initializable_ library) is a must.
+#### 96. State Variables
+- Initializing state variables in a proxy based setup
+	- This should be done in initializer functions and not as part of the state variable declarations in which case they won’t be set.
+#### 97. Import Contracts
+- Contracts used in a proxy based set up may derive from other libraries or other contracts from the project itself which can be defined in other files (in which case they are imported to be used in the proxy contract)
+- Contracts imported from proxy-based upgradeable contracts should also be upgradeable where such contracts have been modified to use initializers instead of constructors.
+#### 98. selfdestruct
+- Avoid  ``selfdestruct`` or ``delegatecall`` in proxy-based upgradeable contracts
+	- This will cause the logic contract to be destroyed and all contract instances will end up delegating calls to an address without any code.
+#### 99. State variables in proxy
+- The declaration order/layout and type/mutability of state variables in such contracts should be preserved exactly while upgrading to prevent critical storage layout mismatch errors.
+#### 100. Function ID
+- There is a security pitfall related to Function ID collision between proxy/implementation in proxy-based upgradeable contracts
+- Solidity and EVM have the notion of a function selector which is the keccak hash of the function signatures.
+	- These selectors are used to determine which contract function is being called
+- At runtime, the function dispatcher in the contract bytecode should determine, by looking at the function selector, if one of the functions in the proxy is being called or it needs to be delegated to the implementation contract
+- Malicious proxy contracts may exploit function ID collision to invoke unintended proxy functions instead of delegating to implementation functions.
+- Check for function ID collisions.
+#### 101. Proxy Function Shadowing
+- Instead of the proxy contract covertly trying to hijack calls meant for the implementation by declaring functions whose IDs collide with the implementation contract function, the can simply shadow the functions in the implementation contract
+	- A proxy contract can declare functions that have the same name and the same parameters/numbers/types as in the implementation contract
+	- The function dispatcher would simply call the proxy contract function instead of forwarding it to the implementation contract
+- Shadow functions in proxy contract prevent functions in logic contract from being invoked.
+#### Compiler bugs
+- This module has discussed multiple compiler bugs
+	- Many have come form the ABI encoded v2 primitive, some have come from the use of optimization... in these instances, the bugs may appear to be severe or critical in nature but they require very specific data structures or very specific conditions in order to be triggered
+- Such complex data structures aren't typically encountered in smart contracts, but compiler bugs should be taken very seriously
+	- Unlike smart contracts that may differ from each other (in logic and data structures), the compiler is a common dependency
+	- The compiler can be a single point of failure for any smart contract compiled with that version
+- It must be recognized that the compiler is another software and just like any software the compiler is bound to have bugs
+	- Perhaps even more so as the compiler is significantly more complex than a smart contract or any other general software package
+- Know which features of a compiler version is being extensively used and which features are considered experimental... try to stay away from experimental features
