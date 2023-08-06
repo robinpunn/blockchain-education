@@ -24,11 +24,31 @@
     118. [Token Supply](#118-token-supply)
     119. [Token Listing](#119-token-listing)
     120. [Token Balance](#120-token-balance)
+2. [Block 2](#block-2)
+    121. [Token Minting](#121-token-minting)
+    122. [ERC1400 Addresses](#122-erc1400-addresses)
+    123. [ERC1400 Transfers](#123-erc1400-transfers)
+    124. [ERC1644 Transfers](#124-erc1644-transfers)
+    125. [ERC621 totalSupply](#125-erc621-totalsupply)
+    126. [ERC884 Reissue](#126-erc884-reissue)
+    127. [ERC884 Whitelisting](#127-erc884-whitelisting)
+    128. [Asset Limits](#128-asset-limits)
+    129. [Asset Types](#129-asset-types)
+    130. [User Limits](#130-user-limits)
+    131. [Usage Limits](#131-usage-limits)
+    132. [Composability Limits](#132-composability-limits)
+    133. [Escrow](#133-escrow)
+    134. [Circuit Breaker](#134-circuit-breaker)
+    135. [Emergency Shutdown](#135-emergency-shutdown)
+    136. [System Specification](#136-system-specification)
+    137. [System Documentation](#137-system-documentation)
+    138. [Function Parameters](#138-function-parameters)
+    139. [Function Arguments](#139-function-arguments)
+    140. [Function Visibility](#140-function-visibility)
 
 ---
 
 ### [Block 1](https://www.youtube.com/watch?v=WGM1SF8twmw)
-
 #### 102. ERC20 Transfers
 
 - Related to the `transfer()` and `transferFrom()` functions between addresses
@@ -177,3 +197,106 @@
 - Users understand the associated risks of large funds or flash loans.
 - Contracts relying on the token balance must carefully take in consideration
   attackers with large funds or attacks through flash loans.
+
+
+### [Block 2](https://www.youtube.com/watch?v=HqHo1jKUnmU)
+#### 121. Token Minting
+- Flash minting is a concept similar to flash loans
+	- Unlike flash loans where the amount of tokens that can be borrowed is limited by the amount of tokens in the protocol, flash minting simply mints the new tokens that are handed to the user
+	- Only available in the context of a transaction... at the end of the transaction, the flash minting will destroy all the tokens that were just minted
+- Token should not allow flash minting.
+- Flash minting can lead to substantial swings in the balance and the total supply, which necessitate strict and comprehensive overflow checks in the operation of the token.
+
+#### 122. ERC1400 Addresses
+- ERC1400 introduced the concept of permissioned addresses
+	- Standard was driven by PolyMath and related to the concept of "security tokens"
+	- Security tokens are tokens that represent ownership in a financial security
+- Can block transfers from/to specific addresses.
+- Not encountered very often, but runs a DOS risk
+
+#### 123. ERC1400 Transfers
+- ERC1400 also introduced the concept of forced transfers
+	- Trusted actors in the context of the standard that can perform unbounded transfers
+- Trusted actors have the ability to transfer funds however they choose.
+
+#### 124. ERC1644 Transfers
+- Related to ERC1400 allowing forced transfers
+	- In the context of a controller role, allowed to perform arbitrary transfers from one account to another
+- Controller has the ability to steal funds.
+
+#### 125. ERC621 totalSupply
+- Allows for control over total supply
+- totalSupply can be changed by trusted actors
+	- Allowed by using increaseSupply and decreaseSupply functions
+
+#### 126.  ERC884 Reissue
+- The standard defines actors known as token implementers
+- Token implementers have the ability to cancel an address and move its tokens to a new address
+
+#### 127. ERC884 Whitelisting
+- Tokens can only be sent to whitelisted addresses
+
+#### 128. Asset Limits
+- Guarded launch asset limits
+- Limiting the total asset value managed by a system initially upon launch and gradually increasing it over time may reduce impact due to initial vulnerabilities or exploits.
+
+#### 129. Asset Types
+- Guarded launch asset types
+- Limiting types of assets that can be used in the protocol initially upon launch and gradually expanding to other assets over time may reduce impact due to initial vulnerabilities or exploits.
+
+#### 130. User Limits
+- Guarded launch user limits
+- Limiting the total number of users that can interact with a system initially upon launch and gradually increasing it over time may reduce impact due to initial vulnerabilities or exploits.
+- Initial users may also be whitelisted to limit to trusted actors before opening the system to everyone
+
+#### 131. Usage Limits
+- Guarded launch usage limits
+- Launch with limited usage and over time allow more usage
+- Enforcing transaction size limits, daily volume limits, per-account limits, or rate-limiting transactions may reduce impact due to initial vulnerabilities or exploits.
+
+#### 132. Composability Limits
+- Guarded launch composability limits
+- Composability is a defining feature of web3 where every application can expect to interact with or be interacted with any other application in the ecosystem
+- Restricting the composability of the system to interface only with whitelisted trusted contracts before expanding to arbitrary external contracts may reduce impact due to initial vulnerabilities or exploits.
+
+#### 133. Escrow
+- Guarded Launch escrow
+- Escrowing high value transactions/operations with time locks and a governance capability to nullify or revert transactions may reduce impact due to initial vulnerabilities or exploits
+
+#### 134. Circuit Breaker
+- Guarded launch circuit breaker
+	- Perhaps the most widely used guarded launch approach
+- Implementing capabilities to pause/unpause a system in extreme scenarios may reduce impact due to initial vulnerabilities or exploits.
+- Start off with circuit breaker on launch and later renounce these capabilities
+#### 135. Emergency Shutdown
+- Guarded launch emergency shutdown
+- An extended or extreme version of the circuit breaker
+- Implement capabilities that allow governance to shutdown new activity in the system and allow users to reclaim assets may reduce impact due to initial vulnerabilities or exploits.
+- Allows for resetting and restarting a dApp
+- Launch with emergency shutdown and remove after gaining confidence in system
+	- Removal involves removing authorized users who can trigger the emergency shutdown (same with other mechanisms)
+#### 136. System Specification
+- The design of any system starts with "requirements gathering"
+	- Requirements are determined based on the target application category, the target market, or the target users
+- Ensure that the specification of the entire system is considered, written and evaluated to the greatest detail possible.
+- Specification describes how (and why) the different components of the system behave to achieve the design requirements.
+- Without specification, a system implementation cannot be evaluated against the requirements for correctness.
+
+#### 137. System Documentation
+- Specification deals with design and requirements of the system whereas documentation deals with the actual implementation itself
+- Ensure that roles, functionalities and interactions of the entire system are well documented to the greatest detail possible.
+- Documentation describes what (and how) the implementation of different components of the system does to achieve the specification goals.
+- Without documentation, a system implementation cannot be evaluated against the specification for correctness and one will have to rely on analyzing the implementation itself.
+
+#### 138. Function Parameters
+- Ensure input validation for all function parameters especially if the visibility is external/public where (untrusted) users can control values.
+- This is especially required for address parameters where maliciously/accidentally used incorrect/zero addresses can cause vulnerabilities or unexpected behavior.
+- Make sure there are valid sanity and threshold checks
+
+#### 139. Function Arguments
+- Ensure that the arguments to function calls at the caller sites are the correct ones and in the right order as expected by the function definition.
+
+#### 140. Function Visibility
+- Functions have 4 visibility specifiers: public, external, internal, private
+- Ensure that the strictest visibility is used for the required functionality.
+- An accidental external/public visibility will allow (untrusted) users to invoke functionality that is supposed to be restricted internally.
