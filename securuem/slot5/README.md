@@ -45,6 +45,27 @@
     138. [Function Parameters](#138-function-parameters)
     139. [Function Arguments](#139-function-arguments)
     140. [Function Visibility](#140-function-visibility)
+3. [Block 3](#block-3)
+    141. [Function Modifiers](#141-function-modifiers)
+    142. [Function Returns](#142-function-returns)
+    143. [Functon Timeliness](#143-function-timeliness)
+    144. [Function Repetitiveness](#144-function-repetitiveness)
+    145. [Function Order](#145-function-order)
+    146. [Function Inputs](#146-function-inputs)
+    147. [Conditionals](#147-conditionals)
+    148. [Access Control Specification](#148-access-control-specification)
+    149. [Access Control Implementation](#149-access-control-implementation)
+    150. [Access Control Modifiers](#150-access-control-modifiers)
+    151. [Modifiers Implementation](#151-modifiers-implementation)
+    152. [Modifiers Usage](#152-modifiers-usage)
+    153. [Access Control Changes](#153-access-control-changes)
+    154. [Comments](#154-comments)
+    155. [Testing](#155-testing)
+    156. [Unused](#156-unused)
+    157. [Redundant](#157-redundant)
+    158. [Eth](#158-eth)
+    159. [Tokens](#159-tokens)
+    160. [Actors](#160-actors)
 
 ---
 
@@ -300,3 +321,104 @@
 - Functions have 4 visibility specifiers: public, external, internal, private
 - Ensure that the strictest visibility is used for the required functionality.
 - An accidental external/public visibility will allow (untrusted) users to invoke functionality that is supposed to be restricted internally.
+
+
+### [Block 3](https://www.youtube.com/watch?v=pXoEIjHupXk)
+#### 141. Function Modifiers
+- Ensure that the right set of function modifiers are used (in the correct order) for the specific functions so that the expected access control or validation is correctly enforced.
+- Modifiers affect both control and data flow
+	- From a control flow perspective they can implement authorization checks that can revert
+	- They can perform different types of validation for the data that is being passed to the modifiers
+#### 142. Function Returns
+- Ensure that the appropriate return value(s) are returned from functions and checked without ignoring at function call sites, so that error conditions are caught and handled appropriately.
+
+#### 143. Function Timeliness
+- Externally accessible functions (_external_/_public_ visibility) may be called at any time (or never).
+- It is not safe to assume they will only be called at specific system phases (e.g. after initialization, when unpaused, during liquidation) that is meaningful to the system design.
+- The reason for this can be accidental or malicious.
+- Function implementation should be robust enough to track system state transitions, determine meaningful states for invocations and withstand arbitrary calls.
+- For e.g., initialization functions (used with upgradeable contracts that cannot use constructors) are meant to be called atomically along with contract deployment to prevent anyone else from initializing with arbitrary values.
+
+#### 144. Function Repetitiveness
+- Externally accessible functions (_external_/_public_ visibility) may be called any number of times.
+- It is not safe to assume they will only be called only once or a specific number of times that is meaningful to the system design.
+- Function implementation should be robust enough to track, prevent, ignore or account for arbitrarily repetitive invocations.
+- For e.g., initialization functions (used with upgradeable contracts that cannot use constructors) are meant to be called only once.
+
+#### 145. Function Order
+- Externally accessible functions (_external_/_public_ visibility) may be called in any order (with respect to other defined functions).
+- It is not safe to assume they will only be called in the specific order that makes sense to the system design or is implicitly assumed in the code.
+- For e.g., initialization functions (used with upgradeable contracts that cannot use constructors) are meant to be called before other system functions can be called.
+
+#### 146. Function Inputs
+- Externally accessible functions (_external_/_public_ visibility) may be called with any possible arguments.
+- Without complete and proper validation (e.g. zero address checks, bound checks, threshold checks etc.), they cannot be assumed to comply with any assumptions made about them in the code.
+
+#### 147. Conditionals
+- Ensure that in conditional expressions (e.g. if statements), the correct variables are being checked and the correct operators, if any, are being used to combine them.
+- For e.g. using || instead of && is a common error.
+
+#### 148. Access Control Specification
+- Access control deals with assets, actors, and actions
+	- Which actors have access to which assets and how much of those assets
+	- What actions can the actors use to access those assets
+- Access control specification should detail who can access what, etc.
+- Ensure that the various system actors, their access control privileges and trust assumptions are accurately specified in great detail so that they are correctly implemented and enforced across different contracts, functions and system transitions/flows.
+- Without access controls, it has hard to evaluate whether the implementation enforces these aspects
+
+#### 149. Access Control Implementation
+- Ensure that the specified access control is implemented uniformly across all the subjects (actors) seeking access and objects (variables, functions) being accessed so that there are no paths/flows where the access control is missing or may be side-stepped.
+
+#### 150. Access Control Modifiers
+- Access control is typically enforced on functions using modifiers that check if specific addresses/roles are calling these functions.
+- Ensure that such modifiers are present on all relevant functions which require that specific access control.
+
+#### 151. Modifiers Implementation
+- Access control is typically enforced on functions using modifiers that check if specific addresses/roles are calling these functions.
+- A system can have multiple roles with different privileges.
+- Ensure that modifiers are implementing the expected checks on the correct roles/addresses with the right composition e.g. incorrect use of || instead of && is a common vulnerability while composing access checks.
+
+#### 152. Modifiers Usage
+- Access control is typically enforced on functions using modifiers that check if specific addresses/roles are calling these functions.
+- A system can have multiple roles with different privileges.
+- Ensure that correct modifiers are used on functions requiring specific access control enforced by that modifier.
+
+#### 153. Access Control Changes
+- Ensure that changes to access control (e.g. change of ownership to new addresses) are handled with extra security so that such transitions happen smoothly without contracts getting locked out or compromised due to use of incorrect credentials.
+- Access control changes should be validated for correctness, use a two step process to allow recovery from mistakes, and log changes for transparency and offchain monitoring
+
+#### 154. Comments
+- Ensure that the code is well commented both with NatSpec and inline comments for better readability and maintainability.
+- The comments should accurately reflect what the corresponding code does.
+- Stale comments should be removed.
+- Discrepancies between code and comments should be addressed.
+- Any TODO’s indicated by comments should be addressed.
+- Commented code should be removed.
+
+#### 155. Testing
+- Tests indicate that the system implementation has been validated against the specification.
+- Unit tests, functional tests and integration tests should have been performed to achieve good test coverage across the entire codebase.
+- Any code or parameterisation used specifically for testing should be removed from production code.
+
+#### 156. Unused
+- Unused constructs may negatively impact security
+- Any unused imports, inherited contracts, functions, parameters, variables, modifiers, events or return values should be removed (or used appropriately) after careful evaluation.
+- This will not only reduce gas costs but improve readability and maintainability of the code.
+- This could also be an indicator of missing logic
+
+#### 157. Redundant
+- Redundant code and comments can be confusing and should be removed (or changed appropriately) after careful evaluation.
+- This will not only reduce gas costs but improve readability and maintainability of the code.
+
+#### 158. Eth
+- Contracts that accept/manage/transfer ETH should ensure that functions handling ETH are using _msg.value_ appropriately, logic that depends on ETH value accounts for less/more ETH sent, logic that depends on contract ETH balance accounts for the different direct/indirect (e.g. _coinbase_ transaction, _selfdestruct_ recipient) ways of receiving ETH and transfers are reentrancy safe.
+- Functions handling ETH should be checked extra carefully for access control, input validation and error handling.
+
+#### 159. Tokens
+- Contracts that accept/manage/transfer ERC tokens should ensure that functions handling tokens account for different types of ERC tokens (e.g. ERC20 vs ERC777), deflationary/inflationary tokens, rebasing tokens and trusted/external tokens.
+- Functions handling tokens should be checked extra carefully for access control, input validation and error handling.
+
+#### 160. Actors
+- Ideally there should be no trusted actors while interacting with smart contracts.
+- However, in guarded launch scenarios, the goal is to start with trusted actors and then progressively decentralize towards automated governance by community/DAO.
+- For the trusted phase, all the trusted actors, their roles and capabilities should be clearly specified, implemented accordingly and documented for user information and examination.
