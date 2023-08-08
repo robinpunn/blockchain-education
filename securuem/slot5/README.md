@@ -66,7 +66,27 @@
     158. [Eth](#158-eth)
     159. [Tokens](#159-tokens)
     160. [Actors](#160-actors)
-
+4. [Block 4](#block-4)
+    161. [Privileged Roles](#161-privileged-roles)
+    162. [Two Step Privileged Roles](#162-two-step-privileged-roles)
+    163. [Critical Parameters](#163-critical-parameters)
+    164. [Explicit vs Implicit](#164-explicit-vs-implicit)
+    165. [Configuration](#165-configuration)
+    166. [Initialization](#166-initialization)
+    167. [Cleanup](#167-cleanup)
+    168. [Data Processing](#168-data-processing)
+    169. [Data Validation](#169-data-validation)
+    170. [Numerical Values](#170-numerical-issues)
+    171. [Accounting Issues](#171-accounting-issues)
+    172. [Access Control](#172-access-control)
+    173. [Auditing and Logging](#173-auditing-and-logging)
+    174. [Cryptography](#174-cryptography)
+    175. [Error Reporting](#175-error-reporting)
+    176. [DoS](#176-dos)
+    177. [Timing](#177-timing)
+    178. [Ordering](#178-ordering)
+    179. [Undefined Behavior](#179-undefined-behavior)
+    180. [Interactions](#180-interactions)
 ---
 
 ### [Block 1](https://www.youtube.com/watch?v=WGM1SF8twmw)
@@ -422,3 +442,116 @@
 - Ideally there should be no trusted actors while interacting with smart contracts.
 - However, in guarded launch scenarios, the goal is to start with trusted actors and then progressively decentralize towards automated governance by community/DAO.
 - For the trusted phase, all the trusted actors, their roles and capabilities should be clearly specified, implemented accordingly and documented for user information and examination.
+
+
+### [Block 4](https://www.youtube.com/watch?v=IVbEIbIpWUY)
+#### 161. Privileged Roles
+- Trusted actors who have privileged roles with capabilities to deploy contracts, change critical parameters, pause/unpause system, trigger emergency shutdown, withdraw/transfer/drain funds and allow/deny other actors should be addresses controlled by multiple, independent, mutually distrusting entities.
+- They should not be controlled by private keys of EOAs but with Multisigs with a high threshold (e.g. 5-of-7, 9-of-11) and eventually by a DAO of token holders.
+- EOA has a single point of failure.
+
+#### 162. Two Step Privileged Roles
+- When privileged roles are being changed, it is recommended to follow a two-step approach:
+	1) The current privileged role proposes a new address for the change
+	2) The newly proposed address then claims the privileged role in a separate transaction.
+- This two-step change allows accidental proposals to be corrected instead of leaving the system operationally with no/malicious privileged role.
+- For e.g., in a single-step change, if the current admin accidentally changes the new admin to a zero-address or an incorrect address (where the private keys are not available), the system is left without an operational admin and will have to be redeployed.
+
+#### 163. Critical Parameters
+- When critical parameters of systems need to be changed, it is required to broadcast the change via event emission and recommended to enforce the changes after a time-delay.
+- This is to allow system users to be aware of such critical changes and give them an opportunity to exit or adjust their engagement with the system accordingly.
+- For e.g. reducing the rewards or increasing the fees in a system might not be acceptable to some users who may wish to withdraw their funds and exit.
+
+#### 164. Explicit vs Implicit
+- As a general principle, everything in security is about being explicit
+- While Solidity has progressively adopted explicit declarations of intent for e.g. with function visibility and variable storage, it is recommended to do the same at the application level where all requirements should be explicitly validated (e.g. input parameters) and assumptions should be documented and checked.
+- Implicit requirements and assumptions should be flagged as dangerous.
+
+#### 165. Configuration
+- Misconfiguration of system components such contracts, parameters, addresses and permissions may lead to security issues.
+- Test configurations and production configurations should be clearly marked as such and separated appropriately
+	- Testing is typically done with lower thresholds of different values
+
+#### 166. Initialization
+- Lack of initialization, initializing with incorrect values or allowing untrusted actors to initialize system parameters may lead to security issues.
+- Default or incorrect values can be used to exploit the system
+
+#### 167. Cleanup
+- Missing to clean up old state or cleaning up incorrectly/insufficiently will lead to reuse of stale state which may lead to security issues.
+- Applicable to contract state maintaining state variables within storage or even local variables within contract functions
+- Cleaning up storage state use the delete primitive provides gas refunds
+
+#### 168. Data Processing
+- At a very high level, data processing issues may lead to security issues
+- Processing data incorrectly will cause unexpected behavior which may lead to security issues.
+- Processing can be missing or incorrectly implemented
+- All aspects of data processing should be reviewed for potential security impact
+
+#### 169. Data Validation
+- Contract functions check if the received data from external users is valid based on aspects of variable types, low or high thresholds, or any other application logic specific context
+- Missing validation of data or incorrectly/insufficiently validating data, especially tainted data from untrusted users, will cause untrustworthy system behavior which may lead to security issues.
+- Sanity and threshold checks are critical aspects of data validation
+
+#### 170. Numerical Issues
+- Numerical processing is where the logic operates on numerical values
+- Incorrect numerical computation will cause unexpected behavior which may lead to security issues.
+- These may be related to overflow/underflow, precision handling,  type casting,  parameter/return values, decimals, ordering of operations, and loop indices(??) among other things
+- The recommended best practice is to adopt widely used libraries
+
+#### 171. Accounting Issues
+- Incorrect or insufficient tracking or accounting of business logic related aspects such as states, phases, permissions, roles, funds (deposits/withdrawals) and tokens (mints/burns/transfers) may lead to security issues.
+
+#### 172. Access Control
+- Access control is central and critical to security
+- Incorrect or insufficient access control or authorization related to system actors, roles, assets and permissions may lead to security issues.
+- The notion of assets, actors, actions in the context of trust and threat models should be reviewed with care
+
+#### 173. Auditing and Logging
+- Recording or accessing snapshots or logs of important events within a system is known as audit logging
+	- The recorded events are called audit logs
+	- This is different from the concept of external reviews (which is also called auditing)
+- In the context of smart contracts, this applies to event emissions, the ability to query values of public state variables, exposed getter functions, and recording appropriate error strings from requires, asserts, and reverts
+- Incorrect or insufficient emission of events will impact off-chain monitoring and incident response capabilities which may lead to security issues.
+
+#### 174. Cryptography
+- Incorrect or insufficient cryptography especially related to on-chain signature verification or off-chain key management will impact access control and may lead to security issues.
+- Aspects of keys, accounts, hashes, signatures, and randomness need to be paid attention to along with the fundamental concepts of  ecdsa signatures and keccak256 hashes
+	- There are also deeper and newer cryptographic aspects: BLS, RANDAO, VDF, ZK
+
+#### 175. Error Reporting
+- Incorrect or insufficient detecting, reporting and handling of error conditions will cause exceptional behavior to go unnoticed which may lead to security issues.
+- At a high level, security exploits almost always focus on exceptional behavior that is normally not encountered or validated or noticed
+- Such exceptional behavior is what is caught and reported by error conditions and any deviations from the specification are errors that should be detected, reported, and handled appropriately
+
+#### 176. DoS
+- Traditionally, security has been considered as a triad referred to as CIA
+	- Confidentiality
+	- Integrity
+	- Availability
+- DoS affects availability
+- Preventing other users from successfully accessing system services by modifying system parameters or state causes denial-of-service issues which affects the availability of the system.
+- This may also manifest as security issues if users are not able to access their funds locked in the system.
+
+#### 177. Timing
+- Incorrect assumptions on timing of user actions, system state transitions or blockchain state/blocks/transactions may lead to security issues.
+- Any timing aspects of a contract should be checked for such issues
+
+#### 178. Ordering
+- Incorrect assumptions on ordering of user actions or system state transitions may lead to security issues.
+- For e.g.,  a user may accidentally/maliciously call a finalization function even before the initialization function if the system allows.
+- Attackers can front run/back run user interactions to force assumptions or ordering to fail
+	- Front running is when attackers race to finish their transaction or interaction before the user
+	- Back running is when attackers race to be behind or right after the user's transaction or interaction
+	- Combining these two aspects can be exploited in "sandwich attacks" where the user's interaction is sandwiched between those of the attacker
+- Evaluate if ordering and timing can be abused in any manner
+
+#### 179. Undefined Behavior
+- Any behavior that is undefined in the specification but is allowed in the implementation will result in unexpected outcomes which may lead to security issues.
+- Any behavior that is not defined in the specification  but is allowed either explicitly or inadvertently in the implementation is undefined behavior
+	- Such behavior may never be triggered in normal operations but if they are triggered accidently in exceptional conditions, that may result in reverts
+
+#### 180. Interactions
+- External interactions can have a security impact
+	- Such interactions could be with assets, actions, or actors that are outside of adopted threat models
+- Interacting with external components (e.g. tokens, contracts, oracles) forces system to trust or make assumptions on their correctness/availability requiring validation of their existence and outputs without which may lead to security issues.
+- Increasing dependencies and composability makes this a significant challenges
