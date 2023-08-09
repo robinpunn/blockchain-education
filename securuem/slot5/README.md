@@ -87,6 +87,29 @@
     178. [Ordering](#178-ordering)
     179. [Undefined Behavior](#179-undefined-behavior)
     180. [Interactions](#180-interactions)
+5. [Block 5](#block-5)
+    181. [Trust](#181-trust)
+    182. [Gas](#182-gas)
+    183. [Dependency](#183-dependency)
+    184. [Constant](#184-constant)
+    185. [Fresh](#185-fresh)
+    186. [Scarcity](#186-scarcity)
+    187. [Incentive](#187-incentive)
+    188. [Clarity](#188-clarity)
+    189. [Privacy](#189-privacy)
+    190. [Cloning](#190-cloning)
+    191. [Business Logic](#191-business-logic)
+    192. [Principle of Least Privilege](#192-principle-of-least-privilege)
+    193. [Principle of Separation of Privilege](#193-principle-of-separation-of-privilege)
+    194. [Principle of Least Common Mechanism](#194-principle-of-least-common-mechanism)
+    195. [Principle of Fail Safe Defaults](#195-principle-of-fail-safe-defaults)
+    196. [Principle of Complete Mediation](#196-principle-of-complete-mediation)
+    197. [Principle of Economy Mechanism](#197-principle-of-economy-of-mechanism)
+    198. [Principle of Open Design](#198-principle-of-open-design)
+    199. [Principle of Psychological Acceptability](#199-principle-of-psychological-acceptability)
+    200. [Principle of Work Factor](#200-principle-of-work-factor)
+    201. [Principle of Compromise Recording](#201-principle-of-compromise-recording)
+
 ---
 
 ### [Block 1](https://www.youtube.com/watch?v=WGM1SF8twmw)
@@ -555,3 +578,111 @@
 	- Such interactions could be with assets, actions, or actors that are outside of adopted threat models
 - Interacting with external components (e.g. tokens, contracts, oracles) forces system to trust or make assumptions on their correctness/availability requiring validation of their existence and outputs without which may lead to security issues.
 - Increasing dependencies and composability makes this a significant challenges
+
+
+### [Block 5](https://www.youtube.com/watch?v=QSsfkmcdbPw&t)
+#### 181. Trust
+- Trusted assets, actors, and actions can become compromised
+- Trust minimalization is a foundational value of web3 and a key tenant of decentralization
+- Incorrect or Insufficient trust assumption about/among system actors and external entities will lead to privilege escalation/abuse which may lead to security issues.
+- Never trust, always verify
+
+#### 182. Gas
+- The notion of gas in Ethereum stems from the need to bound computation because of the turing completeness of the underlying EVM
+- Incorrect assumptions about gas requirements especially for loops or external calls will lead to out-of-gas exceptions which may lead to security issues such as failed transfers or locked funds.
+- Gas usage must be considered when reviewing smart contracts
+
+#### 183. Dependency
+- Dependencies on external actors/assets/actions or software (imports, contracts, libraries, tokens, oracles, relayers, etc.) will lead to trust/availability/correctness assumptions which if/when broken may lead to security issues.
+- Dependencies should be well documented and evaluated
+
+#### 184. Constant
+- Incorrect assumptions about system actors, entities or parameters being constant may lead to security issues if/when such factors change unexpectedly.
+- This affects hardcoded parameters such as block time, addresses, permissions, roles
+
+#### 185. Fresh
+- Freshness of on object as an aspect that indicates if it is the latest in some relevant timeline or of it is stale indicating that there is an updated value or version in that corresponding timeline
+- Using state values and not the most recent values leads to freshness issues which can manifest into security issues
+	- The use of nonce in transactions to prevent replay attacks
+- Incorrect assumptions about the status of or data from system actors or entities being fresh (i.e. not stale), because of lack of updation or availability, may lead to security issues if/when such factors have been updated. For e.g., getting a stale price from an Oracle.
+
+#### 186. Scarcity
+- Scarcity is the notion that something is available in only few numbers
+- Incorrect assumptions about the scarcity of tokens/funds available to any system actor will lead to unexpected outcomes which may lead to security issues.
+	- Flash loans/mints or related overflows where a vulnerable contract makes a scarcity related assumption and applies that to the size or type of variables used to maintain token balances
+		- If not mitigated appropriately, can lead to overflows
+	- Also related to Sybil attacks... an attacker subverts a system by creating a large number of identities and uses them to gain a disproportionately large influence
+
+#### 187. Incentive
+- Incorrect assumptions about the incentives of system/external actors to perform or not perform certain actions will lead to unexpected behavior being triggered or expected behavior not being triggered, both of which may lead to security issues.
+	- For e.g., incentive to liquidate positions, lack of incentive to DoS or grief system.
+
+#### 188. Clarity
+- Lack of clarity in system specification, documentation, implementation or UI/UX will lead to incorrect expectations/outcome which may lead to security issues.
+
+#### 189. Privacy
+- Data and transactions on the Ethereum blockchain are not private.
+	- Anyone can observe contract state and track transactions (both included in a block and pending in the mempool).
+	- Incorrect assumptions about privacy aspects of data or transactions can be abused which may lead to security issues.
+
+#### 190. Cloning
+- Copy-pasting code from other libraries, contracts or even different parts of the same contract may result in incorrect code semantics for the context being copied to, copy over any vulnerabilities or miss any security fixes applied to the original code.
+- All these may lead to security issues.
+
+#### 191. Business Logic
+- Incorrect or insufficient assumptions about the higher-order business logic being implemented in the application will lead to differences in expected and actual behavior, which may result in security issues.
+- Business logic should be translated from requirements to the specification and then implementation with all of it validated and documented accurately
+
+#### 192. **Principle of Least Privilege**
+- “Every program and every user of the system should operate using the least set of privileges necessary to complete the job” — Ensure that various system actors have the least amount of privilege granted as required by their roles to execute their specified tasks.
+- Granting excess privilege is prone to misuse/abuse when trusted actors misbehave or their access is hijacked by malicious entities.
+- Privileges should be need based
+
+#### 193. **Principle of Separation of Privilege**
+- “Where feasible, a protection mechanism that requires two keys to unlock it is more robust and flexible than one that allows access to the presenter of only a single key” — Ensure that critical privileges are separated across multiple actors so that there are no single points of failure/abuse.
+- A good example of this is to require a multisig address (not EOA) for privileged actors (e.g. owner, admin, governor, deployer) who control key contract functionality such as pause/unpause/shutdown, emergency fund drain, upgradeability, allow/deny list and critical parameters.
+	- The multisig address should be composed of entities that are different and mutually distrusting/verifying.
+
+#### 194. **Principle of Least Common Mechanism**
+- “Minimize the amount of mechanism common to more than one user and depended on by all users”
+	- Ensure that only the least number of security-critical modules/paths as required are shared amongst the different actors/code so that impact from any vulnerability/compromise in shared components is limited and contained to the smallest possible subset.
+
+#### 195. **Principle of Fail-safe Defaults**
+- “Base access decisions on permission rather than exclusion”
+	- Ensure that variables or permissions are initialized to fail-safe default values which can be made more inclusive later instead of opening up the system to everyone including untrusted actors.
+
+#### 196. **Principle of Complete Mediation**
+- “Every access to every object must be checked for authority.”
+	- Ensure that any required access control is enforced along all access paths to the object or function being protected
+- Missing modifiers, permissive visibility,  missing auth flows
+- Complete mediation requires access control enforcement on every asset/actor/action along all paths at all times
+
+#### 197. **Principle of Economy of Mechanism**
+- “Keep the design as simple and small as possible”
+	- Ensure that contracts and functions are not overly complex or large so as to reduce readability or maintainability.
+- Complexity typically leads to insecurity.
+
+#### 198. **Principle of Open Design**
+- “The design should not be secret”
+	- Smart contracts are expected to be open-sourced and accessible to everyone.
+- Security by obscurity of code or underlying algorithms is not an option.
+- Security should be derived from the strength of the design and implementation under the assumption that (byzantine) attackers will study their details and try to exploit them in arbitrary ways.
+
+#### 199. **Principle of Psychological Acceptability**
+- “It is essential that the human interface be designed for ease of use, so that users routinely and automatically apply the protection mechanisms correctly”
+	- Ensure that security aspects of smart contract interfaces and system designs/flows are user-friendly and intuitive so that users can interact with minimal risk.
+
+#### 200. **Principle of Work Factor**
+- “Compare the cost of circumventing the mechanism with the resources of a potential attacker”
+	- Given the magnitude of value managed by smart contracts, it is safe to assume that byzantine attackers will risk the greatest amounts of intellectual/financial/social capital possible to subvert such systems.
+	- Therefore, the mitigation mechanisms must factor in the highest levels of risk.
+
+#### 201. **Principle of Compromise Recording**
+- “Mechanisms that reliably record that a compromise of information has occurred can be used in place of more elaborate mechanisms that completely prevent loss”
+	- Ensure that smart contracts and their accompanying operational infrastructure can be monitored/analyzed at all times (development/deployment/runtime) for minimizing loss from any compromise due to vulnerabilities/exploits.
+	- For e.g., critical operations in contracts should necessarily emit events to facilitate monitoring at runtime.
+- It is theoretically and practically impossible to create bug free code in a smart contract, therefore one should strive for the best in performing all security due diligence and reduce attack surface as much as possible
+	- At the same time, anticipate residual risk to exist in the deployed system
+	- Anticipate that there will be potential incidents of exploitation
+		- Have an instant response planned
+- Critical operations in contracts should emit events to facilitate off chain monitoring at run time
