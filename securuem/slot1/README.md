@@ -1,4 +1,4 @@
-## Slot 1
+## Slot 1 Ethereum 101
 
 ---
 ### Table of Contents
@@ -108,7 +108,7 @@
 	99. [Test in Prod](#99-test-in-prod)
 	100. [SSDLC Audits](#100-ssdlc---audits)
 	101. [State of Audits](#101-state-of-audits)
-6. [Quiz](#quiz-1)
+6. [Quiz](#quiz)
 ---
 
 ### [Block 1](https://www.youtube.com/watch?v=44qhIBMGMoM)
@@ -869,326 +869,471 @@
 - Audits have the unreal expectation of being the end all be all
 	- Audits are also very expensive because of the low supply
 
-### Quiz 1
+### [Quiz](https://ventral.digital/posts/2021/10/17/secureum-bootcamp-ethereum-101-quiz)
 ##### Q1 Ethereum Virtual Machine is a
-A) Register-based virtual machine
-B) Stack-based virtual machine
-C) Heap-based virtual machine
-D) Stackless virtual machine
+- [ ] A) Register-based virtual machine
+- [ ] B) Stack-based virtual machine
+- [ ] C) Heap-based virtual machine
+- [ ] D) Stackless virtual machine
 
 <details>
 <summary>Answer</summary>
-B
+<p>B</p>
+<p>The EVM is a simple stack-based architecture consisting of the stack, volatile memory, non-volatile storage with a word size of 256-bit (chosen to facilitate the Keccak256 hash scheme and elliptic-curve computations) and Calldata.
+</p>
+<p>from points 59 of Ethereum 101 - by Secureum</p>
 </details>
 
 ##### Q2 The length of addresses on Ethereum is
-A) 256 bits
-B) 20 bytes
-C) Depends on Externally-Owned-Account or Contract address
-D) Configurable
+- [ ] A) 256 bits
+- [ ] B) 20 bytes
+- [ ] C) Depends on Externally-Owned-Account or Contract address
+- [ ] D) Configurable
 <details>
 <summary>Answer</summary>
 B
+<p>
+Ethereum state is made up of objects called "accounts", with each account having a 20-byte address and state transitions being direct transfers of value and information between accounts.
+</p>
 </details>
 
 ##### Q3 The types of accounts on Ethereum are
-A) All Accounts are the same
-B) Permissioned Accounts and Permissionless Accounts
-C) Externally-Owned-Accounts and Contract Accounts
-D) User Accounts and Admin Accounts
+- [ ] A) All Accounts are the same
+- [ ] B) Permissioned Accounts and Permissionless Accounts
+- [ ] C) Externally-Owned-Accounts and Contract Accounts
+- [ ] D) User Accounts and Admin Accounts
 <details>
 <summary>Answer</summary>
 C
+<p>
+Ethereum has two different types of accounts:<br>
+Externally Owned Accounts (EOAs) controlled by private keys<br>
+Contract Accounts controlled by their contract code
+</p>
 </details>
 
 ##### Q4 The difference(s) between Bitcoin and Ethereum is/are
-A) The underlying tokens: Bitcoin vs Ether
-B) Smart contract support
-C) UTXO vs Accounts
-D) Nakamoto Consensus
+- [ ] A) The underlying tokens: Bitcoin vs Ether
+- [ ] B) Smart contract support
+- [ ] C) UTXO vs Accounts
+- [ ] D) Nakamoto Consensus
 <details>
 <summary>Answer</summary>
 A, B, C
+<p>
+Consensus algorithm: Ethereum uses Bitcoin’s consensus model, Nakamoto Consensus
+</p>
 </details>
 
 ##### Q5 Ethereum smart contracts do not run into halting problem because
-A) EVM is not Turing Complete
-B) EVM is Turing Complete
-C) EVM is Turing Complete but is bounded by gas sent in transaction
-D) EVM is Turing Complete but is bounded by the stack depth
+- [ ] A) EVM is not Turing Complete
+- [ ] B) EVM is Turing Complete
+- [ ] C) EVM is Turing Complete but is bounded by gas sent in transaction
+- [ ] D) EVM is Turing Complete but is bounded by the stack depth
 <details>
 <summary>Answer</summary>
 C
+<p>
+Turing-complete systems face the challenge of the halting problem i.e. given an arbitrary program and its input, it is not solvable to determine whether the program will eventually stop running. So Ethereum cannot predict if a smart contract will terminate, or how long it will run. Therefore, to constrain the resources used by a smart contract, Ethereum introduces a metering mechanism called gas.
+</p>
 </details>
 
 ##### Q6 Ethereum nodes talk to each other via
-A) Peer-to-Peer network
-B) Client-Server network
-C) Satellite network
-D) None of the above
+- [ ] A) Peer-to-Peer network
+- [ ] B) Client-Server network
+- [ ] C) Satellite network
+- [ ] D) None of the above
 <details>
 <summary>Answer</summary>
 A
+<p>
+Ethereum node/client: A node is a software application that implements the Ethereum specification and communicates over the peer-to-peer network with other Ethereum nodes.
+</p>
 </details>
 
 ##### Q7 A nonce is present in
-A) Ethereum transaction
-B) Ethereum account
-C) Both A & B
-D) Neither A nor B
+- [ ] A) Ethereum transaction
+- [ ] B) Ethereum account
+- [ ] C) Both A & B
+- [ ] D) Neither A nor B
 <details>
 <summary>Answer</summary>
 C
+<p>
+Ethereum account contains four fields: The nonce, a counter used to make sure each transaction can only be processed once...
+</p>
+<p>
+A transaction is a serialized binary message that contains the following components: nonce: A sequence number, issued by the originating EOA, used to prevent message replay...
+</p>
 </details>
 
 ##### Q8 The gas tracking website https://etherscan.io/gastracker says that Low gas cost is 40 wei This affects
-A) The transaction gasPrice
-B) The transaction gasLimit
-C) The transaction value
-D) Both B & C
+- [ ] A) The transaction gasPrice
+- [ ] B) The transaction gasLimit
+- [ ] C) The transaction value
+- [ ] D) Both B & C
 <details>
 <summary>Answer</summary>
 A
+<p>
+Gas price: The price a transaction originator is willing to pay in exchange for gas. The price is measured in wei per gas unit. The higher the gas price, the faster the transaction is likely to be confirmed on the blockchain. The suggested gas price depends on the demand for block space at the time of the transaction.
+</p>
+<p>
+gasLimit: The maximum amount of gas the originator is willing to pay for this transaction value: The amount of ether (in wei) to send to the destination
+</p>
 </details>
 
 ##### Q9 The number of transactions in a Ethereum block depend on
-A) Nothing. It is a constant.
-B) Gas used by transactions
-C) Block gas limit
-D) Block difficulty
+- [ ] A) Nothing. It is a constant.
+- [ ] B) Gas used by transactions
+- [ ] C) Block gas limit
+- [ ] D) Block difficulty
 <details>
 <summary>Answer</summary>
 B,C
+<p>
+Block gas limit is set by miners and refers to the cap on the total amount of gas expended by all transactions in the block, which ensures that blocks can’t be arbitrarily large. Blocks therefore are not a fixed size in terms of the number of transactions because different transactions consume different amounts of gas.
+</p>
 </details>
 
 ##### Q10 Miners are responsible for setting
-A) Transaction gas price
-B) Block gas limit
-C) Both A & B
-D) Neither A nor B
+- [ ] A) Transaction gas price
+- [ ] B) Block gas limit
+- [ ] C) Both A & B
+- [ ] D) Neither A nor B
 <details>
 <summary>Answer</summary>
 B
+<p>
+Gas price: The price a transaction originator is willing to pay in exchange for gas. The price is measured in wei per gas unit. The higher the gas price, the faster the transaction is likely to be confirmed on the blockchain. The suggested gas price depends on the demand for block space at the time of the transaction.
+</p>
+<p>
+Block gas limit is set by miners and refers to the cap on the total amount of gas expended by all transactions in the block, which ensures that blocks can’t be arbitrarily large.
+</p>
 </details>
 
 ##### Q11 User A sends transaction T1 from address A1 with gasPrice G1 and later transaction T2 from address A2 with gasPrice G2
-A) T1 will be always included in an earlier block than T2
-B) Inclusion/Ordering of these transactions depends only on gas prices G1 and G2
-C) Inclusion/Ordering of these transactions depends only on network congestion
-D) Inclusion/Ordering of these transactions depends on miners
+- [ ] A) T1 will be always included in an earlier block than T2
+- [ ] B) Inclusion/Ordering of these transactions depends only on gas prices G1 and G2
+- [ ] C) Inclusion/Ordering of these transactions depends only on network congestion
+- [ ] D) Inclusion/Ordering of these transactions depends on miners
 <details>
 <summary>Answer</summary>
 D
+<p>
+Inclusion: Transaction inclusion is not guaranteed and depends on network congestion and gasPrice among other things. Miners determine inclusion.
+Order: Transaction order is not guaranteed and depends on network congestion and gasPrice among other things. Miners determine order.
+</p>
 </details>
 
 ##### Q12 Which of the following statements is/are true about gas?
-A) Unused gas is returned to the transaction destination account
-B) Gas used by the transaction is credited to the beneficiary address in block header
-C) Unused gas is credited to the beneficiary address in block header
-D) Both A & B
+- [ ] A) Unused gas is returned to the transaction destination account
+- [ ] B) Gas used by the transaction is credited to the beneficiary address in block header
+- [ ] C) Unused gas is credited to the beneficiary address in block header
+- [ ] D) Both A & B
 <details>
 <summary>Answer</summary>
 B
+<p>
+Gas refund and beneficiary: Any unused gas in a transaction (gasLimit minus gas used by the transaction) is refunded to the sender’s account at the same gasPrice. Ether used to purchase gas used for the transaction is credited to the beneficiary address (specified in the block header), the address of an account typically under the control of the miner. This is the transaction “fees” paid to the miner.
+</p>
 </details>
 
 ##### Q13 Which of the following EVM components is/are non-volatile across transactions?
-A) Stack
-B) Memory
-C) Storage
-D) Calldata
+- [ ] A) Stack
+- [ ] B) Memory
+- [ ] C) Storage
+- [ ] D) Calldata
 <details>
 <summary>Answer</summary>
 C
+<p>
+A stack machine is a computer processor or a virtual machine in which the primary interaction is moving **short-lived temporary values to and from a push down stack**.
+</p>
+<p>
+The EVM is a simple stack-based architecture consisting of the stack, **volatile memory**, **non-volatile storage** with a word size of 256-bit (chosen to facilitate the Keccak256 hash scheme and elliptic-curve computations) and Calldata.
+</p>
+<p>
+Calldata is a read-only byte-addressable space where the **data parameter of a transaction or call** is held.
+</p>
 </details>
 
 ##### Q14 Which of the following operation(s) touch(es) storage?
-A) SWAP
-B) SLOAD
-C) DUP
-D) PUSH
+- [ ] A) SWAP
+- [ ] B) SLOAD
+- [ ] C) DUP
+- [ ] D) PUSH
 <details>
 <summary>Answer</summary>
 B
+<p>
+Most EVM instructions operate with the stack (stack-based architecture) and there are also stack-specific operations e.g. PUSH, POP, SWAP, DUP etc.
+</p>
+<p>
+Storage is a 256-bit to 256-bit key-value store. [...] This is accessed with SLOAD/SSTORE instructions.
+</p>
 </details>
 
 ##### Q15 Which of the following statement(s) is/are false?
-A) EVM can get the block number only of the current block
-B) EVM can get the block hash only of the current block
-C) EVM can get the account balance only of the current account
-D) EVM can get the code hash only of the current account
+- [ ] A) EVM can get the block number only of the current block
+- [ ] B) EVM can get the block hash only of the current block
+- [ ] C) EVM can get the account balance only of the current account
+- [ ] D) EVM can get the code hash only of the current account
 <details>
 <summary>Answer</summary>
 B,C,D
+<p>
+0x31 BALANCE 1 1 Get balance of the given account<br>
+0x3f EXTCODEHASH 1 1 Get hash of an account’s code<br>
+0x40 BLOCKHASH 1 1 Get the hash of one of the **256 most recent complete blocks**<br>
+0x43 NUMBER 0 1 Get the block’s number<br>
+</p>
 </details>
 
 ##### Q16 Which of the following information cannot be obtained in the EVM?
-A) Block difficulty
-B) Transaction logs
-C) Balance of an account
-D) Block hash of any block
+- [ ] A) Block difficulty
+- [ ] B) Transaction logs
+- [ ] C) Balance of an account
+- [ ] D) Block hash of any block
 <details>
 <summary>Answer</summary>
 B,D
+<p>
+> 0x31 BALANCE 1 1 Get balance of the given account<br>
+> 0x40 BLOCKHASH 1 1 Get the hash of one of the **256 most recent complete blocks**<br>
+> 0x44 DIFFICULTY 0 1 Get the block’s difficulty<br>
+(there's no operation to access transaction logs)
+</p>
 </details>
 
 ##### Q17 Which call instruction could be used to allow modifying the caller account’s state?
-A) CALL
-B) CALLCODE
-C) DELEGATECALL
-D) STATICALL
+- [ ] A) CALL
+- [ ] B) CALLCODE
+- [ ] C) DELEGATECALL
+- [ ] D) STATICALL
 <details>
 <summary>Answer</summary>
 B,C
+<p>
+0xf1 CALL 7 1 Message-call into an account<br>
+0xf2 CALLCODE 7 1 Message-call into this account with an alternative account’s code<br>
+0xf4 DELEGATECALL 6 1 Message-call into this account with an alternative account’s code, but persisting the current values for sender and value<br>
+0xfa STATICCALL 6 1 Static message-call into an account<br>
+</p>
+<p>
+Another variant of call is delegatecall, which replaced the more dangerous callcode. [...] Essentially, delegatecall runs the code of another contract inside the context of the execution of the current contract.
+</p>
+<p>
+Permits non-state-changing calls to itself or other contracts while disallowing any modifications to state during the call (and its subcalls, if present) to increase smart contract security and assure developers that re-entrancy bugs cannot arise from the call.
+</p>
 </details>
 
 ##### Q18 The most gas-expensive operation is
-A) SLOAD
-B) SSTORE
-C) CREATE
-D) SELFDESTRUCT
+- [ ] A) SLOAD
+- [ ] B) SSTORE
+- [ ] C) CREATE
+- [ ] D) SELFDESTRUCT
 <details>
 <summary>Answer</summary>
 C
+<p>
+SLOAD is 2100 gas and SSTORE is 20,000 gas to set a storage slot from 0 to non-0 and 5,000 gas otherwise. CREATE is 32000 gas and SELFDESTRUCT is 5000 gas.
+</p>
 </details>
 
 ##### Q19 Transaction T1 attempts to write to storage values S1 and S2 of contract C. Transaction T2 attempts to read the same storage values S1 and S2. However, T1 reverts due an exception after writing S1 but before writing S2. Which of the following is/are true?
-A) T2 reads the value of S1 updated by T1
-B) T2 reads the value of S1 prior to T1’s attempted update
-C) T2 also reverts because of the dependency on T1
-D) This scenario is not possible
+- [ ] A) T2 reads the value of S1 updated by T1
+- [ ] B) T2 reads the value of S1 prior to T1’s attempted update
+- [ ] C) T2 also reverts because of the dependency on T1
+- [ ] D) This scenario is not possible
 <details>
 <summary>Answer</summary>
 B
+<p>
+Transaction properties: Atomic: it is all or nothing i.e. cannot be divided or interrupted by other transactions
+</p>
+<p>
+A transaction reverts for different exceptional conditions such as running out of gas, invalid instructions etc. in which case all state changes made so far are discarded and the original state of the account is restored as it was before this transaction executed.
+</p>
 </details>
 
 ##### Q20 Ethereum’s threat model is characterised by
-A) Trusted miners and users
-B) Trusted users, untrusted miners
-C) Trusted miners, untrusted users
-D) Everyone is untrusted
+- [ ] A) Trusted miners and users
+- [ ] B) Trusted users, untrusted miners
+- [ ] C) Trusted miners, untrusted users
+- [ ] D) Everyone is untrusted
 <details>
 <summary>Answer</summary>
 D
+<p>
+Given the aspirational absence of trusted intermediaries, everyone and everything is meant to be untrusted by default. Participants in this model include developers, miners/validators, infrastructure providers and users, all of whom could potentially be adversaries.
+</p>
 </details>
 
 ##### Q21 The number of modified Merkle-Patricia trees in an Ethereum block is
-A) One
-B) Three
-C) Three plus number of contract accounts
-D) Three plus number of transactions included in the block
+- [ ] A) One
+- [ ] B) Three
+- [ ] C) Three plus number of contract accounts
+- [ ] D) Three plus number of transactions included in the block
 <details>
 <summary>Answer</summary>
 C
+<p>
+Blocks contain block header, transactions and ommers’ block headers. Block header contains [...] `stateRoot`, `transactionsRoot` and `receiptsRoot` are 256-bit hashes of the root nodes of modified Merkle-Patricia trees.
+</p>
 </details>
 
 ##### Q22 EVM is not a von Neumann architecture because
-A) It was co-founded by Vitalik Buterin, not John von Neumann
-B) Program instructions are stored separately from data
-C) Program instructions are stored in a ROM not RAM
-D) It is quasi Turing complete
+- [ ] A) It was co-founded by Vitalik Buterin, not John von Neumann
+- [ ] B) Program instructions are stored separately from data
+- [ ] C) Program instructions are stored in a ROM not RAM
+- [ ] D) It is quasi Turing complete
 <details>
 <summary>Answer</summary>
 B
+<p>
+EVM does not follow the standard von Neumann architecture. Rather than storing program code in generally accessible memory or storage, it is stored separately in a virtual ROM accessible only through a specialized instruction.
+</p>
+<p>
+In computer science, a universal Turing machine (UTM) is a Turing machine that simulates an arbitrary Turing machine on arbitrary input. [...] This principle is considered to be the origin of the idea of a stored-program computer used by John von Neumann in 1946 for the "Electronic Computing Instrument" that now bears von Neumann's name: the von Neumann architecture
+</p>
 </details>
 
 ##### Q23 EVM stores
-A) Most significant byte in the smallest memory address
-B) Most significant byte in the largest memory address
-C) In Big-endian order
-D) In Little-endian order
+- [ ] A) Most significant byte in the smallest memory address
+- [ ] B) Most significant byte in the largest memory address
+- [ ] C) In Big-endian order
+- [ ] D) In Little-endian order
 <details>
 <summary>Answer</summary>
 A,C
+<p>
+EVM uses big-endian ordering where the most significant byte of a word is stored at the smallest memory address and the least significant byte at the largest
+</p>
 </details>
 
 ##### Q24 Miners are incentivized to validate and create new blocks by
-A) Block rewards
-B) Altruism
-C) Transaction fees
-D) Their belief in decentralization
+- [ ] A) Block rewards
+- [ ] B) Altruism
+- [ ] C) Transaction fees
+- [ ] D) Their belief in decentralization
 <details>
 <summary>Answer</summary>
 A,C
+<p>
+Miners are rewarded for blocks accepted into the blockchain with a block reward in ether (currently 2 ETH). A miner also gets fees which is the ether spent on gas by all the transactions included in the block.
+</p>
 </details>
 
 ##### Q25 Hardfork on Ethereum
-A) Has never happened
-B) Happened only once after the DAO attack
-C) Happens with backwards-incompatible protocol changes
-D) Happens when developers and miners disagree on changes
+- [ ] A) Has never happened
+- [ ] B) Happened only once after the DAO attack
+- [ ] C) Happens with backwards-incompatible protocol changes
+- [ ] D) Happens when developers and miners disagree on changes
 <details>
 <summary>Answer</summary>
 C
+<p>
+A hard fork to introduce an exponential difficulty increase, to motivate a transition to PoS when ready....
+</p>
 </details>
 
 ##### Q26 Gas for EVM opcodes
-A) Is constant and the same for all opcodes
-B) May be changed over time to prevent DoS attacks
-C) Depend on the gas price
-D) Depend on the miners
+- [ ] A) Is constant and the same for all opcodes
+- [ ] B) May be changed over time to prevent DoS attacks
+- [ ] C) Depend on the gas price
+- [ ] D) Depend on the miners
 <details>
 <summary>Answer</summary>
 B
+<p>
+Gas costs for different instructions are different depending on their computational/storage load on the client
+</p>
+<p>
+Tangerine Whistle — A hard fork to change the gas calculation for certain I/O-heavy operations and to clear the accumulated state from a denial-of-service (DoS) attack that exploited the low gas cost of those operations.
+Spurious Dragon — A hard fork to address more DoS attack vectors, and another state clearing. Also, a replay attack protection mechanism.
+</p>
 </details>
 
 ##### Q27 Smart contracts on Ethereum
-A) May be deployed by anyone
-B) May be deployed only through the DApp store
-C) May have some form of access control
-D) Are guaranteed to be secure
+- [ ] A) May be deployed by anyone
+- [ ] B) May be deployed only through the DApp store
+- [ ] C) May have some form of access control
+- [ ] D) Are guaranteed to be secure
 <details>
 <summary>Answer</summary>
 A,C
+<p>
+Web3: is a **permissionless**, trust-minimized and censorship-resistant network for transfer of value and information.
+</p>
 </details>
 
 ##### Q28 EVM opcodes
-A) Are multi-byte instructions
-B) Are single byte instructions
-C) Take operands in registers
-D) Take operands on stack
+- [ ] A) Are multi-byte instructions
+- [ ] B) Are single byte instructions
+- [ ] C) Take operands in registers
+- [ ] D) Take operands on stack
 <details>
 <summary>Answer</summary>
 B,D
+<p>
+The code in Ethereum contracts is written in a low-level, stack-based bytecode language, referred to as "Ethereum virtual machine code" or "EVM code". The code consists of a series of bytes (hence called bytecode), where **each byte represents an operation**.
+</p>
+<p>
+Most EVM instructions operate with the stack (stack-based architecture) and there are also stack-specific operations e.g. PUSH, POP, SWAP, DUP etc.
+</p>
 </details>
 
 ##### Q29 Security of Ethereum DApps depend on
-A) Security of their smart contracts
-B) Security of their off-chain components
-C) Security of Ethereum
-D) None of the above
+- [ ] A) Security of their smart contracts
+- [ ] B) Security of their off-chain components
+- [ ] C) Security of Ethereum
+- [ ] D) None of the above
 <details>
 <summary>Answer</summary>
 A,B,C
+<p>
+On-chain vs Off-chain: Smart contracts are “on-chain” Web3 components and they interact with “off-chain” components that are very similar to Web2 software. So the major differences in security perspectives between Web3 and Web2 mostly narrow down to security considerations of smart contracts vis-a-vis Web2 software.
+</p>
 </details>
 
 ##### Q30 Security Audits for smart contracts are performed because
-A) They are required for listing DApp on the DApp store
-B) They are required for deployment on Ethereum
-C) They help remove vulnerabilities and reduce risk
-D) They are required by exchanges to list tokens
+- [ ] A) They are required for listing DApp on the DApp store
+- [ ] B) They are required for deployment on Ethereum
+- [ ] C) They help remove vulnerabilities and reduce risk
+- [ ] D) They are required by exchanges to list tokens
 <details>
 <summary>Answer</summary>
 C
+<p>
+Audit-as-a-Silver-Bullet: Secure Software Development Lifecycle (SSDLC) processes for Web2 products have evolved over several decades to a point where they are expected to meet some minimum requirements of a combination of internal validation, external assessments (e.g. product/process audits, penetration testing) and certifications depending on the value of managed assets, anticipated risk, threat model and the market domain of products (e.g. financial sector has stricter regulatory compliance requirements).
+</p>
 </details>
 
 ##### Q31 The high-level languages typically used for writing Ethereum smart contracts are
-A) Go
-B) C++
-C) Vyper
-D) Solidity
+- [ ] A) Go
+- [ ] B) C++
+- [ ] C) Vyper
+- [ ] D) Solidity
 <details>
 <summary>Answer</summary>
 C, D
+<p>
+Solidity language continues to dominate smart contracts without much real competition (except Vyper perhaps).
+</p>
 </details>
 
 ##### Q32 The number of decimals in Ether is
-A) 0
-B) 1
-C) 18
-D) Configurable
+- [ ] A) 0
+- [ ] B) 1
+- [ ] C) 18
+- [ ] D) Configurable
 <details>
 <summary>Answer</summary>
 C
+<p>
+Ethereum’s currency unit is called ether or “ETH.” Ether is subdivided into smaller units and the smallest unit is named wei. [...] and 10**18 wei is 1 Ether.
+</p>
 </details>
 
 ##### [Quiz Writeup]
