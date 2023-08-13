@@ -1,4 +1,4 @@
-## Slot 3
+## Slot 3 Solidity 201
 
 ---
 ### Table of Contents
@@ -1277,16 +1277,23 @@
 
 
 
-### Quiz
+### [Quiz](https://ventral.digital/posts/2021/10/30/secureum-bootcamp-solidity-201-quiz)
 ##### Q1 Which of the following is/are true about abstract contracts and interfaces?
-- [x]  A) Abstract contracts have at least one function undefined
+- [ ]  A) Abstract contracts have at least one function undefined
 - [ ]  B) Interfaces can have some functions defined
-- [x]  C) Unimplemented functions in abstract contracts need to be declared virtual
-- [x]  D) All functions are implicitly virtual in interfaces
+- [ ]  C) Unimplemented functions in abstract contracts need to be declared virtual
+- [ ]  D) All functions are implicitly virtual in interfaces
 <details>
 <summary>Answer</summary>
 A,C,D
-- Note: While the initial platform-specified correct answer for Q1 was A,C,D, it was determined that this Q&A had some latent ambiguity with answer choice A. Therefore, all answer combinations indicated above were considered as valid and scores adjusted accordingly.
+<p>Note: While the initial platform-specified correct answer for Q1 was A,C,D, it was determined that this Q&A had some latent ambiguity with answer choice A. Therefore, all answer combinations indicated above were considered as valid and scores adjusted accordingly.
+</p>
+<p>
+Note that A isn't necessarily correct since abstract classes can have all functions defined.<br>
+Abstract Contracts: Contracts need to be marked as abstract when at least one of their functions is not implemented. They use the abstract keyword.<br>
+Interfaces: They cannot have any functions implemented.<br>
+Virtual Functions: Functions without implementation have to be marked virtual outside of interfaces. In interfaces, all functions are automatically considered virtual. Functions with private visibility cannot be virtual.
+</p>
 </details>
 
 ##### Q2 Libraries are contracts
@@ -1297,6 +1304,11 @@ A,C,D
 <details>
 <summary>Answer</summary>
 A,B,D
+<p>
+Libraries: They are deployed only once at a specific address and their code is reused using the DELEGATECALL opcode. This means that if library functions are called, their code is executed in the context of the calling contract. They use the library keyword.<br>
+Library Restrictions: In comparison to contracts, libraries are restricted in the following ways: They cannot have state variables, they cannot inherit nor be inherited, they cannot receive Ether.<br>
+Library functions can only be called directly (i.e. without the use of DELEGATECALL) if they do not modify the state (i.e. if they are view or pure functions), because libraries are assumed to be stateless
+</p>
 </details>
 
 ##### Q3 Storage layout
@@ -1307,6 +1319,10 @@ A,B,D
 <details>
 <summary>Answer</summary>
 A,C,D
+<p>
+EVM Storage: Storage is a key-value store that maps 256-bit words to 256-bit words and is accessed with EVM’s SSTORE/SLOAD instructions. All locations in storage are initialized as zero.<br>
+Storage Layout Packing: For each state variable, a size in bytes is determined according to its type. Multiple, contiguous items that need less than 32 bytes are packed into a single storage slot if possible, according to the following rules: [...] Value types use only as many bytes as are necessary to store them
+</p>
 </details>
 
 ##### Q4 For contract A {uint256 i; bool b1; bool b2; address a1;} the number of storage slots used is
@@ -1317,6 +1333,11 @@ A,C,D
 <details>
 <summary>Answer</summary>
 C
+<p>
+The uint256 takes a full slot, the bools (each 1 byte) and the address (20 bytes) can packed into the same slot<br>
+Storage Layout: State variables of contracts are stored in storage in a compact way such that multiple values sometimes use the same storage slot. Except for dynamically-sized arrays and mappings, data is stored contiguously item after item starting with the first state variable, which is stored in slot 0<br>
+Storage Layout Packing: For each state variable, a size in bytes is determined according to its type. Multiple, contiguous items that need less than 32 bytes are packed into a single storage slot if possible, according to the following rules: [...] If a value type does not fit the remaining part of a storage slot, it is stored in the next storage slot
+</p>
 </details>
 
 ##### Q5 Which of the following is/are generally true about storage layouts?
@@ -1327,6 +1348,13 @@ C
 <details>
 <summary>Answer</summary>
 A,B,C
+<p>
+For mappings the slots are unique for each key, they're not consecutive.<br>
+Storage Layout & Ordering: Ordering of storage variables and struct members affects how they can be packed tightly. For example, declaring your storage variables in the order of uint128, uint128, uint256 instead of uint128, uint256, uint128, as the former will only take up two slots of storage whereas the latter will take up three.<br>
+Storage Layout & Structs/Arrays: [...] The elements of structs and arrays are stored after each other, just as if they were given as individual values.<br>
+Storage Layout for Dynamic Arrays: If the storage location of the array ends up being a slot p after applying the storage layout rules, this slot stores the number of elements in the array (byte arrays and strings are an exception). Array data is located starting at keccak256(p) and it is laid out in the same way as statically-sized array data would: One element after the other, potentially sharing storage slots if the elements are not longer than 16 bytes.<br>
+Storage Layout for Mappings: For mappings, the slot stays empty, but it is still needed to ensure that even if there are two mappings next to each other, their content ends up at different storage locations. The value corresponding to a mapping key k is located at keccak256(h(k) . p) where . is concatenation and h is a function that is applied to the key depending on its type [...]
+</p>
 </details>
 
 ##### Q6 EVM memory
@@ -1337,6 +1365,10 @@ A,B,C
 <details>
 <summary>Answer</summary>
 A,B
+<p>
+EVM Memory: EVM memory is linear and can be addressed at byte level and accessed with MSTORE/MSTORE8/MLOAD instructions. All locations in memory are initialized as zero.<br>
+Reserved Memory: Solidity reserves four 32-byte slots, with specific byte ranges (inclusive of endpoints) [...]: `0x60 - 0x7f (32 bytes)`: zero slot (The zero slot is used as initial value for dynamic memory arrays and should never be written to)
+</p>
 </details>
 
 ##### Q7 EVM inline assembly has
@@ -1347,6 +1379,10 @@ A,B
 <details>
 <summary>Answer</summary>
 A,C,D
+<p>
+Inline Assembly: Inline assembly is a way to access the Ethereum Virtual Machine at a low level. This bypasses several important safety features and checks of Solidity. You should only use it for tasks that need it, and only if you are confident with using it. The language used for inline assembly in Solidity is called Yul.<br>
+Inline Assembly Access to External Variables, Functions and Libraries: You can access Solidity variables and other identifiers by using their name. Local variables of value type are directly usable in inline assembly. Local variables that refer to memory/calldata evaluate to the address of the variable in memory/calldata and not the value itself [...]
+</p>
 </details>
 
 ##### Q8 Zero address check is typically recommended because
@@ -1357,6 +1393,9 @@ A,C,D
 <details>
 <summary>Answer</summary>
 B
+<p>
+Zero Address Check: address(0) which is 20-bytes of 0’s is treated specially in Solidity contracts because the private key corresponding to this address is unknown. Ether and tokens sent to this address cannot be retrieved and setting access control roles to this address also won’t work (no private key to sign transactions). Therefore zero addresses should be used with care and checks should be implemented for user-supplied address parameters.
+</p>
 </details>
 
 ##### Q9 ERC20 transferFrom(address sender, address recipient, uint256 amount) (that follows the ERC20 spec strictly)
@@ -1366,7 +1405,10 @@ B
 - [ ]  D) Deducts amount from caller’s (msg.sender’s) allowance
 <details>
 <summary>Answer</summary>
-A,B, D
+A,B,D
+<p>
+Moves amount tokens from sender to recipient using the allowance mechanism. amount is then deducted from the caller’s allowance. Returns a boolean value indicating whether the operation succeeded. Emits a Transfer event.
+</p>
 </details>
 
 ##### Q10 OpenZeppelin SafeERC20 is generally considered safer to use than ERC20 because
@@ -1387,6 +1429,11 @@ B
 <details>
 <summary>Answer</summary>
 A,B
+<p>
+Not C, because it inherits these modifiers from Pausable and doesn't implement them<br>
+OpenZeppelin ERC20Pausable: ERC20 token with pausable token transfers, minting and burning. Useful for scenarios such as preventing trades until the end of an evaluation period, or having an emergency switch for freezing all token transfers in the event of a large bug.<br>
+OpenZeppelin Pausable: provides an emergency stop mechanism using functions pause and unpause that can be triggered by an authorized account. This module is used through inheritance. It will make available the modifiers whenNotPaused and whenPaused, which can be applied to the functions of your contract. Only the functions using the modifiers will be affected when the contract is paused or unpaused.
+</p>
 </details>
 
 ##### Q12 OpenZeppelin ERC721
@@ -1397,6 +1444,12 @@ A,B
 <details>
 <summary>Answer</summary>
 A,B,D
+<p>
+ Not C, since approval is not susceptible since approval can only given or taken away for a single token, so changing approval doesn't allow stealing more than was already approved<br>
+ OpenZeppelin ERC721: Implements the popular ERC721 Non-Fungible Token Standard.<br>
+ `safeTransferFrom(..)`: Safely transfers tokenId token from from to to, checking first that contract recipients are aware of the ERC721 protocol to prevent tokens from being forever locked. Requirements: 1) from cannot be the zero address [...]<br>
+ `setApprovalForAll(address operator, bool _approved)`: Approve or remove operator as an operator for the caller. Operators can call transferFrom or safeTransferFrom for any token owned by the caller.<br>
+</p>
 </details>
 
 ##### Q13 ERC777 may be considered as an improved version of ERC20 because
@@ -1407,6 +1460,9 @@ A,B,D
 <details>
 <summary>Answer</summary>
 A,B,C
+<p>
+OpenZeppelin ERC777: Like ERC20, ERC777 is a standard for fungible tokens with improvements such as getting rid of the confusion around decimals, minting and burning with proper events, among others, but its killer feature is receive hooks. [...] A hook is simply a function in a contract that is called when tokens are sent to it, meaning accounts and contracts can react to receiving tokens. This enables a lot of interesting use cases, including atomic purchases using tokens (no need to do approve and transferFrom in two separate transactions), rejecting reception of tokens (by reverting on the hook call), redirecting the received tokens to other addresses, among many others. Furthermore, since contracts are required to implement these hooks in order to receive tokens, no tokens can get stuck in a contract that is unaware of the ERC777 protocol, as has happened countless times when using ERC20s.
+</p>
 </details>
 
 ##### Q14 The OpenZeppelin library that provides onlyOwner modifier
@@ -1417,6 +1473,9 @@ A,B,C
 <details>
 <summary>Answer</summary>
 A,C
+<p>
+OpenZeppelin Ownable: provides a basic access control mechanism, where there is an account (an owner) that can be granted exclusive access to specific functions. By default, the owner account will be the one that deploys the contract. This can later be changed with transferOwnership. This module is used through inheritance. It will make available the modifier onlyOwner, which can be applied to your functions to restrict their use to the owner.
+</p>
 </details>
 
 ##### Q15 OpenZeppelin’s (role-based) AccessControl library
@@ -1427,6 +1486,9 @@ A,C
 <details>
 <summary>Answer</summary>
 B,C
+<p>
+OpenZeppelin AccessControl: provides a general role based access control mechanism. Multiple hierarchical roles can be created and assigned each to multiple accounts. Roles can be used to represent a set of permissions. hasRole is used to restrict access to a function call. Roles can be granted and revoked dynamically via the grantRole and revokeRole functions which can only be called by the role’s associated admin accounts.
+</p>
 </details>
 
 ##### Q16 If OpenZeppelin’s isContract(address) returns false for an address then
@@ -1437,9 +1499,12 @@ B,C
 <details>
 <summary>Answer</summary>
 B
+<p>
+Returns true if account is a contract. It is unsafe to assume that an address for which this function returns false is an externally-owned account (EOA) and not a contract. Among others, isContract will return false for the following types of addresses: 1) an externally-owned account 2) a contract in construction 3) an address where a contract will be created 4) an address where a contract lived, but was destroyed
+</p>
 </details>
 
-#### Q17 CREATE2
+##### Q17 CREATE2
 - [ ]  A) Deploys two contracts proxy and implementation concurrently
 - [ ]  B) Deploys contract at an address that can be predetermined
 - [ ]  C) Uses a salt and contract creationCode
@@ -1449,7 +1514,7 @@ B
 B, C
 </details>
 
-#### Q18 OpenZeppelin ECDSA
+##### Q18 OpenZeppelin ECDSA
 - [ ]  A) Implements functions for signature creation & verification
 - [ ]  B) Is susceptible to signature malleability
 - [ ]  C) Both A & B
@@ -1457,6 +1522,10 @@ B, C
 <details>
 <summary>Answer</summary>
 D
+<p>
+OpenZeppelin ECDSA: provides functions for recovering and managing Ethereum account ECDSA signatures. These are often generated via web3.eth.sign, and are a 65 byte array (of type bytes in Solidity) arranged the following way: `[[v (1)], [r (32)], [s (32)]]`. The data signer can be recovered with ECDSA.recover, and its address compared to verify the signature. Most wallets will hash the data to sign and add the prefix `'\x19Ethereum Signed Message:\n'`, so when attempting to recover the signer of an Ethereum signed message hash, you’ll want to use toEthSignedMessageHash.<br>
+Externally Owned Accounts (EOA) can sign messages with their associated private keys, but currently contracts cannot.
+</p>
 </details>
 
 ##### Q19 OpenZeppelin SafeMath
@@ -1467,6 +1536,11 @@ D
 <details>
 <summary>Answer</summary>
 B
+<p>
+Not A, because it does not prevent them at compile- but at runtime. It can be argued it's not B since it's a recommendation and not a requirement.<br>
+OpenZeppelin SafeMath: provides mathematical functions that protect your contract from overflows and underflows.<br>
+Overflow/Underflow Check: Until Solidity version 0.8.0 which introduced checked arithmetic by default, arithmetic was unchecked and therefore susceptible to overflows and underflows which could lead to critical vulnerabilities. The recommended best-practice for such contracts is to use OpenZeppelin’s SafeMath library for arithmetic.
+</p>
 </details>
 
 ##### Q20 OpenZeppelin’s proxy implementations
@@ -1477,6 +1551,10 @@ B
 <details>
 <summary>Answer</summary>
 A,B
+<p>
+OpenZeppelin Proxy: This abstract contract provides a fallback function that delegates all calls to another contract using the EVM instruction delegatecall. We refer to the second contract as the implementation behind the proxy, and it has to be specified by overriding the virtual _implementation function.<br>
+OpenZeppelin ERC1967Proxy: implements an upgradeable proxy. It is upgradeable because calls are delegated to an implementation address that can be changed.
+</p>
 </details>
 
 ##### Q21 Proxied contracts
@@ -1487,6 +1565,10 @@ A,B
 <details>
 <summary>Answer</summary>
 B,C
+<p>
+OpenZeppelin Initializable: aids in writing upgradeable contracts, or any kind of contract that will be deployed behind a proxy. Since a proxied contract cannot have a constructor, it is common to move constructor logic to an external initializer function, usually called initialize. It then becomes necessary to protect this initializer function so it can only be called once. The initializer modifier provided by this contract will have this effect.<br>
+To avoid leaving the proxy in an uninitialized state, the initializer function should be called as early as possible by providing the encoded function call as the _data argument. When used with inheritance, manual care must be taken to not invoke a parent initializer twice, or to ensure that all initializers are idempotent. This is not verified automatically as constructors are by Solidity.
+</p>
 </details>
 
 ##### Q22 Dappsys provides
@@ -1497,6 +1579,11 @@ B,C
 <details>
 <summary>Answer</summary>
 A,C
+<p>
+Dappsys DSProxy: implements a proxy deployed as a standalone contract which can then be used by the owner to execute code.<br>
+Dappsys DSMath: provides arithmetic functions for the common numerical primitive types of Solidity. You can safely add, subtract, multiply, and divide uint numbers without fear of integer overflow. You can also find the minimum and maximum of two numbers. Additionally, this package provides arithmetic functions for two new higher level numerical concepts called wad (18 decimals) and ray (27 decimals). These are used to represent **fixed-point decimal numbers**. A wad is a decimal number with 18 digits of precision and a ray is a decimal number with 27 digits of precision.<br>
+Dappsys DSAuth: Provides a flexible and updatable auth pattern which is completely separate from application logic.
+</p>
 </details>
 
 ##### Q23 WETH is
@@ -1507,6 +1594,9 @@ A,C
 <details>
 <summary>Answer</summary>
 D
+<p>
+WETH: WETH stands for Wrapped Ether. For protocols that work with ERC-20 tokens but also need to handle Ether, WETH contracts allow converting Ether to its ERC-20 equivalent WETH (called wrapping) and vice-versa (called unwrapping). WETH can be created by sending ether to a WETH smart contract where the Ether is stored and in turn receiving the WETH ERC-20 token at a 1:1 ratio. This WETH can be sent back to the same smart contract to be “unwrapped” i.e. redeemed back for the original Ether at a 1:1 ratio. The most widely used WETH contract is WETH9 which holds more than 7 million Ether for now.
+</p>
 </details>
 
 ##### Q24 Name collision error with inheritance happens when the following pairs have the same name within a contract
@@ -1517,6 +1607,9 @@ D
 <details>
 <summary>Answer</summary>
 A,B,D
+<p>
+Name Collision Error: It is an error when any of the following pairs in a contract have the same name due to inheritance: 1) a function and a modifier 2) a function and an event 3) an event and a modifier.
+</p>
 </details>
 
 ##### Q25 Which of the following is/are not allowed?
@@ -1527,6 +1620,11 @@ A,B,D
 <details>
 <summary>Answer</summary>
 C
+<p>
+Function Overriding: Base functions can be overridden by inheriting contracts to change their behavior if they are marked as virtual. The overriding function must then use the override keyword in the function header.<br>
+Function Overloading: A contract can have multiple functions of the same name but with different parameter types. This process is called “overloading.”<br>
+Modifier Overriding: Function modifiers can override each other. This works in the same way as function overriding (except that there is no overloading for modifiers).
+</p>
 </details>
 
 ##### Q26 Solidity supports
@@ -1537,6 +1635,11 @@ C
 <details>
 <summary>Answer</summary>
 A,B,D
+<p>
+No such things as C.<br>
+Solidity supports multiple inheritance including polymorphism<br>
+Function Overloading: A contract can have multiple functions of the same name but with different parameter types. This process is called “overloading.”
+</p>
 </details>
 
 ##### Q27 Which of the following EVM instruction(s) do(es) not touch EVM storage?
@@ -1547,6 +1650,11 @@ A,B,D
 <details>
 <summary>Answer</summary>
 B,D
+<p>
+EVM Storage: Storage is a key-value store that maps 256-bit words to 256-bit words and is accessed with EVM’s SSTORE/SLOAD instructions. All locations in storage are initialized as zero.<br>
+EVM Memory: EVM memory is linear and can be addressed at byte level and accessed with MSTORE/MSTORE8/MLOAD instructions. All locations in memory are initialized as zero.<br>
+Stack is made up of 1024 256-bit elements. EVM instructions can operate with the top 16 stack elements. Most EVM instructions operate with the stack (stack-based architecture) and there are also stack-specific operations e.g. PUSH, POP, SWAP, DUP etc.
+</p>
 </details>
 
 ##### Q28 Which of the following is/are true about Solidity compiler 0.8.0?
@@ -1557,6 +1665,12 @@ B,D
 <details>
 <summary>Answer</summary>
 A,C,D
+<p>
+ABI coder v2 is activated by default. You can choose to use the old behaviour using `pragma abicoder v1;`. The pragma `pragma experimental ABIEncoderV2;` is still valid, but it is deprecated and has no effect. If you want to be explicit, please use `pragma abicoder v2;` instead.<br>
+Arithmetic operations revert on underflow and overflow. You can use `unchecked`  to use the previous wrapping behaviour.<br>
+Failing assertions and other internal checks like division by zero or arithmetic overflow do not use the invalid opcode but instead the revert opcode. More specifically, they will use error data equal to a function call to Panic(uint256) with an error code specific to the circumstances. This will save gas on errors while it still allows static analysis tools to distinguish these situations from a revert on invalid input, like a failing require.<br>
+Exponentiation is right associative, i.e., the expression a**b**c is parsed as a**(b**c). Before 0.8.0, it was parsed as (a**b)**c. This is the common way to parse the exponentiation operator.
+</p>
 </details>
 
 ##### Q29 OpenZeppelin SafeCast
@@ -1567,6 +1681,9 @@ A,C,D
 <details>
 <summary>Answer</summary>
 B
+<p>
+OpenZeppelin SafeCast: Wrappers over Solidity's uintXX/intXX casting operators with added overflow checks. Downcasting from uint256/int256 in Solidity does not revert on overflow. This can easily result in undesired exploitation or bugs, since developers usually assume that overflows raise errors. `SafeCast` restores this intuition by reverting the transaction when such an operation overflows.
+</p>
 </details>
 
 ##### Q30 OpenZeppelin’s ReentrancyGuard library mitigates reentrancy risk in a contract
@@ -1577,6 +1694,9 @@ B
 <details>
 <summary>Answer</summary>
 B
+<p>
+OpenZeppelin ReentrancyGuard: prevents reentrant calls to a function. Inheriting from ReentrancyGuard will make the nonReentrant modifier available, which can be applied to functions to make sure there are no nested (reentrant) calls to them.
+</p>
 </details>
 
 ##### Q31 Assuming all contracts C1, C2 and C3 define explicit constructors in contract C1 is C2, C3 {…} and both C2 and C3 don’t inherit contracts, the number & order of constructor(s) executed is/are
@@ -1587,6 +1707,10 @@ B
 <details>
 <summary>Answer</summary>
 B
+<p>
+Base Constructors: The constructors of all the base contracts will be called following the linearization rules.<br>
+Storage Layout & Inheritance: For contracts that use inheritance, **the ordering of state variables is determined by the C3-linearized order of contracts starting with the most base-ward contract.** If allowed by the above rules, state variables from different contracts do share the same storage slot.
+</p>
 </details>
 
 ##### Q32 Which of the following is/are true for a function f that has a modifier m?
@@ -1597,4 +1721,7 @@ B
 <details>
 <summary>Answer</summary>
 B
+<p>
+Function Modifiers: They can be used to change the behaviour of functions in a declarative way. For example, you can use a modifier to automatically check a condition prior to executing the function. The function’s control flow continues after the “_” in the preceding modifier. Multiple modifiers are applied to a function by specifying them in a whitespace-separated list and are evaluated in the order presented. The modifier can choose not to execute the function body at all and in that case the return variables are set to their default values just as if the function had an empty body. The _ symbol can appear in the modifier multiple times. Each occurrence is replaced with the function body.
+</p>
 </details>
