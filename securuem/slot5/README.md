@@ -747,6 +747,9 @@ contract InSecureumToken {
 <details>
 <summary>Answer</summary>
 D
+<p>
+Since decimals was defined as uint (same as uint256) and not as uint8 as ERC20 or ERC777 standardized, it can't strictly be either of them. And since this is clearly a fungible token contract, it can't be ERC721.
+</p>
 </details>
 
 #### Q2 To avoid lock of funds, the following feature(s) MUST be implemented before contract deployment
@@ -758,6 +761,9 @@ D
 <details>
 <summary>Answer</summary>
 C
+<p>
+Locked Ether: Contracts that accept Ether via payable functions but without withdrawal mechanisms will lock up that Ether. Remove payable attribute or add withdraw function.
+</p>
 </details>
 
 #### Q3 Which of the following assertion(s) is/are true (without affecting the security posture of the contract)?
@@ -769,6 +775,9 @@ C
 <details>
 <summary>Answer</summary>
 C,D
+<p>
+buy() cannot function without being payable. There's no reason the visibility of balances needs to be private. transfer() can be external since it's not called internally. safeAdd() can be public since it is a pure function.
+</p>
 </details>
 
 #### Q4 The total supply is limited by
@@ -780,6 +789,9 @@ C,D
 <details>
 <summary>Answer</summary>
 D
+<p>
+It would be B, but `MAX_SUPPLY` isn't actually used anywhere in the code.
+</p>
 </details>
 
 #### Q5 The following issue(s) is/are present in the codebase
@@ -791,6 +803,9 @@ D
 <details>
 <summary>Answer</summary>
 B
+<p>
+It's impossible to get any Ether out of this contract, so no draining either. It divides desired_tokens first and only then multiplies by the decimals, this causes any amount of tokens below 10 to result in 0 required_wei_sent. There are no divisions here that could allow a division by 0.
+</p>
 </details>
 
 #### Q6 The following issue(s) is/are present in the codebase
@@ -802,6 +817,9 @@ B
 <details>
 <summary>Answer</summary>
 C
+<p>
+No requests made before/after a function call would be able to change the token price. All of the functions are intended to be used by users, so no "access control" would be possible without excluding users. A user can send all of their tokens to themselves, which will double their balance due to the pre-loaded variable reuse.
+</p>
 </details>
 
 #### Q7 The following issue(s) is/are present in the codebase
@@ -813,6 +831,9 @@ C
 <details>
 <summary>Answer</summary>
 D
+<p>
+No reentrancies are possible since no external calls are made.
+</p>
 </details>
 
 #### Q8 The following issue(s) is/are present in the codebase
@@ -824,6 +845,10 @@ D
 <details>
 <summary>Answer</summary>
 D or B or C or B,C<br>
-Note: While the initial platform-specified correct answer for Q8 was D, it was determined that this Q&A had some latent ambiguity with answer choices B & C.
+<p>Note: While the initial platform-specified correct answer for Q8 was D, it was determined that this Q&A had some latent ambiguity with answer choices B & C.<br>
 Therefore, all answer combinations indicated above were considered as valid and scores adjusted accordingly.
+</p>
+<p>
+While it is indeed possible to exploit an overflow at the multiplication ((desired_tokens / 10) * decimals), it doesn't allow you to receive FREE tokens (although it makes them a bargain).
+</p>
 </details>

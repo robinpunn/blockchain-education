@@ -108,6 +108,7 @@
     99. [State Variables in Proxy](#99-state-variables-in-proxy)
     100. [Function ID](#100-function-id)
     101. [Proxy Function Shadowing](#101-proxy-function-shadowing)
+6. [Quiz](#quiz)
 ---
 
 ### [Block 1](youtube.com/watch?v=OOzyoaYIw2k)
@@ -541,8 +542,14 @@ contract test {
 - [ ]  C) Is illustrative of risks from using a much older Solidity version (assume current version is 0.8.9)
 - [ ]  D) None of the above
 
+<details>
 <summary>Answer</summary>
 B,C
+<p>
+Unlocked pragma: Contracts should be deployed using the same compiler version/flags with which they have been tested. Locking the pragma (for e.g. by not using ^ in pragma solidity 0.5.10) ensures that contracts do not accidentally get deployed using an older compiler version with unfixed bugs.<br>
+There were bugs that were fixed in versions between 0.6.5 and 0.6.11 which means those fixes were absent in 0.6.5. Choice B was about these aspects.<br>
+Illustrative means "serving as an example or explanation." So the use of ^0.6.0 when the latest available version is 0.8.9 (as mentioned in choice C) is an example of using a much older compiler version when newer versions with bug fixes and more security features e.g. built-in overflow checks in ^0.8.0 are available.
+</p>
 </details>
 
 #### Q2 The given contract snippet has
@@ -565,8 +572,14 @@ contract test {
 - [ ]  C) A compiler error because of the use of the kill reserved keyword
 - [ ]  D) None of the above
 
+<details>
 <summary>Answer</summary>
 A,B
+<p>
+Unprotected call to selfdestruct: A user/attacker can mistakenly/intentionally kill the contract. Protect access to such functions.<br>
+Zero Address Check: address(0) which is 20-bytes of 0’s is treated specially in Solidity contracts because the private key corresponding to this address is unknown. Ether and tokens sent to this address cannot be retrieved and setting access control roles to this address also won’t work (no private key to sign transactions). Therefore zero addresses should be used with care and checks should be implemented for user-supplied address parameters.<br>
+Reserved Keywords: These keywords are reserved in Solidity. They might become part of the syntax in the future: after, alias, apply, auto, case, copyof, default, define, final, immutable, implements, in, inline, let, macro, match, mutable, null, of, partial, promise, reference, relocatable, sealed, sizeof, static, supports, switch, typedef, typeof, unchecked
+</p>
 </details>
 
 #### Q3 The given contract snippet has
@@ -593,8 +606,15 @@ contract test {
 - [ ]  B) Missing return value check on transfer
 - [ ]  C) Unprotected withdrawal of funds
 - [ ]  D) None of the above
+<details>
 <summary>Answer</summary>
 A,C
+<p>
+Incorrect access control: Contract functions executing critical logic should have appropriate access control enforced via address checks (e.g. owner, controller etc.) typically in modifiers. Missing checks allow attackers to control critical logic.<br>
+Unprotected withdraw function: Unprotected (external/public) function calls sending Ether/tokens to user-controlled addresses may allow users to withdraw unauthorized funds.<br>
+`transferFunds()` clearly lets anyone withdraw any amount to any address. The only hint in the Q is the `onlyAdmin` modifier. While some other access control may also have been acceptable, the focus is on the code snippet provided and hence (A).<br>
+transfer (unlike send) does not return a success/failure return value. It reverts on failure. So there is nothing to be checked. Note that ERC20's transfer() returns a boolean which should be checked
+</p>
 </details>
 
 #### Q4 In the given contract snippet
@@ -629,7 +649,7 @@ contract test {
 - [ ]  B) getAddress returns zero address if check is false
 - [ ]  C) getAddress reverts if check is false
 - [ ]  D) None of the above
-
+<details>
 <summary>Answer</summary>
 A,B
 </details>
@@ -657,9 +677,15 @@ contract test {
 - [ ]  B) delegatecall return value is not checked
 - [ ]  C) `delegate()` may be missing `onlyAdmin` modifier
 - [ ]  D) `delegate()` does not check for contract existence at addr
-
+<details>
 <summary>Answer</summary>
 A,B,C,D
+<p>
+Controlled delegatecall: delegatecall() or callcode() to an address controlled by the user allows execution of malicious contracts in the context of the caller’s state. Ensure trusted destination addresses for such calls.<br>
+Return values of low-level calls: Ensure that return values of low-level calls (call/callcode/delegatecall/send/etc.) are checked to avoid unexpected failures.<br>
+Incorrect access control: Contract functions executing critical logic should have appropriate access control enforced via address checks (e.g. owner, controller etc.) typically in modifiers. Missing checks allow attackers to control critical logic.<br>
+Account existence check for low-level calls: Low-level calls call/delegatecall/staticcall return true even if the account called is non-existent (per EVM design). Account existence must be checked prior to calling if needed.
+</p>
 </details>
 
 #### Q6 The vulnerability/vulnerabilities present in the given contract snippet is/are
@@ -688,10 +714,19 @@ contract test {
 - [ ]  B) Integer underflow leading to wrapping
 - [ ]  C) Missing check on user balance in `withdraw()`
 - [ ]  D) All of the above
-
+<details>
 <summary>Answer</summary>
 B,C or A,B,C or A,B,C,D or D
+<p>
 Note: While the initial platform-specified correct answer for Q6 was B,C, it was determined that this Q&A had some latent ambiguity with answer choice A. Therefore, all answer combinations indicated above were considered as valid and scores adjusted accordingly.
+</p>
+<p>
+The code in this question was unintentionally missing inheritance from the ReentrancyGuard Contract. While there's a lot of discussion about the correct meaning of the term "underflow", this is how it is used in the <a href="https://docs.soliditylang.org/en/v0.8.9/control-structures.html?highlight=underflow#checked-or-unchecked-arithmetic">Solidity Documentation</a> and other related literature.
+</p>
+<p>
+Reentrancy vulnerabilities: Untrusted external contract calls could callback leading to unexpected results such as multiple withdrawals or out-of-order events. Use check-effects-interactions pattern or reentrancy guards.<br>
+Integer overflow/underflow: Not using OpenZeppelin’s SafeMath (or similar libraries) that check for overflows/underflows may lead to vulnerabilities or unexpected behavior if user/attacker can control the integer operands of such arithmetic operations. Solc v0.8.0 introduced default overflow/underflow checks for all arithmetic operations.<br>
+</p>
 </details>
 
 #### Q7 The security concern(s) in the given contract snippet is/are
@@ -715,9 +750,15 @@ contract test {
 - [ ]  B) The private variable secret is not really hidden from users
 - [ ]  C) `block.timestamp` is an insecure source of randomness
 - [ ]  D) Integer overflow
-
+<details>
 <summary>Answer</summary>
 B,C
+<p>
+Private on-chain data: Marking variables private does not mean that they cannot be read on-chain. Private data should not be stored unencrypted in contract code or state but instead stored encrypted or off-chain.<br>
+Weak PRNG: PRNG relying on block.timestamp, now or blockhash can be influenced by miners to some extent and should be avoided.<br>
+Making it public in this case should not affect gas given that there are no function arguments to copy over (if there were parameters/arguments, making it public would increase gas). Even otherwise, making it public from external should not affect the attack surface of the contract because it will only further allow (trusted) contract functions to call it.<br>
+E.: The logic of diceRoll() is broken as it returns only 1 or 4 🙂
+</p>
 </details>
 
 #### Q8 The security concern(s) in the given contract snippet is/are
@@ -746,9 +787,18 @@ contract test {
 - [ ]  B) Potential man-in-the-middle attack on admin address authentication
 - [ ]  C) Assumption on contract balance might cause a revert
 - [ ]  D) Missing event for critical `emergencyWithdraw()` function
-
+<details>
 <summary>Answer</summary>
 B,D
+<p>
+Neither transfer nor send are recommended anymore.
+</p>
+<p>
+Avoid transfer()/send() as reentrancy mitigations: Although transfer() and send() have been recommended as a security best-practice to prevent reentrancy attacks because they only forward 2300 gas, the gas repricing of opcodes may break deployed contracts. Use call() instead, without hardcoded gas limits along with checks-effects-interactions pattern or reentrancy guards for reentrancy protection.<br>
+Dangerous usage of tx.origin: Use of tx.origin for authorization may be abused by a MITM malicious contract forwarding calls from the legitimate user who interacts with it. Use msg.sender instead.<br>
+[Regarding C.:] 0 transfers should not revert 😅. Even if they did, in this context, it wouldn't be considered a "security" concern because there would be nothing to withdraw and so a revert wouldn't be a concern w.r.t. any locked funds as such.<br>
+Missing events: Events for critical state changes (e.g. owner and other critical parameters) should be emitted for tracking this off-chain.
+</p>
 </details>
 
 #### Q9 The given contract snippet is vulnerable because of
@@ -773,10 +823,18 @@ contract test {
 - [ ]  A) Integer overflow leading to wrapping
 - [ ]  B) Overly permissive function visibility of `contribute()`
 - [ ]  C) Incorrect use of `msg.sender`
-- [x]  D) Use of strict equality (`!=`) may break the `MAX_FUND_RAISE` constraint
-
+- [ ]  D) Use of strict equality (`!=`) may break the `MAX_FUND_RAISE` constraint
+<details>
 <summary>Answer</summary>
 D
+<p>
+Visibility of external or public is required for a function to be payable. This use of message sender is very common and correct.
+</p>
+<p>
+Dangerous strict equalities: Use of strict equalities with tokens/Ether can accidentally/maliciously cause unexpected behavior. Consider using >= or <= instead of == for such variables depending on the contract logic.<br>
+Unexpected Ether and this.balance: A contract can receive Ether via payable functions, selfdestruct(), coinbase transaction or pre-sent before creation. Contract logic depending on this.balance can therefore be manipulated.<br>
+Given the compiler version, even if there is an attempted integer overflow at runtime, it will revert before overflowing (because of inbuilt checks) with an exception but will not wrap. So A is not a vulnerability. While this is true in general, this snippet cannot be overflowed because of its dependence on msg.value.
+</p>
 </details>
 
 
@@ -800,9 +858,12 @@ contract test {
 - [ ]  B) Pass for a non-existent contract address
 - [ ]  C) Pass always
 - [ ]  D) Fail always
-
+<details>
 <summary>Answer</summary>
 B
+<p>
+Account existence check for low-level calls: Low-level calls call/delegatecall/staticcall return true even if the account called is non-existent (per EVM design). Account existence must be checked prior to calling if needed.
+</p>
 </details>
 
 #### Q11 The security concern(s) in the given contract snippet is/are
@@ -826,9 +887,15 @@ contract test {
 - [ ]  B) Missing zero-address validation
 - [ ]  C) Single-step change of critical address
 - [ ]  D) Missing event for critical function
-
+<details>
 <summary>Answer</summary>
 A,B,C,D
+<p>
+Incorrect access control: Contract functions executing critical logic should have appropriate access control enforced via address checks (e.g. owner, controller etc.) typically in modifiers. Missing checks allow attackers to control critical logic.<br>
+Missing zero address validation: Setters of address type parameters should include a zero-address check otherwise contract functionality may become inaccessible or tokens burnt forever.<br>
+Critical address change: Changing critical addresses in contracts should be a two-step process where the first transaction (from the old/current address) registers the new address (i.e. grants ownership) and the second transaction (from the new address) replaces the old address with the new one (i.e. claims ownership). This gives an opportunity to recover from incorrect addresses mistakenly used in the first step. If not, contract functionality might become inaccessible.<br>
+Missing events: Events for critical state changes (e.g. owner and other critical parameters) should be emitted for tracking this off-chain.
+</p>
 </details>
 
 #### Q12 The security concern(s) in the given contract snippet is/are
@@ -866,9 +933,15 @@ contract test {
 - [ ]  B) Incorrect use of modifier onlyAdmin on `setPoolAddress()`
 - [ ]  C) Missing zero-address validation for _pool in `setPoolAddress()`
 - [ ]  D) Transaction order dependence risk from admin front-running with pool address change
-
+<details>
 <summary>Answer</summary>
 A,C,D
+<p>
+Function invocation order: Externally accessible functions (external/public visibility) may be called in any order (with respect to other defined functions). It is not safe to assume they will only be called in the specific order that makes sense to the system design or is implicitly assumed in the code. For e.g., initialization functions (used with upgradeable contracts that cannot use constructors) are meant to be called before other system functions can be called.<br>
+Uninitialized state/local variables: Uninitialized state/local variables are assigned zero values by the compiler and may cause unintended results e.g. transferring tokens to zero address. Explicitly initialize all state/local variables.<br>
+Missing zero address validation: Setters of address type parameters should include a zero-address check otherwise contract functionality may become inaccessible or tokens burnt forever.<br>
+Transaction order dependence: Race conditions can be forced on specific Ethereum transactions by monitoring the mempool. For example, the classic ERC20 approve() change can be front-run using this method. Do not make assumptions about transaction order dependence.
+</p>
 </details>
 
 #### Q13 The security concern(s) in the given proxy-based implementation contract snippet is/are
@@ -904,9 +977,17 @@ contract test is Initializable {
 - [ ]  B) Multiple `initialize()` calls possible which allows anyone to reset the admin
 - [ ]  C) rewards will be 0 in the proxy contract before `setRewards()` is called by it
 - [ ]  D) All the above
-
+<details>
 <summary>Answer</summary>
 B,C
+<p>
+There are no imported contracts that need to be made upgradable (by implementing Initializable).
+</p>
+<p>
+Import upgradeable contracts in proxy-based upgradeable contracts: Contracts imported from proxy-based upgradeable contracts should also be upgradeable where such contracts have been modified to use initializers instead of constructors.<br>
+Unprotected initializers in proxy-based upgradeable contracts: Proxy-based upgradeable contracts need to use public initializer functions instead of constructors that need to be explicitly called only once. Preventing multiple invocations of such initializer functions (e.g. via initializer modifier from OpenZeppelin’s Initializable library) is a must.<br>
+Initializing state-variables in proxy-based upgradeable contracts: This should be done in initializer functions and not as part of the state variable declarations in which case they won’t be set.
+</p>
 </details>
 
 #### Q14 The security concern(s) in the given contract snippet is/are
@@ -947,9 +1028,17 @@ contract test {
 - [ ]  B) ERC20 `approve()` race condition
 - [ ]  C) Unchecked return value of `transfer()` (assuming it returns a boolean/other value and does not revert on failure)
 - [ ]  D) Potential reverts due to mismatched lengths of recipients and amounts arrays
-
+<details>
 <summary>Answer</summary>
 A,C,D
+<p>
+There's no guarantee that the passed arrays are of same length, so if one would be longer than the other one it can cause an Out Of Bounds error, which is why D is correct.
+</p>
+<p>
+Calls inside a loop: Calls to external contracts inside a loop are dangerous (especially if the loop index can be user-controlled) because it could lead to DoS if one of the calls reverts or execution runs out of gas. Avoid calls within loops, check that loop index cannot be user-controlled or is bounded.<br>
+ERC20 transfer() does not return boolean: Contracts compiled with solc >= 0.4.22 interacting with such functions will revert. Use OpenZeppelin’s SafeERC20 wrappers.<br>
+This is ERC20 token transfer and not Ether transfer (which throws on failure). <a href="https://github.com/OpenZeppelin/openzeppelin-contracts/blob/342265d29066e98c5dc88900d001cab3d0c4f0c5/contracts/token/ERC20/ERC20.sol#L113">ERC20 transfer is typically expected to return a boolean</a> but non-ERC20-conforming tokens may return nothing or even revert which is typically why <a href="https://github.com/OpenZeppelin/openzeppelin-contracts/blob/342265d29066e98c5dc88900d001cab3d0c4f0c5/contracts/token/ERC20/utils/SafeERC20.sol">SafeERC20</a> is recommended.
+</p>
 </details>
 
 
@@ -977,9 +1066,13 @@ contract test {
 - [ ]  B) Integer overflow leading to wrapping
 - [ ]  C) Integer underflow leading to wrapping
 - [ ]  D) None of the above
-
+<details>
 <summary>Answer</summary>
 A
+<p>
+Reentrancy vulnerabilities: Untrusted external contract calls could callback leading to unexpected results such as multiple withdrawals or out-of-order events. Use check-effects-interactions pattern or reentrancy guards.<br>
+Integer overflow/underflow: Not using OpenZeppelin’s SafeMath (or similar libraries) that check for overflows/underflows may lead to vulnerabilities or unexpected behavior if user/attacker can control the integer operands of such arithmetic operations. Solc v0.8.0 introduced default overflow/underflow checks for all arithmetic operations.
+</p>
 </details>
 
 #### Q16 The security concern(s) in the given contract snippet is/are
@@ -1001,7 +1094,13 @@ function verify(address signer, bytes32 memory hash, bytes32 sigR, bytes32 sigS,
 - [ ]  B) Missing use of nonce in message hash may allow replay attacks across transactions
 - [ ]  C) Missing use of chainID in message hash may allow replay attacks across chains
 - [ ]  D) Missing zero-address check for ecrecover return value may allow invalid signatures
-
+<details>
 <summary>Answer</summary>
 A,B,C,D
+<p>
+Signature malleability: The ecrecover function is susceptible to signature malleability which could lead to replay attacks. Consider using OpenZeppelin’s ECDSA library.<br>
+Insufficient Signature Information: The vulnerability occurs when a digital signature is valid for multiple transactions, which can happen when one sender (say Alice) sends money to multiple recipients through a proxy contract (instead of initiating multiple transactions). In the proxy contract mechanism, Alice can send a digitally signed message off-chain (e.g., via email) to the recipients, similar to writing personal checks in the real world, to let the recipients withdraw money from the proxy contract via transactions. To assure that Alice does approve a certain payment, the proxy contract verifies the validity of the digital signature in question. However, if the signature does not give the due information (e.g., nonce, proxy contract address), then a malicious recipient can replay the message multiple times to withdraw extra payments. This vulnerability was first exploited in a replay attack against smart contracts [36]. This vulnerability can be prevented by incorporating the due information in each message, such as a nonce value and timestamps<br>
+Indistinguishable Chains: This vulnerability was first observed from the cross-chain replay attack when Ethereum was divided into two chains, namely, ETH and ETC [10]. Recall that Ethereum uses ECDSA to sign transactions. Prior to the hard fork for EIP-155 [7], each transaction consisted of six fields (i.e., nonce, recipient, value, input, gasPrice, and gasLimit). However, the digital signatures were not chain-specific, because no chain-specific information was even known back then. As a consequence, a transaction created for one chain can be reused for another chain. This vulnerability has been eliminated by incorporating chainID into the fields.<br>
+`ecrecover() returns (address)`: recover the address associated with the public key from elliptic curve signature or return zero on error.
+</p>
 </details>
