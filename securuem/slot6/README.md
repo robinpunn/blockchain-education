@@ -44,6 +44,27 @@
 	38. [Slither Code Similarity](#38-slither-code-similarity)
 	39. [Slither Flat](#39-slither-flat)
 	40. [Slither Format](#40-slither-format)
+3. [Block 3](#block-3)
+	41. [Slither ERC Conformance](#41-slither-erc-conformance)
+	42. [Slither-Prop](#42-slither-prop)
+	43. [Slither New Detectors](#43-slither-new-detectors)
+	44. [Manticore](#44-manticore)
+	45. [Echidna](#45-echidna)
+	46. [Echidna Features](#46-echidna-features)
+	47. [Echidna Usage](#47-echidna-usage)
+	48. [Eth-security-toolbox](#48-eth-security-toolbox)
+	49. [Ethersplay](#49-ethersplay)
+	50. [Pyevmasm](#50-pyevmasm)
+	51. [Rattle](#51-rattle)
+	52. [Evm_cfg_builder](#52-evm_cfg_builder)
+	53. [Crytic Compile](#53-crytic-compile)
+	54. [Solc-selct](#54-solc-select)
+	55. [Etheno](#55-etheno)
+	56. [Mythx](#56-mythx)
+	57. [Mythx process](#57-mythx-process)
+	58. [Mythx tools](#58-mythx-tools)
+	59. [Mythx Coverage](#59-mythx-coverage)
+	60. [Mythx](#60-mythx)
 ---
 
 ### [Block 1](https://github.com/x676f64/secureum-mind_map)
@@ -451,3 +472,170 @@
 	5. external-function
 	6. constable-states
 	7. constant-function
+
+
+### [Block 3](https://www.youtube.com/watch?v=QmD2bJUe140)
+#### 41. Slither ERC Conformance
+- Slither ERC conformance tool _slither-check-erc_ checks the following for ERC's conformance for ERC20, ERC721, ERC777, ERC165, ERC223 and ERC1820:
+	1. All the functions are present
+	2. All the events are present
+	3. Functions return the correct type
+	4. Functions that must be view are view
+	5. Events' parameters are correctly indexed
+	6. The functions emit the events
+	7. Derived contracts do not break the conformance
+
+#### 42. Slither-Prop
+- Slither property generation tool _slither-prop_ generates code properties (e.g., invariants) that can be tested with unit tests or Echidna, entirely automatically. The ERC20 scenarios that can be tested are:
+	1. Transferable - Test the correct tokens transfer
+	2. Pausable - Test the pausable functionality
+	3. NotMintable - Test that no one can mint tokens
+	4. NotMintableNotBurnable - Test that no one can mint or burn tokens
+	5. NotBurnable - Test that no one can burn tokens
+	6. Burnable - Test the burn of tokens. Require the "burn(address) returns()" function
+
+#### 43. Slither New Detectors
+- Slither’s plugin architecture lets you integrate new detectors that run from the command line. The skeleton for a detector has:
+	1. _ARGUMENT_: lets you run the detector from the command line
+	2. _HELP_: is the information printed from the command line
+	3. _IMPACT_: indicates the impact of the issue. Allowed values are INFORMATIONAL|LOW|MEDIUM|HIGH
+	4. _CONFIDENCE_: indicates your confidence in the analysis. Allowed values are LOW|MEDIUM|HIGH
+	5. _WIKI_: constants are used to generate automatically the documentation.
+	6. ``detect()`` is the function that implements the detector logic and needs to return a list of findings.
+
+#### 44. [Manticore](https://github.com/trailofbits/manticore)
+- A symbolic execution tool for analysis of Ethereum smart contracts (besides Linux binaries & WASM modules). See [tutorial](https://github.com/crytic/building-secure-contracts/tree/master/program-analysis/manticore) for details.
+	1. Program Exploration: Manticore can execute a program with symbolic inputs and explore all the possible states it can reach
+	2. Input Generation: Manticore can automatically produce concrete inputs that result in a given program state
+	3. Error Discovery: Manticore can detect crashes and other failure cases in binaries and smart contracts
+	4. Instrumentation: Manticore provides fine-grained control of state exploration via event callbacks and instruction hooks
+	5. Programmatic Interface: Manticore exposes programmatic access to its analysis engine via a Python API
+
+#### 45. [Echidna](https://github.com/crytic/echidna)
+- A Haskell program designed for fuzzing/property-based testing of Ethereum smart contracts that compliments Slither and Manticore.
+- It uses sophisticated grammar-based fuzzing campaigns based on a contract ABI to falsify user-defined predicates or Solidity assertions.
+
+#### 46. Echidna Features
+1. Generates inputs tailored to your actual code
+2. Optional corpus collection, mutation and coverage guidance to find deeper bugs
+3. Powered by Slither to extract useful information before the fuzzing campaign
+4. Source code integration to identify which lines are covered after the fuzzing campaign
+5. Curses-based retro UI, text-only or JSON output
+6. Automatic test case minimization for quick triage
+7. Seamless integration into the development workflow
+8. Maximum gas usage reporting of the fuzzing campaign
+9. Support for a complex contract initialization with Etheno and Truffle
+
+#### 47. Echidna Usage
+-  [Tutorial](https://github.com/crytic/building-secure-contracts/tree/master/program-analysis/echidna#echidna-tutorial) for details)
+	1. Executing the test runner:
+		- The core Echidna functionality is an executable called echidna-test.
+		- echidna-test takes a contract and a list of invariants (properties that should always remain true) as input.
+		- For each invariant, it generates random sequences of calls to the contract and checks if the invariant holds.
+		- If it can find some way to falsify the invariant, it prints the call sequence that does so.
+		- If it can't, you have some assurance the contract is safe.
+	2. Writing invariants:
+		- Invariants are expressed as Solidity functions with names that begin with echidna_, have no arguments, and return a boolean.
+	3. Collecting and visualizing coverage:
+		- After finishing a campaign, Echidna can save a coverage maximizing corpus in a special directory specified with the corpusDir config option.
+		- This directory will contain two entries:
+			1) a directory named coverage with JSON files that can be replayed by Echidna and
+			2) a plain-text file named covered.txt, a copy of the source code with coverage annotations.
+#### 48. [Eth-security-toolbox](https://github.com/crytic/eth-security-toolbox)
+- A Docker container preinstalled and preconfigured with all of Trail of Bits’ Ethereum security tools.
+- This includes:
+	1. Echidna property-based fuzz tester
+	2. Etheno integration tool and differential tester
+	3. Manticore symbolic analyzer and formal contract verifier
+	4. Slither static analysis tool
+	5. Rattle EVM lifter
+	6. Not So Smart Contracts repository
+
+#### 49. [Ethersplay](https://github.com/crytic/ethersplay)
+- A Binary Ninja plugin which enables an EVM disassembler and related analysis tools.
+	1. Takes as input the evm bytecode in raw binary format
+	2. Renders control flow graph of all functions
+	3. Shows Manticore coverage
+#### 50. [Pyevmasm](https://github.com/crytic/pyevmasm)
+- An assembler and disassembler library for the Ethereum Virtual Machine (EVM).
+- It includes a command line utility and a Python API.
+
+#### 51. [Rattle](https://github.com/crytic/rattle)
+- An EVM binary static analysis framework designed to work on deployed smart contracts (not actively developed anymore).
+	1. Takes EVM byte strings and uses a flow-sensitive analysis to recover the original control flow graph
+	2. Lifts the control flow graph into an SSA/infinite register form, and optimizes the SSA – removing DUPs, SWAPs, PUSHs, and POPs
+	3. The conversion from a stack machine to SSA form removes 60%+ of all EVM instructions and presents a much friendlier interface to those who wish to read the smart contracts they’re interacting with
+
+#### 52. [Evm_cfg_builder](https://github.com/crytic/evm_cfg_builder)
+- A tool used to extract a control flow graph (CFG) from EVM bytecode and used by Ethersplay, Manticore, and other tools from Trail of Bits.
+	1. Reliably recovers a Control Flow Graph (CFG) from EVM bytecode using a dedicated Value Set Analysis
+	2. Recovers functions names
+	3. Recovers attributes (e.g., payable, view, pure)
+	4. Outputs the CFG to a dot file
+	5. Library API
+
+#### 53. [Crytic-compile](https://github.com/crytic/crytic-compile)
+- A smart contract compilation library which is used in Trail of Bits’ security tools and supports Truffle, Embark, Etherscan, Brownie, Waffle, Hardhat and other development environments.
+- The plugin is used in Crytic tools, including:
+	1. Slither
+	2. Echidna
+	3. Manticore
+	4. evm-cfg-builder
+
+#### 54. [Solc-select](https://github.com/crytic/solc-select)
+- A script to quickly switch between Solidity compiler versions.
+	1. solc-select: manages installing and setting different solc compiler versions
+	2. solc: wrapper around solc which picks the right version according to what was set via solc-select
+	3. solc binaries are downloaded from https://binaries.soliditylang.org/ which contains official artifacts for many historical and modern solc versions for Linux and macOS
+
+#### 55. [Etheno](https://github.com/crytic/etheno)
+- The Ethereum testing Swiss Army knife.
+- It’s a JSON RPC multiplexer, analysis tool wrapper, and test integration tool.
+	1. JSON RPC Multiplexing:
+		- Etheno runs a JSON RPC server that can multiplex calls to one or more clients:
+			1) API for filtering and modifying JSON RPC calls
+			2) Enables differential testing by sending JSON RPC sequences to multiple Ethereum clients
+			3) Deploy to and interact with multiple networks at the same time
+	2. Analysis Tool Wrapper:
+		- Etheno provides a JSON RPC client for advanced analysis tools like Manticore
+			1) Lowers barrier to entry for using advanced analysis tools
+			2) No need for custom scripts to set up account and contract state
+			3) Analyze arbitrary transactions without Solidity source code
+	3. Integration with Test Frameworks like Ganache and Truffle:
+		1) Run a local test network with a single command
+		2) Use Truffle migrations to bootstrap Manticore analyses
+		3) Symbolic semantic annotations within unit tests
+
+#### 56. [MythX](https://mythx.io/)
+- A powerful security analysis service that finds Solidity vulnerabilities in your Ethereum smart contract code during your development life cycle.
+- It is a [paid API-based service](https://mythx.io/plans/) which uses [several tools](https://mythx.io/tools/) on the backend including a static analyzer (Maru), symbolic analyzer (Mythril) and a greybox fuzzer (Harvey) to implement a total of [46 detectors](https://mythx.io/detectors/).
+- [Mythril](https://github.com/ConsenSys/mythril) is the open-source component of MythX.
+
+#### 57. MythX process
+- MythX is an api based service so it doesn't run locally on the users's machine
+	1. Submit your code:
+		- The analysis requests are encrypted with TLS and the code you submit is accessed only by you.
+		- Submit both the source code and the compiled bytecode of your smart contracts for best results.
+	2. Activate a full suite of analysis techniques:
+		- The longer MythX runs, the more it can detect more security weaknesses.
+	3. Receive a detailed analysis report:
+		- MythX detects a majority of vulnerabilities listed in the SWC Registry.
+		- The report will return a listing of all the weaknesses found in your code, including the exact position of the issue and its SWC ID.
+		- Reports generated can be only accessed by you.
+		- MythX offers 3 scan modes, quick, standard and deep.
+
+#### 58. MythX tools
+- When you submit your code to the API it gets analyzed by multiple microservices in parallel where these tools cooperate to return the more comprehensive results in the execution time provided.
+	1. A static analyzer, Maru, parses the Solidity AST
+	2. A symbolic analyzer, Mythril, detects possible vulnerable states
+	3. A greybox fuzzer, Harvey, detects vulnerable execution paths
+		- Compared to traditional blackbox fuzzing, greybox fuzzing is guided by coverage information which is made possible by using program instrumentation to trace the code coverage "breached?" by each input during fuzzing
+
+#### 59. MythX coverage
+- Extends to most SWCs found in the [SWC Registry](https://swcregistry.io/) with the 46 detectors listed [here](https://mythx.io/detectors/) along with the type of analysis used.
+
+#### 60. MythX
+- Based on a SaaS (Security as a Service) platform based on the premise that:
+    1. Higher performance compared to running security tools locally
+    2. Higher vulnerability coverage than any standalone tool
+    3. Benefit from continuous improvements to our security analysis technology with new and improved security tests as the smart contract security landscape evolves.
