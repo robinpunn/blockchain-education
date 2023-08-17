@@ -65,6 +65,27 @@
 	58. [Mythx tools](#58-mythx-tools)
 	59. [Mythx Coverage](#59-mythx-coverage)
 	60. [Mythx](#60-mythx)
+4. [Block 4](#block-4)
+	61. [MythX Privacy](#61-mythx-privacy)
+	62. [MythX Performance](#62-mythx-performance)
+	63. [MythX Versions](#63-mythx-versions)
+	64. [MythX Pricing](#64-mythx-pricing)
+	65. [Scribble](#65-scribble)
+	66. [Fuzzing as a service](#66-fuzzing-as-a-service)
+	67. [Karl](#67-karl)
+	68. [Theo](#68-theo)
+	69. [Visual Auditor](#69-visual-auditor)
+	70. [Surya](#70-surya)
+	71. [SWC Registry](#71-swc-registry)
+	72. [Securify](#72-securify)
+	73. [Verx](#73-verx)
+	74. [Smartcheck](#74-smartcheck)
+	75. [K-Framework](#75-k-framework)
+	76. [Certora Prover](#76-certora-prover)
+	77. [DappHubb's Hevm](#77-dapphubs-hevm)
+	78. [Capture The Flag (CTF)](#78capture-the-flag-ctf)
+	79. [Security Tools](#79-security-tools)
+	80. [Audit Process](#80-audit-process)
 ---
 
 ### [Block 1](https://github.com/x676f64/secureum-mind_map)
@@ -639,3 +660,172 @@
     1. Higher performance compared to running security tools locally
     2. Higher vulnerability coverage than any standalone tool
     3. Benefit from continuous improvements to our security analysis technology with new and improved security tests as the smart contract security landscape evolves.
+
+
+### [Block 4](https://www.youtube.com/watch?v=jZ81ebDJVe0)
+#### 61. MythX Privacy
+- MythX privacy guarantee for the smart contract code submitted using their SaaS APIs:
+	1. Code analysis requests are encrypted with TLS
+	2. To provide comprehensive reports and improve performance, it stores some of the contract data in our database, including parts of the source code and bytecode but that data never leaves their secure server and is not shared with any outside parties.
+	3. It keeps the results of your analysis so you can retrieve them later, but the report can be accessed by you only.
+
+#### 62. MythX Performance
+- Performance is usually a concern with security tools
+- Quick scan runs for 5 minutes, Standard scan runs for 30 minutes, and Deep scan runs for 90 minutes.
+
+#### 63. MythX Versions
+- Comes in different versions, so it can be accessed in different ways
+- MythX official integrations, tools and libraries include:
+    1. MythX CLI: Unified tool to use MythX as a Command Line Interface (CLI) now with full Truffle Projects support.
+    2. MythX-JS: Typescript library to integrate MythX in your JS or TS projects.
+    3. PythX: Python library to integrate MythX in your Python projects.
+    4. MythX VSCode: VSCode extension which allows you to scan smart-contracts and view results directly from your code editor.
+
+#### 64. MythX Pricing
+1. On Demand (US$9.99/3 scans): All scan modes and Prepaid scan packs
+2. Developer (US$49/mo): Quick and Standard scan modes; 500 scans/month
+3. Professional (US$249/mo): All scan modes; 10 000 scans/month
+4. Enterprise (Custom pricing):
+	1. Custom plans for your team's specific needs
+	2. Custom Verification Service
+	3. Retainer for Custom Support
+
+#### 65. [Scribble](https://github.com/consensys/scribble)
+- A verification language and runtime verification tool that translates high-level specifications into solidity code. It allows you to annotate a solidity smart contract with properties (See [here](https://docs.scribble.codes/)_)_.
+    1. Principles/Goals:
+	    1) Specifications are easy to understand by developers and auditors
+	    2) Specifications are simple to reason about
+	    3) Specifications can be efficiently checked using off-the-shelf analysis tools 4) A small number of core specification constructs are sufficient to express and reason about more advanced constructs
+    2. Transforms annotations in the Scribble specification language into concrete assertions
+    3. With these instrumented but equivalent contracts, one can then use Mythril, Harvey, MythX
+
+#### 66. [Fuzzing-as-a-Service](https://consensys.net/diligence/fuzzing/)
+- A service recently launched by ConsenSys Diligence where projects can submit their smart contracts along with embedded inlined specifications or properties written using the Scribble language.
+- These contracts are run through the Harvey fuzzer which uses the specified properties to optimize fuzzing campaigns.
+- Any violations from fuzzing are reported back from the service for the project to fix.
+
+#### 67. [Karl](https://github.com/cleanunicorn/karl)
+- A monitor for smart contracts that checks for security vulnerabilities using the Mythril detection engine.
+- It can be used to monitor the Ethereum blockchain for newly deployed vulnerable smart contracts in real-time.
+
+#### 68. [Theo](https://github.com/cleanunicorn/theo)
+- An exploitation tool with a Metasploit-like interface, drops you into a Python REPL console, where you can use the available features to do smart contract reconnaissance, check the storage, run exploits or frontrun or backrun transactions targeting a specific smart contract.
+- Features:
+	1. Automatic smart contract scanning which generates a list of possible exploits
+	2. Sending transactions to exploit a smart contract
+	3. Transaction pool monitor
+	4. Web3 console
+	5. Frontrunning and backrunning transactions
+	6. Waiting for a list of transactions and sending out others
+	7. Estimating gas for transactions means only successful transactions are sent
+	8. Disabling gas estimation will send transactions with a fixed gas quantity.
+
+#### 69. Visual Auditor
+- S Visual Studio Code extension that provides security-aware syntax and semantic highlighting for [Solidity](https://marketplace.visualstudio.com/items?itemName=tintinweb.solidity-visual-auditor) _and_ [Vyper](https://marketplace.visualstudio.com/items?itemName=tintinweb.vscode-vyper)_._
+	1. Syntax Highlighting:
+		- access modifiers (external, public, payable, …)
+		- security relevant built-ins, globals, methods and user/miner-tainted information, (address.call(), tx.origin, msg.data, block.*, now)
+		- storage access modifiers (memory, storage)
+		- developer notes in comments (TODO, FIXME, HACK, …)
+		- custom function modifiers
+		- contract creation / event invocations
+		- easily differentiate between arithmetics vs. logical operations
+		- make Constructor and Fallback function more prominent
+	2. Semantic Highlighting:
+		- highlights StateVars (constant, inherited)
+		- detects and alerts about StateVar shadowing
+		- highlights function arguments in the function body
+	3. Review Features:
+		- audit annotations/bookmarks - @audit - ``<msg>`` @audit-ok - ``<msg>`` (see below),
+		- generic interface for importing external scanner results - cdili json format (see below),
+		- codelens inline action:
+			- graph, report, dependencies, inheritance, parse, ftrace, flatten, generate unit test stub, function signature hashes, uml
+	4. Graph- and Reporting Features:
+		- access your favorite Sūrya features from within vscode,
+		- interactive call graphs with call flow highlighting and more,
+		- auto-generate UML diagrams from code to support your threat modelling exercises or documentation
+	5. Code Augmentation:
+		- Hover over Ethereum Account addresses to download the byte-code,
+		- source-code or open it in the browser,
+		- Hover over ASM instructions to show their signatures,
+		- Hover over keywords to show basic Security Notes,
+		- Hover over StateVar's to show declaration information
+	6. Views: Cockpit vs Outline
+
+#### 70. [Surya](https://github.com/ConsenSys/surya)
+- Aids auditors in understanding and visualizing Solidity smart contracts by providing information about the contracts’ structure and generates call graphs and inheritance graphs.
+- It also supports querying the function call graph in multiple ways to aid in the manual inspection of contracts.
+    1. Integrated with Visual Auditor
+    2. Commands: graph, ftrace, flatten, describe, inheritance, dependencies, parse, mdreport
+
+#### 71. [SWC Registry](https://github.com/SmartContractSecurity/SWC-registry)
+- The Smart Contract Weakness Classification Registry (SWC Registry) is an implementation of the weakness classification scheme proposed in EIP-1470.
+    1. It is loosely aligned to the terminologies and structure used in the Common Weakness Enumeration (CWE) while overlaying a wide range of weakness variants that are specific to smart contracts
+    2. The goals of this project are as follows:
+	    - Provide a straightforward way to classify security issues in smart contract systems.
+	    - Define a common language for describing security issues in smart contract systems' architecture, design, or code.
+	    - Serve as a way to train and increase performance for smart contract security analysis tools.
+    3. This repository is maintained by the team behind MythX and currently contains 37 entries
+
+#### 72. [Securify](https://github.com/eth-sri/securify2)
+- A security scanner for Ethereum smart contracts which Implements static analysis written in Datalog and supports 38 vulnerabilities
+
+#### 73. [VerX](https://verx.ch/)
+- A verifier that can automatically prove temporal safety properties of Ethereum smart contracts.
+	- The verifier is based on a careful combination of three ideas:
+		- reduction of temporal safety verification to reachability checking,
+		- an efficient symbolic execution engine used to compute precise symbolic states within a transaction,
+		- and delayed abstraction which approximates symbolic states at the end of transactions into abstract states.
+
+#### 74. [SmartCheck](https://github.com/smartdec/smartcheck)
+- An extensible static analysis tool for discovering vulnerabilities and other code issues in Ethereum smart contracts written in the Solidity programming language.
+- It translates Solidity source code into an XML-based intermediate representation and checks it against XPath patterns.
+
+#### 75. [K-Framework](https://kframework.org/)
+- A verification framework from the  [Runtime Verification](https://runtimeverification.com/smartcontract/) team.
+- Analysis, modelling and verification tools from (RV):
+	- provides [KEVM](https://github.com/kframework/evm-semantics) which is a model of EVM in the K-Framework.
+	- It is the first executable specification of the EVM that completely passes official test-suites and serves as a platform for building a wide range of analysis tools and other semantic extensions for EVM.
+
+#### 76. [Certora](https://www.certora.com/) [Prover](https://www.certora.com/pubs/QuickGuide.pdf)
+- Checks that a smart contract satisfies a set of rules written in a language called Specify.
+- Each rule is checked on all possible transactions, though of course this is not done by explicitly enumerating transactions, but rather through symbolic techniques.
+    1. The Certora Prover provides complete path coverage for a set of safety rules provided by the user.
+		- For example, a rule might check that only a bounded number of tokens can be minted in an ERC20 contract.
+		- The prover either guarantees that a rule holds on all paths and all inputs or produces a test input that demonstrates a violation of the rule.
+    2. The problem addressed by the Certora Prover is known to be undecidable which means that there will always be pathological programs and rules for which the Certora prover will time out without a definitive answer
+    3. The Certora Prover takes as input the smart contract (either as EVM bytecode or Solidity source code) and a set of rules, written in Certora’s specification language.
+	    - The Prover then automatically determines whether or not the contract satisfies all the rules using a combination of two computer science techniques: abstract interpretation and constraint solving
+
+#### 77. DappHub’s [Hevm](http://dapp.tools/hevm/)
+- An implementation of the EVM made specifically for unit testing and debugging smart contracts.
+- It can run unit tests, property tests, interactively debug contracts while showing the Solidity source, or run arbitrary EVM code.
+
+#### 78.Capture the Flag (CTF)
+- Fun and educational challenges where participants have to hack different (dummy) smart contracts that have vulnerabilities in them.
+- They help understand the complexities around how vulnerabilities may be exploited in the wild. Popular ones include:
+    1. [Capture The Ether](https://capturetheether.com/): is a set of twenty challenges created by [Steve Marx](https://twitter.com/smarx) which test knowledge of Ethereum concepts of contracts, accounts and math among other things.
+    2. [Ethernaut](https://ethernaut.openzeppelin.com/): is a Web3/Solidity based war game from OpenZeppelin that is played in the Ethereum Virtual Machine. Each level is a smart contract that needs to be ‘hacked'. The game is 100% open source and all levels are contributions made by other players
+    3. [Damn Vulnerable DeFi v2](https://www.damnvulnerabledefi.xyz/v2-release.html): is a set of 12 DeFi related challenges created by [tinchoabbate](https://twitter.com/tinchoabbate). Depending on the challenge, you should either stop the system from working, steal as much funds as you can, or do some other unexpected things.
+    4. [Paradigm CFT](https://ctf.paradigm.xyz/): is a set of seventeen [challenges](https://github.com/paradigm-operations/paradigm-ctf-2021) created by [samczsun](https://twitter.com/samczsun) at Paradigm.
+
+#### 79. Security Tools
+- Smart contract security tools are useful in assisting auditors while reviewing smart contracts.
+- They automate many of the tasks that can be codified into rules with different levels of coverage, correctness and precision.
+- They are fast, cheap, scalable and deterministic compared to manual analysis.
+- But they are also susceptible to false positives.
+- They are especially well-suited currently to detect common security pitfalls and best-practices at the Solidity and EVM level.
+- With varying degrees of manual assistance, they can also be programmed to check for application-level, business-logic constraints.
+
+#### 80. Audit Process
+- Audit Process could be thought of as a ten-step process as follows:
+    1. Read specification/documentation of the project to understand the requirements, design and architecture
+    2. Run fast automated tools such as linters or static analyzers to investigate common Solidity pitfalls or missing smart contract best-practices
+    3. Manual code analysis to understand business logic and detect vulnerabilities in it
+    4. Run slower but more deeper automated tools such as symbolic checkers, fuzzers or formal verification analyzers which typically require formulation of properties/constraints beforehand, hand holding during the analyses and some post-run evaluation of their results
+    5. Discuss (with other auditors) the findings from above to identify any false positives or missing analyses
+    6. Convey status to project team for clarifying questions on business logic or threat model
+    7. Iterate the above for the duration of the audit leaving some time for report writing
+    8. Write report summarizing the above with details on findings and recommendations
+    9. Deliver the report to the project team and discuss findings, severity and potential fixes
+    10. Evaluate fixes from the project team and verify that they indeed remove the vulnerabilities identified in findings.
