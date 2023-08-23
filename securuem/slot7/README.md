@@ -44,27 +44,47 @@
     38. [Lack of Return Value Checks](#38-lack-of-return-value-checks-can-lead-to-unexpected-results)
     39. [External Calls](#39-external-calls-in-loop-can-lead-to-denial-of-service)
     40. [Transfer more than expected](#40-ousd-allows-users-to-transfer-more-tokens-than-expected)
-
+3. [Block 3](#block-3)
+    41. [OUSD Total Supply](#41-ousd-total-supply-can-be-arbitrary-even-smaller-than-user-balances)
+    42. [Flash ](#42-flash-minting-can-be-used-to-redeem-fydai)
+    43. [ChainID Validation](#43-lack-of-chainid-validation-allows-signatures-to-be-re-used-across-forks)
+    44. [Contract Existence Check](#44-lack-of-a-contract-existence-check-allows-token-theft)
+    45. [Bidders](#45-no-incentive-for-bidders-to-vote-earlier)
+    46. [Access Control](#46-lack-of-access-control-separation-is-risky)
+    47. [Two Step Procedure](#47-lack-of-two-step-procedure-for-critical-operations-leaves-them-error-prone)
+    48. [Initialization Functions](#48-initialization-functions-can-be-front-run)
+    49. [Missing Validation](#49-missing-validation-of-_owner-argument-could-indefinitely-lock-owner-role)
+    50. [Incorrect Comparison](#50-incorrect-comparison-enables-swapping-and-token-draining-at-no-cost)
+    51. [Unbound Loop](#51-unbound-loop-enables-denial-of-service)
+    52. [Front Running Pool's Initialization](#52-front-running-pools-initialization-can-lead-to-draining-of-liquidity-providers-initial-deposits)
+    53. [Swapping on Zero Liquidity](#53-swapping-on-zero-liquidity-allows-for-control-of-the-pools-price)
+    54. [Failed Transfer Overlooked](#54-failed-transfer-may-be-overlooked-due-to-lack-of-contract-existence-check)
+    55. [Undefined Behavior](#55-use-of-undefined-behavior-in-equality-check)
+    56. [Assimilators' Balance Function](#56-assimilators-balance-functions-return-raw-values)
+    57. [USDC Equivalent to USD](#57-system-always-assumes-usdc-is-equivalent-to-usd)
+    58. [Deprecated Chainlink API](#58-assimilators-use-a-deprecated-chainlink-api)
+    59. [cancelOrdersUpTo](#59-cancelordersupto-can-be-used-to-permanently-block-future-orders)
+    60. [AssetProxyOwner timelock period](#60-specification-code-mismatch-for-assetproxyowner-timelock-period)
 ---
 
 
 ### [Block 1](https://www.youtube.com/watch?v=SromSImIpHE)
 #### 1. **Unhandled return values of** _**transfer**_ **and** _**transferFrom**_
-- ERC20 implementations are not always consistent. 
-- Some implementations of _transfer_ and _transferFrom_ could return ‘false’ on failure instead of reverting. 
+- ERC20 implementations are not always consistent.
+- Some implementations of _transfer_ and _transferFrom_ could return ‘false’ on failure instead of reverting.
 - It is safer to wrap such calls into _require()_ statements to these failures.
 	1. Recommendation: Check the return value and revert on 0/false or use OpenZeppelin’s _SafeERC20_ wrapper functions
 	2. Medium severity finding from [Consensys Diligence Audit of Aave Protocol V2](https://consensys.net/diligence/audits/2020/09/aave-protocol-v2/#unhandled-return-values-of-transfer-and-transferfrom)
 
 #### 2. **Random task execution**
-- In a scenario where a user takes a flash loan, __parseFLAndExecute()_ gives the flash loan wrapper contract (_FLAaveV2_, _FLDyDx_) the permission to execute functions on behalf of the user’s _DSProxy_. 
-- This execution permission is revoked only after the entire recipe execution is finished, which means that in case that any of the external calls along the recipe execution is malicious, it might call _executeAction()_ back, i.e. 
+- In a scenario where a user takes a flash loan, __parseFLAndExecute()_ gives the flash loan wrapper contract (_FLAaveV2_, _FLDyDx_) the permission to execute functions on behalf of the user’s _DSProxy_.
+- This execution permission is revoked only after the entire recipe execution is finished, which means that in case that any of the external calls along the recipe execution is malicious, it might call _executeAction()_ back, i.e.
 - Reentrancy Attack, and inject any task it wishes (e.g. take user’s funds out, drain approved tokens, etc)
     1. Recommendation: A reentrancy guard (mutex) should be used to prevent such attack
     2. Critical severity finding from [Consensys Diligence Audit of Defi Saver](https://consensys.net/diligence/audits/2021/03/defi-saver/#random-task-execution)
 
-#### 3. Tokens with more than 18 decimal points will cause issues**: 
-- It is assumed that the maximum number of decimals for each token is 18. 
+#### 3. Tokens with more than 18 decimal points will cause issues**:
+- It is assumed that the maximum number of decimals for each token is 18.
 - However uncommon, it is possible to have tokens with more than 18 decimals, as an example YAMv2 has 24 decimals. This can result in broken code flow and unpredictable outcomes
     1. Recommendation: Make sure the code won’t fail in case the token’s decimals is more than 18
     2. Major severity finding from [Consensys Diligence Audit of Defi Saver](https://consensys.net/diligence/audits/2021/03/defi-saver/#tokens-with-more-than-18-decimal-points-will-cause-issues)
@@ -79,9 +99,9 @@
     1. Recommendation: Reverse the order of parameters in allowance function call to fit the order that is in the safeTransferFrom function call.
     2. Medium severity finding from [Consensys Diligence Audit of Defi Saver](https://consensys.net/diligence/audits/2021/03/defi-saver/#reversed-order-of-parameters-in-allowance-function-call)
 
-#### 6. Token approvals can be stolen in _**DAOfiV1Router01.addLiquidity()**_ 
-- DAOfiV1Router01.addLiquidity() creates the desired pair contract if it does not already exist, then transfers tokens into the pair and calls _DAOfiV1Pair.deposit()_. 
-- There is no validation of the address to transfer tokens from, so an attacker could pass in any address with nonzero token approvals to _DAOfiV1Router_. 
+#### 6. Token approvals can be stolen in _**DAOfiV1Router01.addLiquidity()**_
+- DAOfiV1Router01.addLiquidity() creates the desired pair contract if it does not already exist, then transfers tokens into the pair and calls _DAOfiV1Pair.deposit()_.
+- There is no validation of the address to transfer tokens from, so an attacker could pass in any address with nonzero token approvals to _DAOfiV1Router_.
 - This could be used to add liquidity to a pair contract for which the attacker is the _pairOwner_, allowing the stolen funds to be retrieved using DAOfiV1Pair.withdraw().
     1. Recommendation: Transfer tokens from msg.sender instead of lp.sender
     2. Critical severity finding from [Consensys Diligence Audit of DAOfi](https://consensys.net/diligence/audits/2021/02/daofi/#token-approvals-can-be-stolen-in-daofiv1router01-addliquidity)
@@ -91,15 +111,15 @@
     1. Recommendation: Check the intended values
     2. Major severity finding from [Consensys Diligence Audit of DAOfi](https://consensys.net/diligence/audits/2021/02/daofi/#the-swapexacttokensforeth-checks-the-wrong-return-value)
 
-#### 8. DAOfiV1Pair.deposit() accepts deposits of zero, blocking the pool 
-- DAOfiV1Pair.deposit() is used to deposit liquidity into the pool. 
-- Only a single deposit can be made, so no liquidity can ever be added to a pool where deposited == true. 
+#### 8. DAOfiV1Pair.deposit() accepts deposits of zero, blocking the pool
+- DAOfiV1Pair.deposit() is used to deposit liquidity into the pool.
+- Only a single deposit can be made, so no liquidity can ever be added to a pool where deposited == true.
 - The deposit() function does not check for a nonzero deposit amount in either token, so a malicious user that does not hold any of the _baseToken_ or _quoteToken_ can lock the pool by calling deposit() without first transferring any funds to the pool.
     1. Recommendation: Require a minimum deposit amount with non-zero checks
     2. Medium severity finding from [Consensys Diligence Audit of DAOfi](https://consensys.net/diligence/audits/2021/02/daofi/#daofiv1pair-deposit-accepts-deposits-of-zero-blocking-the-pool)
 
 #### 9. GenesisGroup.commit overwrites previously-committed values
-- The amount stored in the recipient’s _committedFGEN_ balance overwrites any previously-committed value. 
+- The amount stored in the recipient’s _committedFGEN_ balance overwrites any previously-committed value.
 - Additionally, this also allows anyone to commit an amount of “0” to any account, deleting their commitment entirely.
     1. Recommendation: Ensure the committed amount is added to the existing commitment.
     2. Critical severity finding from [Consensys Diligence Audit of Fei Protocol](https://consensys.net/diligence/audits/2021/01/fei-protocol/#genesisgroup-commit-overwrites-previously-committed-values)
@@ -109,77 +129,77 @@
 	1. Recommendation: Consider adding validation in _GenesisGroup.purchase_ and _GenesisGroup.commit_ to make sure that these functions cannot be called after the launch.
 	2. Critical severity finding from [Consensys Diligence Audit of Fei Protocol](https://consensys.net/diligence/audits/2021/01/fei-protocol/#purchasing-and-committing-still-possible-after-launch)
 
-#### 11. UniswapIncentive overflow on pre-transfer hooks 
-- Before a token transfer is performed, Fei performs some combination of mint/burn operations via _UniswapIncentive.incentivize_. 
-- Both _incentivizeBuy_ and _incentivizeSell_ calculate buy/sell incentives using overflow-prone math, then mint / burn from the target according to the results. 
-- This may have unintended consequences, like allowing a caller to mint tokens before transferring them, or burn tokens from their recipient.  
+#### 11. UniswapIncentive overflow on pre-transfer hooks
+- Before a token transfer is performed, Fei performs some combination of mint/burn operations via _UniswapIncentive.incentivize_.
+- Both _incentivizeBuy_ and _incentivizeSell_ calculate buy/sell incentives using overflow-prone math, then mint / burn from the target according to the results.
+- This may have unintended consequences, like allowing a caller to mint tokens before transferring them, or burn tokens from their recipient.
     1. Recommendation: Ensure casts in _getBuyIncentive_ and _getSellPenalty_ do not overflow
     2. Major severity finding from [Consensys Diligence Audit of Fei Protocol](https://consensys.net/diligence/audits/2021/01/fei-protocol/#uniswapincentive-overflow-on-pre-transfer-hooks)
 
-#### 12. BondingCurve **allows users to acquire FEI before launch 
-- allocate can be called before genesis launch, as long as the contract holds some nonzero PCV. 
+#### 12. BondingCurve **allows users to acquire FEI before launch
+- allocate can be called before genesis launch, as long as the contract holds some nonzero PCV.
 - By force-sending the contract 1 wei, anyone can bypass the majority of checks and actions in allocate, and mint themselves FEI each time the timer expires.
     1. Recommendation: Prevent allocate from being called before genesis launch
     2. Medium severity finding from [Consensys Diligence Audit of Fei Protocol](https://consensys.net/diligence/audits/2021/01/fei-protocol/#bondingcurve-allows-users-to-acquire-fei-before-launch)
 
 #### 13. Timed.isTimeEnded returns true if the timer has not been initialized
-- Timed_ initialization is a 2-step process: 
-	1) _Timed.duration_ is set in the constructor 
-	2) _Timed.startTime_ is set when the method __initTimed_ is called. 
+- Timed_ initialization is a 2-step process:
+	1) _Timed.duration_ is set in the constructor
+	2) _Timed.startTime_ is set when the method __initTimed_ is called.
 		- Before this second method is called, _isTimeEnded_() calculates remaining time using a _startTime_ of 0, resulting in the method returning true for most values, even though the timer has not technically been started.
     1. Recommendation: If Timed has not been initialized, _isTimeEnded_() should return false, or revert
     2. Medium severity finding from [Consensys Diligence Audit of Fei Protocol](https://consensys.net/diligence/audits/2021/01/fei-protocol/#timed-istimeended-returns-true-if-the-timer-has-not-been-initialized)
 
-#### 14. Overflow/underflow protection 
-- Having overflow/underflow vulnerabilities is very common for smart contracts. 
-- It is usually mitigated by using SafeMath or using solidity version ^0.8 (after solidity 0.8 arithmetical operations already have default overflow/underflow protection). 
-- In this code, many arithmetical operations are used without the ‘safe’ version. 
-- The reasoning behind it is that all the values are derived from the actual ETH values, so they can’t overflow.  
+#### 14. Overflow/underflow protection
+- Having overflow/underflow vulnerabilities is very common for smart contracts.
+- It is usually mitigated by using SafeMath or using solidity version ^0.8 (after solidity 0.8 arithmetical operations already have default overflow/underflow protection).
+- In this code, many arithmetical operations are used without the ‘safe’ version.
+- The reasoning behind it is that all the values are derived from the actual ETH values, so they can’t overflow.
     1. Recommendation: In our opinion, it is still safer to have these operations in a safe mode. So we recommend using SafeMath or solidity version ^0.8 compiler.
     2. Medium severity finding from [Consensys Diligence Audit of Fei Protocol](https://consensys.net/diligence/audits/2021/01/fei-protocol/#overflow-underflow-protection)
 
 #### 15. Unchecked return value for _IWETH.transfer_ call
-- In _EthUniswapPCVController_, there is a call to _IWETH.transfer_ that does not check the return value. 
-- It is usually good to add a require-statement that checks the return value or to use something like _safeTransfer_; unless one is sure the given token reverts in case of a failure.  
+- In _EthUniswapPCVController_, there is a call to _IWETH.transfer_ that does not check the return value.
+- It is usually good to add a require-statement that checks the return value or to use something like _safeTransfer_; unless one is sure the given token reverts in case of a failure.
     1. Recommendation: Consider adding a require-statement or using _safeTransfer_
     2. Medium severity finding from [Consensys Diligence Audit of Fei Protocol](https://consensys.net/diligence/audits/2021/01/fei-protocol/#unchecked-return-value-for-iweth-transfer-call)
 
 #### 16. GenesisGroup.emergencyExit remains functional after launch
-- emergencyExit_ is intended as an escape mechanism for users in the event the genesis launch method fails or is frozen. 
-- _emergencyExit_ becomes callable 3 days after launch is callable. 
-- These two methods are intended to be mutually-exclusive, but are not: either method remains callable after a successful call to the other. 
-- This may result in accounting edge cases.  
-    1. Recommendation: 
-	    1) Ensure launch cannot be called if _emergencyExit_ has been called 
-	    2) Ensure _emergencyExit_ cannot be called if launch has been called        
+- emergencyExit_ is intended as an escape mechanism for users in the event the genesis launch method fails or is frozen.
+- _emergencyExit_ becomes callable 3 days after launch is callable.
+- These two methods are intended to be mutually-exclusive, but are not: either method remains callable after a successful call to the other.
+- This may result in accounting edge cases.
+    1. Recommendation:
+	    1) Ensure launch cannot be called if _emergencyExit_ has been called
+	    2) Ensure _emergencyExit_ cannot be called if launch has been called
     2. Medium severity finding from [Consensys Diligence Audit of Fei Protocol](https://consensys.net/diligence/audits/2021/01/fei-protocol/#genesisgroup-emergencyexit-remains-functional-after-launch)
 
-#### 17. ERC20 tokens with no return value will fail to transfer 
-- Although the ERC20 standard suggests that a transfer should return true on success, many tokens are non-compliant in this regard. 
-- In that case, the .transfer() call here will revert even if the transfer is successful, because solidity will check that the _RETURNDATASIZE_ matches the ERC20 interface.  
+#### 17. ERC20 tokens with no return value will fail to transfer
+- Although the ERC20 standard suggests that a transfer should return true on success, many tokens are non-compliant in this regard.
+- In that case, the .transfer() call here will revert even if the transfer is successful, because solidity will check that the _RETURNDATASIZE_ matches the ERC20 interface.
     1. Recommendation: Consider using OpenZeppelin’s SafeERC20
     2. Major severity finding from [Consensys Diligence Audit of bitbank](https://consensys.net/diligence/audits/2020/11/bitbank/#erc20-tokens-with-no-return-value-will-fail-to-transfer)
 
 #### 18. Reentrancy vulnerability in MetaSwap.swap()
-- If an attacker is able to reenter _swap()_, they can execute their own trade using the same tokens and get all the tokens for themselves.  
+- If an attacker is able to reenter _swap()_, they can execute their own trade using the same tokens and get all the tokens for themselves.
     1. Recommendation: Use a simple reentrancy guard, such as OpenZeppelin’s ReentrancyGuard to prevent reentrancy in _MetaSwap.swap()_
     2. Major severity finding from [Consensys Diligence Audit of MetaSwap](https://consensys.net/diligence/audits/2020/08/metaswap/#reentrancy-vulnerability-in-metaswap-swap)
 
 #### 19. A new malicious adapter can access users’ tokens
-- The purpose of the _MetaSwap_ contract is to save users gas costs when dealing with a number of different aggregators. 
-- They can just approve() their tokens to be spent by _MetaSwap_ (or in a later architecture, the Spender contract). 
-- They can then perform trades with all supported aggregators without having to reapprove anything. 
-- A downside to this design is that a malicious (or buggy) adapter has access to a large collection of valuable assets. 
+- The purpose of the _MetaSwap_ contract is to save users gas costs when dealing with a number of different aggregators.
+- They can just approve() their tokens to be spent by _MetaSwap_ (or in a later architecture, the Spender contract).
+- They can then perform trades with all supported aggregators without having to reapprove anything.
+- A downside to this design is that a malicious (or buggy) adapter has access to a large collection of valuable assets.
 - Even a user who has diligently checked all existing adapter code before interacting with _MetaSwap_ runs the risk of having their funds intercepted by a new malicious adapter that’s added later.
     1. Recommendation: Make _MetaSwap_ contract the only contract that receives token approval. It then moves tokens to the Spender contract before that contract _DELEGATECALLs_ to the appropriate adapter. In this model, newly added adapters shouldn’t be able to access users’ funds.
     2. Medium severity finding from [Consensys Diligence Audit of MetaSwap](https://consensys.net/diligence/audits/2020/08/metaswap/#a-new-malicious-adapter-can-access-users-tokens)
 
 #### 20. Owner can front-run traders by updating adapters
-- MetaSwap_ owners can front-run users to swap an adapter implementation. 
-- This could be used by a malicious or compromised owner to steal from users. 
-- Because adapters are _DELEGATECALL’ed_, they can modify storage. 
-- This means any adapter can overwrite the logic of another adapter, regardless of what policies are put in place at the contract level. 
-- Users must fully trust every adapter because just one malicious adapter could change the logic of all other adapters.  
+- MetaSwap_ owners can front-run users to swap an adapter implementation.
+- This could be used by a malicious or compromised owner to steal from users.
+- Because adapters are _DELEGATECALL’ed_, they can modify storage.
+- This means any adapter can overwrite the logic of another adapter, regardless of what policies are put in place at the contract level.
+- Users must fully trust every adapter because just one malicious adapter could change the logic of all other adapters.
     1. Recommendation: At a minimum, disallow modification of existing adapters. Instead, simply add new adapters and disable the old ones.
     2. Medium severity finding from [Consensys Diligence Audit of MetaSwap](https://consensys.net/diligence/audits/2020/08/metaswap/#owner-can-front-run-traders-by-updating-adapters)
 
@@ -338,3 +358,162 @@
 - This issue seems to be caused by a rounding issue when the _creditsDeducted_ is calculated and subtracted.
     1. Recommendation: Short term, make sure the balance is correctly checked before performing all the arithmetic operations. This will make sure it does not allow to transfer more than expected. Long term, use Echidna to write properties that ensure ERC20 transfers are transferring the expected amount.
     2. High Risk severity finding from [ToB’s Audit of Origin Dollar](https://github.com/trailofbits/publications/blob/master/reviews/OriginDollar.pdf)
+
+
+### [Block 3](https://www.youtube.com/watch?v=RUyED_6mkqg)
+#### 41. OUSD total supply can be arbitrary, even smaller than user balances
+- The OUSD token contract allows users to opt out of rebasing effects.
+- At that point, their exchange rate is “fixed”, and further rebases will not have an impact on token balances (until the user opts in).
+    1. Recommendation: Short term, we would advise making clear all common invariant violations for users and other stakeholders. Long term, we would recommend designing the system in such a way to preserve as many commonplace invariants as possible.
+    2. High Risk severity finding from [ToB’s Audit of Origin Dollar](https://github.com/trailofbits/publications/blob/master/reviews/OriginDollar.pdf)
+
+#### 42. Flash minting can be used to redeem fyDAI
+- The flash-minting feature from the _fyDAI_ token can be used to redeem an arbitrary amount of funds from a mature token.
+    1. Recommendation: Short term, disallow calls to redeem in the _YDai_ and Unwind contracts during flash minting. Long term, do not include operations that allow any user to manipulate an arbitrary amount of funds, even if it is in a single transaction. This will prevent attackers from gaining leverage to manipulate the market and break internal invariants.
+    2. Medium Risk severity finding from [ToB’s Audit of Yield Protocol](https://github.com/trailofbits/publications/blob/master/reviews/YieldProtocol.pdf)
+
+#### 43. **Lack of** _**chainID**_ **validation allows signatures to be re-used across forks**
+- ``YDai`` implements the draft ERC 2612 via the _ERC20Permit_ contract it inherits from.
+- This allows a third party to transmit a signature from a token holder that modifies the ERC20 allowance for a particular user.
+- These signatures used in calls to permit in _ERC20Permit_ do not account for chain splits.
+- The _chainID_ is included in the domain separator.
+- However, it is not updatable and not included in the signed data as part of the permit call.
+- As a result, if the chain forks after deployment, the signed message may be considered valid on both forks.
+    1. Recommendation: Short term, include the _chainID_ opcode in the permit schema. This will make replay attacks impossible in the event of a post-deployment hard fork. Long term, document and carefully review any signature schemas, including their robustness to replay on different wallets, contracts, and blockchains. Make sure users are aware of signing best practices and the danger of signing messages from untrusted sources.
+    2. High Risk severity finding from [ToB’s Audit of Yield Protocol](https://github.com/trailofbits/publications/blob/master/reviews/YieldProtocol.pdf)
+
+#### 44. Lack of a contract existence check allows token theft
+- Since there’s no existence check for contracts that interact with external tokens, an attacker can steal funds by registering a token that’s not yet deployed.
+- ``safeTransferFrom`` will return success even if the token is not yet deployed, or was self-destructed.
+	- An attacker that knows the address of a future token can register the token in Hermez, and deposit any amount prior to the token deployment.
+	- Once the contract is deployed and tokens have been deposited in Hermez, the attacker can steal the funds.
+	- The address of a contract to be deployed can be determined by knowing the address of its deployer.
+    1. Recommendation: Short term, check for contract existence in _ _safeTransferFrom_. Add a similar check for any low-level calls, including in _WithdrawalDelayer_. This will prevent an attacker from listing and depositing tokens in a contract that is not yet deployed. Long term, carefully review the Solidity documentation, especially the Warnings section. The Solidity documentation warns: The low-level call, _delegatecall_ and _callcode_ will return success if the called account is non-existent, as part of the design of EVM. Existence must be checked prior to calling if desired.
+    2. High Risk severity finding from [ToB’s Audit of Hermez](https://github.com/trailofbits/publications/blob/master/reviews/hermez.pdf)
+
+#### 45. No incentive for bidders to vote earlier
+- Hermez relies on a voting system that allows anyone to vote with any weight at the last minute.
+	- As a result, anyone with a large fund can manipulate the vote.
+	- Hermez’s voting mechanism relies on bidding.
+	- There is no incentive for users to bid tokens well before the voting ends.
+	- Users can bid a large amount of tokens just before voting ends, and anyone with a large fund can decide the outcome of the vote.
+	- As all the votes are public, users bidding earlier will be penalized, because their bids will be known by the other participants.
+	- An attacker can know exactly how much currency will be necessary to change the outcome of the voting just before it ends.
+    1. Recommendation: Short term, explore ways to incentivize users to vote earlier. Consider a weighted bid, with a weight decreasing over time. While it won’t prevent users with unlimited resources from manipulating the vote at the last minute, it will make the attack more expensive and reduce the chance of vote manipulation. Long term, stay up to date with the latest research on blockchain-based online voting and bidding. Blockchain-based online voting is a known challenge. No perfect solution has been found yet.
+    2. Medium Risk severity finding from [ToB’s Audit of Hermez](https://github.com/trailofbits/publications/blob/master/reviews/hermez.pdf)
+
+#### 46. **Lack of access control separation is risky**
+- The system uses the same account to change both frequently updated parameters and those that require less frequent updates.
+- This architecture is error-prone and increases the severity of any privileged account compromises.
+    1. Recommendation: Short term, use a separate account to handle updating the tokens/USD ratio. Using the same account for the critical operations and update the tokens/USD ratio increases underlying risks. Long term, document the access controls and set up a proper authorization architecture. Consider the risks associated with each access point and their frequency of usage to evaluate the proper design.
+    2. High Risk severity finding from [ToB’s Audit of Hermez](https://github.com/trailofbits/publications/blob/master/reviews/hermez.pdf)
+
+#### 47. Lack of two-step procedure for critical operations leaves them error-prone
+- Several critical operations are done in one function call.
+- This schema is error-prone and can lead to irrevocable mistakes.
+	- For example, the setter for the whitehack group address sets the address to the provided argument.
+	- If the address is incorrect, the new address will take on the functionality of the new role immediately.
+	- However, a two-step process is similar to the approve-transferFrom functionality:
+		- The contract approves the new address for a new role, and the new address acquires the role by calling the contract.
+    1. Recommendation: Short term, use a two-step procedure for all non-recoverable critical operations to prevent irrecoverable mistakes. Long term, identify and document all possible actions and their associated risks for privileged accounts. Identifying the risks will assist codebase review and prevent future mistakes.
+    2. High Risk severity finding from [ToB’s Audit of Hermez](https://github.com/trailofbits/publications/blob/master/reviews/hermez.pdf)
+
+#### 48. Initialization functions can be front-run
+- ``Hermez``, ``HermezAuctionProtocol``, and ``WithdrawalDelayer`` have initialization functions that can be front-run, allowing an attacker to incorrectly initialize the contracts.
+	- Due to the use of the ``delegatecall`` proxy pattern, ``Hermez``, ``HermezAuctionProtocol``, and ``WithdrawalDelayer`` cannot be initialized with a constructor, and have initializer functions.
+	- All these functions can be front-run by an attacker, allowing them to initialize the contracts with malicious values.
+    1. Recommendation: Short term, either: 1) Use a factory pattern that will prevent front-running of the initialization, or 2) Ensure the deployment scripts are robust in case of a front-running attack. Carefully review the Solidity documentation, especially the Warnings section. Carefully review the pitfalls of using delegatecall proxy pattern.
+    2. High Risk severity finding from [ToB’s Audit of Hermez](https://github.com/trailofbits/publications/blob/master/reviews/hermez.pdf)
+
+#### 49. **Missing validation of** _**_owner**_ **argument could indefinitely lock owner role**
+- A lack of input validation of the ``owner`` argument in both the constructor and ``setOwner`` functions could permanently lock the owner role, requiring a costly redeploy.
+	- To resolve an incorrect owner issue, Uniswap would need to redeploy the factory contract and re-add pairs and liquidity.
+	- Users might not be happy to learn of these actions, which could lead to reputational damage.
+	- Certain users could also decide to continue using the original factory and pair contracts, in which owner functions cannot be called.
+	- This could lead to the concurrent use of two versions of Uniswap, one with the original factory contract and no valid owner and another in which the owner was set correctly.
+	- Trail of Bits identified four distinct cases in which an incorrect owner is set: 1) Passing address(0) to the constructor 2) Passing address(0) to the _setOwner_ function 3) Passing an incorrect address to the constructor 4)  Passing an incorrect address to the _setOwner_ function.
+    1. Recommendation: Several improvements could prevent the four above mentioned cases: 1) Designate _msg.sender_ as the initial owner, and transfer ownership to the chosen owner after deployment. 2) Implement a two-step ownership-change process through which the new owner needs to accept ownership. 3) If it needs to be possible to set the owner to address(0), implement a _renounceOwnership_ function.
+    2. Medium Risk severity finding from [ToB’s Audit of Uniswap V3](https://github.com/Uniswap/uniswap-v3-core/blob/main/audits/tob/audit.pdf)
+
+#### 50. Incorrect comparison enables swapping and token draining at no cost
+- An incorrect comparison in the swap function allows the swap to succeed even if no tokens are paid.
+	- This issue could be used to drain any pool of all of its tokens at no cost.
+	- The swap function calculates how many tokens the initiator (_msg.sender_) needs to pay (_amountIn_) to receive the requested amount of tokens (_amountOut_).
+	- It then calls the _uniswapV3SwapCallback_ function on the initiator’s account, passing in the amount of tokens to be paid.
+	- The callback function should then transfer at least the requested amount of tokens to the pool contract.
+	- Afterward, a require inside the swap function verifies that the correct amount of tokens (amountIn) has been transferred to the pool.
+	- However, the check inside the require is incorrect.
+	- The operand used is >= instead of <=.
+    1. Recommendation: Replace >= with <= in the require statement.
+    2. High Risk severity finding from [ToB’s Audit of Uniswap V3](https://github.com/Uniswap/uniswap-v3-core/blob/main/audits/tob/audit.pdf)
+
+#### 51. Unbound loop enables denial of service
+- The swap function relies on an unbounded loop.
+- An attacker could disrupt swap operations by forcing the loop to go through too many operations, potentially trapping the swap due to a lack of gas.
+    1. Recommendation: Bound the loops and document the bounds.
+    2. Medium Risk severity finding from [ToB’s Audit of Uniswap V3](https://github.com/Uniswap/uniswap-v3-core/blob/main/audits/tob/audit.pdf)
+
+#### 52. Front-running pool’s initialization can lead to draining of liquidity provider’s initial deposits
+- A front-run on _UniswapV3Pool.initialize_ allows an attacker to set an unfair price and to drain assets from the first deposits.
+	- There are no access controls on the initialize function, so anyone could call it on a deployed pool.
+	- Initializing a pool with an incorrect price allows an attacker to generate profits from the initial liquidity provider’s deposits.
+    1. Recommendation: 1) moving the price operations from initialize to the constructor, 2) adding access controls to initialize, or 3) ensuring that the documentation clearly warns users about incorrect initialization.
+    2. Medium Risk severity finding from [ToB’s Audit of Uniswap V3](https://github.com/Uniswap/uniswap-v3-core/blob/main/audits/tob/audit.pdf)
+
+#### 53. **Swapping on zero liquidity allows for control of the pool’s price**
+- Swapping on a tick with zero liquidity enables a user to adjust the price of 1 wei of tokens in any direction.
+- As a result, an attacker could set an arbitrary price at the pool’s initialization or if the liquidity providers withdraw all of the liquidity for a short time.
+    1. Recommendation: No straightforward way to prevent the issue. Ensure pools don’t end up in unexpected states. Warn users of potential risks.
+    2. Medium Risk severity finding from [ToB’s Audit of Uniswap V3](https://github.com/Uniswap/uniswap-v3-core/blob/main/audits/tob/audit.pdf)
+
+#### 54. **Failed transfer may be overlooked due to lack of contract existence check**
+- Because the pool fails to check that a contract exists, the pool may assume that failed transactions involving destructed tokens are successful.
+	- ``TransferHelper.safeTransfer`` performs a transfer with a low-level call without confirming the contract’s existence.
+	- As a result, if the tokens have not yet been deployed or have been destroyed, ``safeTransfer`` will return success even though no transfer was executed.
+    1. Recommendation: Short term, check the contract’s existence prior to the low-level call in _TransferHelper.safeTransfer_. Long term, avoid low-level calls.
+    2. High Risk severity finding from [ToB’s Audit of Uniswap V3](https://github.com/Uniswap/uniswap-v3-core/blob/main/audits/tob/audit.pdf)
+
+#### 55. **Use of undefined behavior in equality check**
+- On the left-hand side of the equality check, there is an assignment of the variable ``outputAmt``.
+- The right-hand side uses the same variable.
+- The Solidity 0.7.3. documentation states that “The evaluation order of expressions is not specified (more formally, the order in which the children of one node in the expression tree are evaluated is not specified, but they are of course evaluated before the node itself).
+- It is only guaranteed that statements are executed in order and short-circuiting for boolean expressions is done” which means that this check constitutes an instance of undefined behavior.
+- As such, the behavior of this code is not specified and could change in a future release of Solidity.
+    1. Recommendation: Short term, rewrite the if statement such that it does not use and assign the same variable in an equality check. Long term, ensure that the codebase does not contain undefined Solidity or EVM behavior.
+    2. High Risk severity finding from [ToB’s Audit of DFX Finance](https://github.com/dfx-finance/protocol/blob/main/audits/2021-05-03-Trail_of_Bits.pdf)
+
+#### 56. **Assimilators’ balance functions return raw values**
+- The system converts raw values to numeraire values for its internal arithmetic.
+- However, in one instance it uses raw values alongside numeraire values. Interchanging raw and numeraire values will produce unwanted results and may result in loss of funds for liquidity provider.
+    1. Recommendation: Short term, change the semantics of the three functions listed above in the CADC, XSGD, and EURS assimilators to return the numeraire balance. Long term, use unit tests and fuzzing to ensure that all calculations return the expected values. Additionally, ensure that changes to the Shell Protocol do not introduce bugs such as this one.
+    2. High Risk severity finding from [ToB’s Audit of DFX Finance](https://github.com/dfx-finance/protocol/blob/main/audits/2021-05-03-Trail_of_Bits.pdf)
+
+#### 57. System always assumes USDC is equivalent to USD
+- Throughout the system, assimilators are used to facilitate the processing of various stablecoins.
+	- However, the _UsdcToUsdAssimilator_’s implementation of the _getRate_ method does not use the USDC-USD oracle provided by Chainlink; instead, it assumes 1 USDC is always worth 1 USD.
+	- A deviation in the exchange rate of 1 USDC = 1 USD could result in exchange errors.
+    1. Recommendation: Short term, replace the hard-coded integer literal in the _UsdcToUsdAssimilator_’s _getRate_ method with a call to the relevant Chainlink oracle, as is done in other assimilator contracts. Long term, ensure that the system is robust against a decrease in the price of any stablecoin.
+    2. Medium Risk severity finding from [ToB’s Audit of DFX Finance](https://github.com/dfx-finance/protocol/blob/main/audits/2021-05-03-Trail_of_Bits.pdf)
+
+#### 58. **Assimilators use a deprecated Chainlink API**
+- The old version of the Chainlink price feed API (_AggregatorInterface_) is used throughout the contracts and tests.
+	- For example, the deprecated function _latestAnswer_ is used.
+	- This function is not present in the latest API reference (_AggregatorInterfaceV3_).
+	- However, it is present in the deprecated API reference. In the worst-case scenario, the deprecated contract could cease to report the latest values, which would very likely cause liquidity providers to incur losses.
+    1. Recommendation: Use the latest stable versions of any external libraries or contracts leveraged by the codebase
+    2. Undetermined Risk severity finding from [ToB’s Audit of DFX Finance](https://github.com/dfx-finance/protocol/blob/main/audits/2021-05-03-Trail_of_Bits.pdf)
+
+#### 59. _**cancelOrdersUpTo**_ **can be used to permanently block future orders**
+- Users can cancel an arbitrary number of future orders, and this operation is not reversible.
+	- The _cancelOrdersUpTo_ function can cancel an arbitrary number of orders in a single, fixed-size transaction.
+	- This function uses a parameter to discard any order with salt less than the input value. However, _cancelOrdersUpTo_ can cancel future orders if it is called with a very large value (e.g., _MAX_UINT256_ - 1).
+	- This operation will cancel future orders, except for the one with salt equal to _MAX_UINT256_.
+    1. Recommendation: Properly document this behavior to warn users about the permanent effects of _cancelOrderUpTo_ on future orders. Alternatively, disallow the cancelation of future orders.
+    2. High Risk severity finding from [ToB’s Audit of 0x Protocol](https://github.com/trailofbits/publications/blob/master/reviews/0x-protocol.pdf)
+
+#### 60. **Specification-Code mismatch for** _**AssetProxyOwner**_ **timelock period**
+- The specification for _AssetProxyOwner_ says: "The _AssetProxyOwner_ is a time-locked multi-signature wallet that has permission to perform administrative functions within the protocol.
+	- Submitted transactions must pass a 2 week timelock before they are executed." The _MultiSigWalletWithTimeLock_._sol_ and _AssetProxyOwner_._sol_ contracts' timelock-period implementation/usage does not enforce the two-week period, but is instead configurable by the wallet owner without any range checks.
+	- Either the specification is outdated (most likely), or this is a serious flaw.
+    1. Recommendation: Short term, implement the necessary range checks to enforce the timelock described in the specification. Otherwise correct the specification to match the intended behavior. Long term, make sure implementation and specification are in sync. Use Echidna or Manticore to test that your code properly implements the specification.
+    2. High Risk severity finding from [ToB’s Audit of 0x Protocol](https://github.com/trailofbits/publications/blob/master/reviews/0x-protocol.pdf)
