@@ -65,6 +65,27 @@
     58. [Deprecated Chainlink API](#58-assimilators-use-a-deprecated-chainlink-api)
     59. [cancelOrdersUpTo](#59-cancelordersupto-can-be-used-to-permanently-block-future-orders)
     60. [AssetProxyOwner timelock period](#60-specification-code-mismatch-for-assetproxyowner-timelock-period)
+4. [Block 4](#block-4)
+    61. [Unclear Documentation](#61-unclear-documentation-on-how-order-filling-can-fail)
+    62. [Market Maker Front Running](#62-market-makers-have-a-reduced-cost-for-performing-front-running-attacks)
+    63. [setSignatureValidatorApproval](#63-setsignaturevalidatorapproval_-race-condition-may-be-exploitable)
+    64. [Batch Processing of Transaction Execution](#64-batch-processing-of-transaction-execution-and-order-matching-may-lead-to-exchange-griefing)
+    65. [Zero Fee Orders](#65-zero-fee-orders-are-possible-if-a-user-performs-transactions-with-a-zero-gas-price)
+    66. [setParams](#66-calls-to-setparams-may-set-invalid-values-and-produce-unexpected-behavior-in-the-staking-contracts)
+    67. [Improper Supply Cap](#67-improper-supply-cap-limitation-enforcement)
+    68. [Improper Storage Management](#68-improper-storage-management-of-open-loan-accounts)
+    69. [Change Minting Fees](#69-contract-owner-can-arbitrarily-change-minting-fees-and-interest-rates)
+    70. [Inadequate Proxy Implementation](#70-inadequate-proxy-implementation-preventing-contract-upgrades)
+    71. [Blacklisting Bypass](#71-blacklisting-bypass-via-transferfrom-function)
+    72. [Wrong Order of Operations](#72-wrong-order-of-operations-leads-to-exponentiation-of-rewardpertokenstored)
+    73. [Staking Before Inital notifyRewardAmount](#73-staking-before-initial-notifyrewardamount-can-lead-to-disproportionate-rewards)
+    74. [External Call Reverts](#74-external-call-reverts-if-period-has-not-elapsed)
+    75. [Erroneous Rewards](#75-gap-between-periods-can-lead-to-erroneous-rewards)
+    76. [DOS/Hijack Requests](#76-malicious-users-can-doshijack-requests-from-chainlinked-contracts)
+    77. [Lack of Event Emission](#77-lack-of-event-emission-after-sensitive-actions)
+    78. [Unexpected Side Effects](#78-functions-with-unexpected-side-effects)
+    79. [Pairs Cannot Be Unpaused](#79-mooniswap-pairs-cannot-be-unpaused)
+    80. [Prevent Honest Instant Withdraw](#80-attackers-can-prevent-honest-users-from-performing-an-instant-withdraw-from-the-wallet-contract)
 ---
 
 
@@ -517,3 +538,154 @@
 	- Either the specification is outdated (most likely), or this is a serious flaw.
     1. Recommendation: Short term, implement the necessary range checks to enforce the timelock described in the specification. Otherwise correct the specification to match the intended behavior. Long term, make sure implementation and specification are in sync. Use Echidna or Manticore to test that your code properly implements the specification.
     2. High Risk severity finding from [ToB’s Audit of 0x Protocol](https://github.com/trailofbits/publications/blob/master/reviews/0x-protocol.pdf)
+
+
+### [Block 4](https://www.youtube.com/watch?v=D1Uz0NvrqeU)
+#### 61. Unclear documentation on how order filling can fail
+- The 0x documentation is unclear about how to determine whether orders are fillable or not.
+- Even some fillable orders cannot be completely filled.
+- The 0x specification does not state clearly enough how fillable orders are determined.
+    1. Recommendation: Define a proper procedure to determine if an order is fillable and document it in the protocol specification. If necessary, warn the user about potential constraints on the orders.
+    2. High Risk severity finding from [ToB’s Audit of 0x Protocol](https://github.com/trailofbits/publications/blob/master/reviews/0x-protocol.pdf)
+
+#### 62. **Market makers have a reduced cost for performing front-running attacks**
+- Market makers receive a portion of the protocol fee for each order filled, and the protocol fee is based on the transaction gas price.
+- Therefore market makers are able to specify a higher gas price for a reduced overall transaction rate, using the refund they will receive upon disbursement of protocol fee pools.
+    1. Recommendation: Short term, properly document this issue to make sure users are aware of this risk. Establish a reasonable cap for the protocolFeeMultiplier to mitigate this issue. Long term, consider using an alternative fee that does not depend on the tx.gasprice to avoid reducing the cost of performing front-running attacks.
+    2. Medium Risk severity finding from [ToB’s Audit of 0x Protocol](https://github.com/trailofbits/publications/blob/master/reviews/0x-protocol.pdf)
+
+#### 63. **setSignatureValidatorApproval**_ **race condition may be exploitable**
+- If a validator is compromised, a race condition in the signature validator approval logic becomes exploitable. The _setSignatureValidatorApproval_ function (Figure 4.1) allows users to delegate the signature validation to a contract. However, if the validator is compromised, a race condition in this function could allow an attacker to validate any amount of malicious transactions.
+    1. Recommendation: Short term, document this behavior to make sure users are aware of the inherent risks of using validators in case of a compromise. Long term, consider monitoring the blockchain using the _SignatureValidatorApproval_ events to catch front-running attacks.
+    2. Medium Risk severity finding from [ToB’s Audit of 0x Protocol](https://github.com/trailofbits/publications/blob/master/reviews/0x-protocol.pdf)
+
+#### 64. Batch processing of transaction execution and order matching may lead to exchange griefing
+- Batch processing of transaction execution and order matching will iteratively process every transaction and order, which all involve filling.
+- If the asset being filled does not have enough allowance, the asset’s transferFrom will fail, causing _AssetProxyDispatcher_ to revert.
+- NoThrow variants of batch processing, which are available for filling orders, are not available for transaction execution and order matching.
+- So if one transaction or order fails this way, the entire batch will revert and will have to be re-submitted after the reverting transaction is removed.
+    1. Recommendation: Short term, implement NoThrow variants for batch processing of transaction execution and order matching. Long term, take into consideration the effect of malicious inputs when implementing functions that perform a batch of operations.
+    2. Medium Risk severity finding from [ToB’s Audit of 0x Protocol](https://github.com/trailofbits/publications/blob/master/reviews/0x-protocol.pdf)
+
+#### 65. **Zero fee orders are possible if a user performs transactions with a zero gas price**:
+- Users can submit valid orders and avoid paying fees if they use a zero gas price.
+- The computation of fees for each transaction is performed in the _calculateFillResults_ function.
+- It uses the gas price selected by the user and the _protocolFeeMultiplier_ coefficient.
+- Since the user completely controls the gas price of their transaction and the price could even be zero, the user could feasibly avoid paying fees.
+    1. Recommendation: Short term, select a reasonable minimum value for the protocol fee for each order or transaction. Long term, consider not depending on the gas price for the computation of protocol fees. This will avoid giving miners an economic advantage in the system.
+    2. Medium Risk severity finding from [ToB’s Audit of 0x Protocol](https://github.com/trailofbits/publications/blob/master/reviews/0x-protocol.pdf)
+
+#### 66. **Calls to** _**setParams**_ **may set invalid values and produce unexpected behavior in the staking contracts**
+- Certain parameters of the contracts can be configured to invalid values, causing a variety of issues and breaking expected interactions between contracts.
+- _setParams_ allows the owner of the staking contracts to reparameterize critical parameters. However, reparameterization lacks sanity/threshold/limit checks on all parameters.
+    1. Recommendation: Add proper validation checks on all parameters in _setParams_. If the validation procedure is unclear or too complex to implement on-chain, document the potential issues that could produce invalid values.
+    2. Medium Risk severity finding from [ToB’s Audit of 0x Protocol](https://github.com/trailofbits/publications/blob/master/reviews/0x-protocol.pdf)
+
+#### 67. Improper Supply Cap Limitation Enforcement
+- The _openLoan()_ function does not check if the loan to be issued will result in the supply cap being exceeded. It only enforces that the supply cap is not reached before the loan is opened.
+- As a result, any account can create a loan that exceeds the maximum amount of sETH that can be issued by the _EtherCollateral_ contract.
+    1. Recommendation: Introduce a require statement in the _openLoan()_ function to prevent the total cap from being exceeded by the loan to be opened.
+    2. High Risk severity finding from [Sigma Prime's Audit of Synthetix EtherCollateral](https://github.com/sigp/public-audits/blob/master/synthetix/ethercollateral/review.pdf)
+
+#### 68. **Improper Storage Management of Open Loan Accounts**
+- When loans are open, the associated account address gets added to the _accountsWithOpenLoans_ array regardless of whether the account already has a loan/is already included in the array.
+- Additionally, it is possible for a malicious actor to create a denial of service condition exploiting the unbound storage array in _accountsSynthLoans_.
+    1. Recommendation: 1) Consider changing the _storeLoan_ function to only push the account to the _accountsWithOpenLoans_ array if the loan to be stored is the first one for that particular account ; 2) Introduce a limit to the number of loans each account can have.
+    2. High Risk severity finding from [Sigma Prime's Audit of Synthetix EtherCollateral](https://github.com/sigp/public-audits/blob/master/synthetix/ethercollateral/review.pdf)
+
+#### 69. Contract Owner Can Arbitrarily Change Minting Fees and Interest Rates
+- The _issueFeeRate_ and _interestRate_ variables can both be changed by the _EtherCollateral_ contract owner after loans have been opened.
+- As a result, the owner can control fees such as they equal/exceed the collateral for any given loan.
+    1. Recommendation: While "dynamic" interest rates are common, we recommend considering the minting fee ( _issueFeeRate_ ) to be a constant that cannot be changed by the owner.
+    2. Medium Risk severity finding from [Sigma Prime's Audit of Synthetix EtherCollateral](https://github.com/sigp/public-audits/blob/master/synthetix/ethercollateral/review.pdf)
+
+#### 70. Inadequate Proxy Implementation Preventing Contract Upgrades
+- The _TokenImpl_ smart contract requires Owner , name , symbol and decimals of _TokenImpl_ to be set by the _TokenImpl_ constructor.
+- Consider two smart contracts, contract A and contract B .
+	- If contract A performs a delegatecall on contract B , the state/storage variables of contract B are not accessible by contract A .
+	- Therefore, when _TokenProxy_ targets an implementation of _TokenImpl_ and interacts with it via a _DELEGATECALL_ , it will not be able to access any of the state variables of the _TokenImpl_ contract.
+	- Instead, the _TokenProxy_ will access its local storage, which does not contain the variables set in the constructor of the _TokenImpl_ implementation.
+	- When the _TokenProxy_ contract is constructed it will only initialize and set two storage slots:
+		- The proxy admin address ( __setAdmin_ internal function)
+		- The token implementation address ( setImplementation_ private function)
+		- Hence when a proxy call to the implementation is made, variables such as _Owner_ will be uninitialised (effectively set to their default value).
+		- This is equivalent to the owner being the 0x0 address.
+		- Without access to the implementation state variables, the proxy contract is rendered unusable.
+    1. Recommendation: 1) Set fixed constant parameters as Solidity constants. The solidity compiler replaces all occurrences of a constant in the code and thus does not reserve state for them. Thus if the correct getters exist for the ERC20 interface, the proxy contract doesn’t need to initialise anything. 2) Create a constructor-like function that can only be called once within _TokenImpl_ . This can be used to set the state variables as is currently done in the constructor, however if called by the proxy after deployment, the proxy will set its state variables. 3) Create getter and setter functions that can only be called by the owner . Note that this strategy allows the owner to change various parameters of the contract after deployment. 4) Predetermine the slots used by the required variables and set them in the constructor of the proxy. The storage slots used by a contract are deterministic and can be computed. Hence the variables Owner , name , symbol and decimals can be set directly by their slot in the proxy constructor.
+    2. Critical Risk severity finding from [Sigma Prime's Audit of InfiniGold](https://github.com/sigp/public-audits/raw/master/infinigold/review.pdf)
+
+#### 71. **Blacklisting Bypass via** _**transferFrom()**_ **Function**
+- The _transferFrom()_ function in the _TokenImpl_ contract does not verify that the sender (i.e. the from address) is not blacklisted.
+- As such, it is possible for a user to allow an account to spend a certain allowance regardless of their blacklisting status.
+    1. Recommendation: At present the function _transferFrom()_ uses the _notBlacklisted(address)_ modifier twice, on the msg.sender and to addresses. The _notBlacklisted(address)_ modifier should be used a third time against the from address.
+    2. High Risk severity finding from [Sigma Prime's Audit of InfiniGold](https://github.com/sigp/public-audits/raw/master/infinigold/review.pdf)
+
+#### 72. **Wrong Order of Operations Leads to Exponentiation of** _**rewardPerTokenStored**_
+- _rewardPerTokenStored_ is mistakenly used in the numerator of a fraction instead of being added to the fraction.
+	- The result is that _rewardPerTokenStored_ will grow exponentially thereby severely overstating each individual's rewards earned.
+	- Individuals will therefore either be able to withdraw more funds than should be allocated to them or they will not be able to withdraw their funds at all as the contract has insufficient SNX balance.
+	- This vulnerability makes the Unipool contract unusable.
+    1. Recommendation: Adjust the function _rewardPerToken()_ to represent the original functionality.
+    2. Critical Risk severity finding from [Sigma Prime's Audit of Synthetix Unipool](https://github.com/sigp/public-audits/blob/master/synthetix/unipool/review.pdf)
+
+#### 73. **Staking Before Initial notifyRewardAmount Can Lead to Disproportionate Rewards**
+- If a user successfully stakes an amount of UNI tokens before the function _notifyRewardAmount()_ is called for the first time, their initial _userRewardPerTokenPaid_ will be set to zero.
+- The staker would be paid out funds greater than their share of the SNX rewards.
+    1. Recommendation: We recommend preventing _stake()_ from being called before _notifyRewardAmount()_ is called for the first time.
+    2. High Risk severity finding from [Sigma Prime's Audit of Synthetix Unipool](https://github.com/sigp/public-audits/blob/master/synthetix/unipool/review.pdf)
+
+#### 74. **External Call Reverts if Period Has Not Elapsed**
+- The function _notifyRewardAmount()_ will revert if _block.timestamp >= periodFinish_.
+- However this function is called indirectly via the _Synthetix.mint()_ function.
+- A revert here would cause the external call to fail and thereby halt the mint process. _Synthetix.mint()_ cannot be successfully called until enough time has elapsed for the period to finish.
+    1. Recommendation: Consider handling the case where the reward period has not elapsed without reverting the call.
+    2. High Risk severity finding from [Sigma Prime's Audit of Synthetix Unipool](https://github.com/sigp/public-audits/blob/master/synthetix/unipool/review.pdf)
+
+#### 75. **Gap Between Periods Can Lead to Erroneous Rewards**
+- The SNX rewards are earned each period based on reward and duration as specified in the _notifyRewardAmount()_ function.
+- The contract will output more rewards than it receives.
+- Therefore if all stakers call _getReward()_ the contract will not have enough SNX balance to transfer out all the rewards and some stakers may not receive any rewards.
+    1. Recommendation: We recommend enforcing each period start exactly at the end of the previous period.
+    2. Medium Risk severity finding from [Sigma Prime's Audit of Synthetix Unipool](https://github.com/sigp/public-audits/blob/master/synthetix/unipool/review.pdf)
+
+#### 76. **Malicious Users Can DOS/Hijack Requests From Chainlinked Contracts**
+- Malicious users can hijack or perform Denial of Service (DOS) attacks on requests of Chainlinked contracts by replicating or front-running legitimate requests.
+- The Chainlinked (_Chainlinked.sol_) contract contains the _checkChainlinkFulfillment_() modifier.
+	- This modifier is demonstrated in the examples that come with the repository.
+- In these examples this modifier is used within the functions which contracts implement that will be called by the Oracle when fulfilling requests.
+- It requires that the caller of the function be the Oracle that corresponds to the request that is being fulfilled.
+	- Thus, requests from Chainlinked contracts are expected to only be fulfilled by the Oracle that they have requested.
+- However, because a request can specify an arbitrary callback address, a malicious user can also place a request where the callback address is a target Chainlinked contract.
+	- If this malicious request gets fulfilled first (which can ask for incorrect or malicious results), the Oracle will call the legitimate contract and fulfil it with incorrect or malicious results.
+	- Because the known requests of a Chainlinked contract gets deleted, the legitimate request will fail.
+- It could be such that the Oracle fulfils requests in the order in which they are received. In such cases, the malicious user could simply front-run the requests to be higher in the queue.
+    1. Recommendation: This issue arises due to the fact that any request can specify its own arbitrary callback address. A restrictive solution would be where callback addresses are localised to the requester themselves.
+    2. High Risk severity finding from [Sigma Prime's Audit of Chainlink](https://github.com/sigp/public-audits/blob/master/chainlink-1/review.pdf)
+
+#### 77. **Lack of event emission after sensitive actions**
+- The _getLatestFundingRate_ function of the _FundingRateApplier_ contract does not emit relevant events after executing the sensitive actions of setting the _fundingRate_, _updateTime_ and _proposalTime_, and transferring the rewards.
+    1. Recommendation: Consider emitting events after sensitive changes take place, to facilitate tracking and notify off-chain clients following the contract’s activity.
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of UMA Phase 4](https://blog.openzeppelin.com/uma-audit-phase-4/)
+
+#### 78. **Functions with unexpected side-effects**
+- Some functions have side-effects.
+	- For example, the getLatestFundingRate_ function of the _FundingRateApplier_ contract might also update the funding rate and send rewards.
+	- The _getPrice_ function of the OptimisticOracle contract might also settle a price request.
+	- These side-effect actions are not clear in the name of the functions and are thus unexpected, which could lead to mistakes when the code is modified by new developers not experienced in all the implementation details of the project.
+    1. Recommendation: Consider splitting these functions in separate getters and setters. Alternatively, consider renaming the functions to describe all the actions that they perform.
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of UMA Phase 4](https://blog.openzeppelin.com/uma-audit-phase-4/)
+
+#### 79. **Mooniswap pairs cannot be unpaused**
+- The _MooniswapFactoryGovernance_ contract has a shutdown function that can be used to pause the contract and prevent any future swaps.
+- However there is no function to unpause the contract.
+- There is also no way for the factory contract to redeploy a Mooniswap instance for a given pair of tokens.
+- Therefore, if a Mooniswap contract is ever shutdown/paused, it will not be possible for that pair of tokens to ever be traded on the Mooniswap platform again, unless a new factory contract is deployed.
+    1. Recommendation: Consider providing a way for Mooniswap contracts to be unpaused.
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of 1inch Liquidity Protocol Audit](https://blog.openzeppelin.com/1inch-liquidity-protocol-audit/)
+
+#### 80. **Attackers can prevent honest users from performing an instant withdraw from the Wallet contract**
+- An attacker who sees an honest user’s call to _MessageProcessor.instantWithdraw_ in the mempool can grab the _oracleMessage_ and _oracleSignature_ parameters from the user’s transaction, then submit their own transaction to _instantWithdraw_ using the same parameters, a higher gas price (so as to frontrun the honest user’s transaction), and carefully choosing the gas limit for their transactions such that the internal call to the _callInstantWithdraw_ will fail on line 785 with an out-of-gas error, but will successfully execute the _if(!success)_ block.
+- The result is that the attacker’s instant withdraw will fail (so the user will not receive their funds), but the _userInteractionNumber_ will be successfully reserved by the _ReplayTracker_.
+- As a result, the honest user’s transaction will revert because it will be attempting to use a _userInteractionNumber_ that is no longer valid.
+1. Recommendation: Consider adding an access control mechanism to restrict who can submit _oracleMessages_ on behalf of the user.
+2. 1. High Risk severity finding from [OpenZeppelin’s Audit of Futureswap V2](https://blog.openzeppelin.com/futureswap-v2-audit/)
