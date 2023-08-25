@@ -1,4 +1,4 @@
-### [Secureum Race 13](https://ventral.digital/posts/2023/1/3/race-13-of-the-secureum-bootcamp-epoch)
+### [Race 13](https://ventral.digital/posts/2023/1/3/race-13-of-the-secureum-bootcamp-epoch)
 ##### Q1 In `transferFrom()`, `unchecked` is not used in the allowance subtraction
 - [ ] A) To save gas 
 - [ ] B) To avoid unauthorized transfers 

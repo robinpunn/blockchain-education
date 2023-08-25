@@ -86,6 +86,28 @@
     78. [Unexpected Side Effects](#78-functions-with-unexpected-side-effects)
     79. [Pairs Cannot Be Unpaused](#79-mooniswap-pairs-cannot-be-unpaused)
     80. [Prevent Honest Instant Withdraw](#80-attackers-can-prevent-honest-users-from-performing-an-instant-withdraw-from-the-wallet-contract)
+5. [Block 5](#block-5)
+    81. [Upgrade Safe Contracts](#81-not-using-upgrade-safe-contracts-in-fstoken-inheritance)
+    82. [Unchecked Output of ECDSA Recover](#82-unchecked-output-of-the-ecdsa-recover-function)
+    83. [Multi Level Inherited Upgradeable Contracts](#83-adding-new-variables-to-multi-level-inherited-upgradeable-contracts-may-break-storage-layout)
+    84. [Unsafe Division](#84-unsafe-division-in-rdivide-and-wdivide-functions)
+    85. [Incorrect safeApprove Usage](#85-incorrect-safeapprove-usage)
+    86. [Trapped ETH](#86-eth-could-get-trapped-in-the-protocol)
+    87. [Impossible to Withdraw ETH](#87-use-of-transfer-might-render-eth-impossible-to-withdraw)
+    88. [Not Following Check Effects](#88-not-following-the-checks-effects-interactions-pattern)
+    89. [Updating Governance Registry](#89-updating-the-governance-registry-and-guardian-addresses-emits-no-events)
+    90. [Quorum Requirement](#90-the-quorum-requirement-can-be-trivially-bypassed-with-sybil-accounts)
+    91. [Inconsistently Checking Initialization](#91-inconsistently-checking-initialization)
+    92. [Voting Period Quorum](#92-voting-period-and-quorum-can-be-set-to-zero)
+    93. [State Variables Not Set](#93-some-state-variables-are-not-set-during-initialize)
+    94. [Expired and/or Paused Options](#94-expired-andor-paused-options-can-still-be-traded)
+    95. [ERC20 Transfers](#95-erc20-transfers-can-misbehave)
+    96. [Incorrect Event Emission](#96-incorrect-event-emission)
+    97. [Anyone Can Liquidate](#97-anyone-can-liquidate-on-behalf-of-another-account)
+    98. [Orders Cannot be Cancelled](#98-orders-cannot-be-cancelled)
+    99. [Re-entrancy Possibilities](#99-re-entrancy-possibilities)
+    100. [Governance Parameter Changes](#100-governance-parameter-changes-should-not-be-instant)
+    101. [Votes Can Be Duplicated](#101-votes-can-be-duplicated)
 ---
 
 
@@ -689,3 +711,168 @@
 - As a result, the honest user’s transaction will revert because it will be attempting to use a _userInteractionNumber_ that is no longer valid.
 1. Recommendation: Consider adding an access control mechanism to restrict who can submit _oracleMessages_ on behalf of the user.
 2. 1. High Risk severity finding from [OpenZeppelin’s Audit of Futureswap V2](https://blog.openzeppelin.com/futureswap-v2-audit/)
+
+### [Block 5](https://www.youtube.com/watch?v=GX8Z0kRRi_I)
+#### 81. **Not using upgrade safe contracts in** _**FsToken**_ **inheritance**
+- The _FsToken_ contract is intended to be an upgradeable contract, used behind a proxy (namely, the _FsTokenProxy_ contract).
+- However, the contracts _ERC20Snapshot_, _ERC20Mintable_ and _ERC20Burnable_ in the inheritance chain of FsToken are not imported from the upgrade safe library _@openzeppelin/contracts-ethereum-package_ but instead from _@openzeppelin/contracts_.
+    1. Recommendation: Use the upgrades safe library in this case will ensure the inheritance from Initializable and the other contracts is always linearized as expected by the compiler.
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of Futureswap V2](https://blog.openzeppelin.com/futureswap-v2-audit/)
+
+#### 82. **Unchecked output of the ECDSA recover function**
+- The _ECDSA.recover_ function (in version 2.5.1) returns address(0) if the signature provided is invalid.
+- This function is used twice in the Futureswap code: Once to recover an _oracleAddress_ from an _oracleSignature_, and again to recover the user’s address from their signature.
+- If the oracle signature was invalid, the _oracleAddress_ is set to address(0).
+- Similarly, if the user’s signature is invalid, then the _userMessage.signer_ or the withDrawer is set to address(0).
+- This can result in unintended behavior.
+    1. Recommendation: Consider reverting if the output of the _ECDSA.recover_ is ever address(0)
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of Futureswap V2](https://blog.openzeppelin.com/futureswap-v2-audit/)
+
+#### 83. **Adding new variables to multi-level inherited upgradeable contracts may break storage layout**
+- The Notional protocol uses the OpenZeppelin/SDK contracts to manage upgradeability in the system, which follows the unstructured storage pattern.
+- When using this upgradeability approach, and when working with multi-level inheritance, if a new variable is introduced in a parent contract, that addition can potentially overwrite the beginning of the storage layout of the child contract, causing critical misbehaviors in the system.
+    1. Recommendation: consider preventing these scenarios by defining a storage gap in each upgradeable parent contract at the end of all the storage variable definitions as follows: _uint256[50] __gap; // gap to reserve storage in the contract for future variable additions._ In such an implementation, the size of the gap would be intentionally decreased each time a new variable was introduced, thereby avoiding overwriting preexisting storage values.
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of Notional Protocol](https://blog.openzeppelin.com/notional-audit/)
+
+#### 84. **Unsafe division in** _**rdivide**_ **and** _**wdivide**_ **functions**
+- The function _rdivide_ on line 227 and the function _wdivide_ on line 230 of the _GlobalSettlement_ contract, accept the divisor y as an input parameter.
+- However, these functions do not check if the value of y is 0. If that is the case, the call will revert due to the division by zero error.
+    1. Recommendation: consider adding a _require_ statement in the functions to ensure _y > 0_, or consider using the _div_ functions provided in OpenZeppelin’s SafeMath libraries
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of GEB Protocol](https://blog.openzeppelin.com/geb-protocol-audit/)
+
+#### 85. **Incorrect** _**safeApprove**_ **usage**
+- The _safeApprove_ function of the OpenZeppelin SafeERC20 library prevents changing an allowance between non-zero values to mitigate a possible front-running attack.
+- Instead, the _safeIncreaseAllowance_ and _safeDecreaseAllowance_ functions should be used.
+	- However, the _UniERC20_ library simply bypasses this restriction by first setting the allowance to zero.
+	- This reintroduces the front-running attack and undermines the value of the _safeApprove_ function. Consider introducing an _increaseAllowance_ function to handle this case.
+    1. Recommendation: _safeIncreaseAllowance_ and _safeDecreaseAllowance_ functions should be used
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of 1inch Exchange Audit](https://blog.openzeppelin.com/1inch-exchange-audit/)
+
+#### 86. **ETH could get trapped in the protocol**:
+- The Controller contract allows users to send arbitrary actions such as possible flash loans through the _call_ internal function.
+- Among other features, it allows sending ETH with the action to then perform a call to a _CalleeInterface_ type of contract.
+- To do so, it saves the original _msg.value_ sent with the operate function call in the _ethLeft_ variable and it updates the remaining ETH left after each one of those calls to revert in case that it is not enough.
+- Nevertheless, if the user sends more than the necessary ETH for the batch of actions, the remaining ETH (stored in the ethLeft variable after the last iteration) will not be returned to the user and will be locked in the contract due to the lack of a _withdrawEth_ function.
+    1. Recommendation: Consider either returning all the remaining ETH to the user or creating a function that allows the user to collect the remaining ETH after performing a Call action type, taking into account that sending ETH with a push method may trigger the fallback function on the caller’s address.
+    2. High Risk severity finding from [OpenZeppelin’s Audit of Opyn Gamma Protocol](https://blog.openzeppelin.com/opyn-gamma-protocol-audit/)
+
+#### 87. **Use of transfer might render ETH impossible to withdraw**
+- When withdrawing ETH deposits, the _PayableProxyController_ contract uses Solidity’s _transfer_ function.
+- This has some notable shortcomings when the withdrawer is a smart contract, which can render ETH deposits impossible to withdraw.
+- Specifically, the withdrawal will inevitably fail when:
+	1) The withdrawer smart contract does not implement a payable fallback function.
+	2) The withdrawer smart contract implements a payable fallback function which uses more than 2300 gas units.
+	3) The withdrawer smart contract implements a payable fallback function which needs less than 2300 gas units but is called through a proxy that raises the call’s gas usage above 2300.
+    1. Recommendation:  _sendValue_ function available in OpenZeppelin Contract’s Address library can be used to transfer the withdrawn Ether without being limited to 2300 gas units. Risks of reentrancy stemming from the use of this function can be mitigated by tightly following the “Check-effects-interactions” pattern and using OpenZeppelin Contract’s _ReentrancyGuard_ contract.
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of Opyn Gamma Protocol](https://blog.openzeppelin.com/opyn-gamma-protocol-audit/)
+
+#### 88. **Not following the Checks-Effects-Interactions pattern**
+- The _finalizeGrant_ function of the Fund contract is setting the _grant.complete_ storage variable after a token transfer.
+- Solidity recommends the usage of the Check-Effects-Interaction Pattern to avoid potential security issues, such as reentrancy.
+- The _finalizeGrant_ function can be used to conduct a reentrancy attack, where the token transfer in line 129 can call back again the same function, sending to the admin multiple times an amount of fee, before setting the grant as completed.
+- In this way the grant.recipient can receive less than expected and the contract funds can be drained unexpectedly leading to an unwanted loss of funds.
+    1. Recommendation: Consider always following the “Check-Effects-Interactions” pattern, thus modifying the contract’s state before making any external call to other contracts.
+    2. High Risk severity finding from [OpenZeppelin’s Audit of Endaoment](https://blog.openzeppelin.com/endaoment-audit/)
+
+#### 89. **Updating the Governance registry and Guardian addresses emits no events**
+- In the Governance contract the _registryAddress_ and the _guardianAddress_ are highly sensitive accounts.
+- The first one holds the contracts that can be proposal targets, and the second one is a superuser account that can execute proposals without voting.
+- These variables can be updated by calling _setRegistryAddress_ and _transferGuardianship_, respectively.
+- Note that these two functions update these sensitive addresses without logging any events.
+- Stakers who monitor the Audius system would have to inspect all transactions to notice that one address they trust is replaced with an untrusted one.
+    1. Recommendation: Consider emitting events when these addresses are updated. This will be more transparent, and it will make it easier for clients to subscribe to the events when they want to keep track of the status of the system.
+    2. High Risk severity finding from [OpenZeppelin’s Audit of Audius](https://blog.openzeppelin.com/audius-contracts-audit/#high)
+
+#### 90. **The quorum requirement can be trivially bypassed with sybil accounts**
+- While the final vote on a proposal is determined via a token-weighted vote, the quorum check in the _evaluateProposalOutcome_ function can be trivially bypassed by splitting one’s tokens over multiple accounts and voting with each of the accounts.
+- Each of these sybil votes increases the _proposals[_proposalId].numVotes_ variable. This means anyone can make the quorum check pass.
+    1. Recommendation: Consider measuring quorum size by the percentage of existing tokens that have voted, rather than the number of unique accounts that have voted.
+    2. High Risk severity finding from [OpenZeppelin’s Audit of Audius](https://blog.openzeppelin.com/audius-contracts-audit/#high)
+
+#### 91. **Inconsistently checking initialization**
+- When a contract is initialized, its _isInitialized_ state variable is set to true.
+- Since interacting with uninitialized contracts would cause problems, the _requireIsInitialized_ function is available to make this check.
+- However, this check is not used consistently.
+	- For example, it is used in the _getVotingQuorum_ function of the Governance contract, but it is not used in the _getRegistryAddress_ function of the same contract.
+	- There is no obvious difference between the functions to explain this difference, and it could be misleading and cause uninitialized contracts to be called.
+    1. Recommendation: Consider calling _requireIsInitialized_ consistently in all the functions of the _InitializableV2_ contracts. If there is a reason to not call it in some functions, consider documenting it. Alternatively, consider removing this check altogether and preparing a good deployment script that will ensure that all contracts are initialized in the same transaction that they are deployed. In this alternative, it would be required to check that contracts resulting from new proposals are also initialized before they are put in production.
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of Audius](https://blog.openzeppelin.com/audius-contracts-audit/#medium)
+
+#### 92. **Voting period and quorum can be set to zero**
+- When the Governance contract is initialized, the values of _votingPeriod_ and _votingQuorum_ are checked to make sure that they are greater than 0.
+- However, the corresponding setter functions _setVotingPeriod_ and setVotingQuorum allow these variables to be reset to 0.
+- Setting the _votingPeriod_ to zero would cause spurious proposals that cannot be voted.
+- Setting the quorum to zero is worse because it would allow proposals with 0 votes to be executed.
+    1. Recommendation: Consider adding the validation to the setter functions
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of Audius](https://blog.openzeppelin.com/audius-contracts-audit/#medium)
+
+#### 93. **Some state variables are not set during initialize**
+- The Audius contracts can be upgraded using the unstructured storage proxy pattern.
+- This pattern requires the use of an initializer instead of the constructor to set the initial values of the state variables.
+- In some of the contracts, the initializer is not initializing all of the state variables.
+    1. Recommendation: Consider setting all the required variables in the initializer. If there is a reason for leaving them uninitialized, consider documenting it, and adding checks on the functions that use those variables to ensure that they are not called before initialization.
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of Audius](https://blog.openzeppelin.com/audius-contracts-audit/#medium)
+
+#### 94. **Expired and/or paused options can still be traded**
+- Option tokens can still be freely transferred when the Option contract is either paused or expired (or both).
+- This would allow malicious option holders to sell paused / expired options that cannot be exercised in the open market to exchanges and users who do not take the necessary precautions before buying an option minted by the Primitive protocol.
+    1. Recommendation: Should this be the system’s expected behavior, consider clearly documenting it in user-friendly documentation so as to raise awareness in option sellers and buyers. Alternatively, if the described behavior is not intended, consider implementing the necessary logic in the Option contract to prevent transfers of tokens during pause and after expiration.
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of Primitive](https://blog.openzeppelin.com/primitive-audit/)
+
+#### 95. **ERC20 transfers can misbehave**
+- The _transferFromERC20_ function is used throughout _ACOToken.sol_ to handle transferring funds into the contract from a user. It is called within mint, within _mintTo_, and within _validateAndBurn_.
+- In each case, the destination is the ACOToken contract. Such transfers may behave unexpectedly if the token contract charges fees. As an example, the popular USDT token does not presently charge any fees upon transfer, but it has the potential to do so. In this case the amount received would be less than the amount sent.
+- Such tokens have the potential to lead to protocol insolvency when they are used to mint new ACOTokens. In the case of _transferERC20_, similar issues can occur, and could cause users to receive less than expected when collateral is transferred or when exercise assets are transferred.
+    1. Recommendation: Consider thoroughly vetting each token used within an ACO options pair, ensuring that failing _transferFrom_ and _transfer_ calls will cause reverts within _ACOToken.sol_. Additionally, consider implementing some sort of sanity check which enforces that the balance of the ACOToken contract increases by the desired amount when calling _transferFromERC20_.
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of ACO Protocol](https://blog.openzeppelin.com/aco-protocol-audit/)
+
+#### 96. **Incorrect event emission**
+- The _UniswapWindowUpdate_ event of the _UniswapAnchoredView_ contract is currently being emitted in the _pokeWindowValues_ function using incorrect values.
+- In particular, as it is being emitted before relevant state changes are applied to the _oldObservation_ and _newObservation_ variables, the data logged by the event will be outdated.
+    1. Recommendation: Consider emitting the _UniswapWindowUpdate_ event after changes are applied so that all logged data is up-to-date.
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of Compound Open Price Feed – Uniswap Integration](https://blog.openzeppelin.com/compound-open-price-feed-uniswap-integration-audit/)
+
+#### 97. **Anyone can liquidate on behalf of another account**
+- The Perpetual contract has a public liquidateFrom function that bypasses the checks in the liquidate function.
+- This means that it can be called to liquidate a position when the contract is in the _SETTLED_ state.
+- Additionally, any user can set an arbitrary from address, causing a third-party user to confiscate the under-collateralized trader’s position.
+- This means that any trader can unilaterally rearrange another account’s position.
+- They could also liquidate on behalf of the Perpetual Proxy, which could break some of the Automated Market Maker invariants, such as the condition that it only holds LONG positions.
+    1. Recommendation: Consider restricting _liquidateFrom_ to internal visibility
+    2. Critical Risk severity finding from [OpenZeppelin’s Audit of MCDEX Mai Protocol](https://blog.openzeppelin.com/mcdex-mai-protocol-audit/)
+
+#### 98. **Orders cannot be cancelled**
+- When a user or broker calls _cancelOrder_, the cancelled mapping is updated, but this has no subsequent effects.
+- In particular, _validateOrderParam_ does not check if the order has been cancelled.
+    1. Recommendation: Consider adding this check to the order validation to ensure cancelled orders cannot be filled.
+    2. Critical Risk severity finding from [OpenZeppelin’s Audit of MCDEX Mai Protocol](https://blog.openzeppelin.com/mcdex-mai-protocol-audit/)
+
+#### 99. **Re-entrancy possibilities**
+- There are several examples of interactions preceding effects:
+	1) In the deposit function of the Collateral contract, collateral is retrieved before the user balance is updated and an event is emitted.
+	2) In the _withdraw_ function of the Collateral contract, collateral is sent before the event is emitted
+	3) The same pattern occurs in the _depositToInsuranceFund_, _depositEtherToInsuranceFund_ and _withdrawFromInsuranceFund_ functions of the Perpetual contract.
+- It should be noted that even when a correctly implemented ERC20 contract is used for collateral, incoming and outgoing transfers could execute arbitrary code if the contract is also ERC777 compliant.
+- These re-entrancy opportunities are unlikely to corrupt the internal state of the system, but they would affect the order and contents of emitted events, which could confuse external clients about the state of the system.
+    1. Recommendation: Consider always following the “Check-Effects-Interactions” pattern or use _ReentrancyGuard_ contract is now used to protect those functions
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of MCDEX Mai Protocol](https://blog.openzeppelin.com/mcdex-mai-protocol-audit/)
+
+#### 100. **Governance parameter changes should not be instant**
+- Many sensitive changes can be made by any account with the _WhitelistAdmin_ role via the functions _setGovernanceParameter_ within the _AMMGovernance_ and _PerpetualGovernance_ contracts.
+	- For example, the _WhitelistAdmin_ can change the fee schedule, the initial and maintenance margin rates, or the lot size parameters, and these new parameters instantly take effect in the protocol with important effects.
+	- For example, raising the maintenance margin rate could cause _isSafe_ to return False when it would have previously returned True.
+		- This would allow the user’s position to be liquidated.
+		- By changing _tradingLotSize_, trades may revert when being matched, where they would not have before the change.
+- These are only examples; the complexity of the protocol, combined with unpredictable market conditions and user actions means that many other negative effects likely exist as well.
+    1. Recommendation: Since these changes are occasionally needed, but can create risk for the users of the protocol, consider implementing a time-lock mechanism for such changes to take place. By having a delay between the signal of intent and the actual change, users will have time to remove their funds or close trades that would otherwise be at risk if the change happened instantly.
+    2. Medium Risk severity finding from [OpenZeppelin’s Audit of MCDEX Mai Protocol](https://blog.openzeppelin.com/mcdex-mai-protocol-audit/)
+
+#### 101. **Votes can be duplicated**
+- The Data Verification Mechanism uses a commit-reveal scheme to hide votes during the voting period. The intention is to prevent voters from simply voting with the majority.
+- However, the current design allows voters to blindly copy each other’s submissions, which undermines this goal.
+	- In particular, each commitment is a masked hash of the claimed price, but is not cryptographically tied to the voter.
+	- This means that anyone can copy the commitment of a target voter (for instance, someone with a large balance) and submit it as their own.
+	- When the target voter reveals their salt and price, the copycat can “reveal” the same values.
+	- Moreover, if another voter recognizes this has occurred during the commitment phase, they can also change their commitment to the same value, which may become an alternate Schelling point.
+    1. Recommendation: Consider including the voter address within the commitment to prevent votes from being duplicated. Additionally, as a matter of good practice, consider including the relevant timestamp, price identifier and round ID as well to limit the applicability (and reusability) of a commitment.
+    2. High Risk severity finding from [OpenZeppelin’s Audit of UMA Phase 1](https://blog.openzeppelin.com/uma-audit-phase-1/)
