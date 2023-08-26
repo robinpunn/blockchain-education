@@ -1,5 +1,4 @@
 ### [Race 14](https://ventral.digital/posts/2023/1/30/race-14-of-the-secureum-bootcamp-epoch-infinity)
-#### Contracts
 ##### Q1 Lending platforms have a few options to configure when it comes to adding new tokens as collateral. For example, you’ll have to set up an oracle for the price of the collateral, and you have to configure a margin requirement. The security concern with using the given collateral configuration is:
 - [ ] A) The periodic fee parameter is static 
 - [ ] B) The collateral ratio of loans is too low 
