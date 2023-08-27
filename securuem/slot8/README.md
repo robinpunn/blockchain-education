@@ -22,6 +22,27 @@
     118. [Unpredicatable Behavior](#118-unpredictable-behavior-for-users-due-to-admin-front-running-or-general-bad-timing)
     119. [Improve System Documentation](#119-improve-system-documentation-and-create-a-complete-technical-specification)
     120. [Ensure System States Roles and Permissions](#120-ensure-system-states-roles-and-permissions-are-sufficiently-restrictive)
+2. [Block 2](#block-2)
+    121. [Evaluate all Tokens](#121-evaluate-all-tokens-prior-to-inclusion-in-the-system)
+    122. [Use Descriptive Names For Contracts and Libraries](#122-use-descriptive-names-for-contracts-and-libraries)
+    123. [Used Before Initialized](#123-prevent-contracts-from-being-used-before-they-are-entirely-initialized)
+    124. [Resource Exhaustion by External Calls](#124-potential-resource-exhaustion-by-external-calls-performed-within-an-unbounded-loop)
+    125. [Owners Can Never Be Removed](#125-owners-can-never-be-removed)
+    126. [Manipulation of Stable Interest Rates](#126-potential-manipulation-of-stable-interest-rates-using-flash-loans)
+    127. [Only Whitelist Validated Assets](#127-only-whitelist-validated-assets)
+    128. [Underflow if Token Decimals Greater Than 18](#128-underflow-if-token_decimals-are-greater-than-18)
+    129. [Chainlink Price Volatility](#129-chainlinks-performance-at-times-of-price-volatility)
+    130. [Iterative Approach to Launching](#130-consider-an-iterative-approach-to-launching)
+    131. [Modifiers for Repeated Checks](#131-use-of-modifiers-for-repeated-checks)
+    132. [Switch Modifier Order](#132-switch-modifier-order)
+    133. [Address Codebase Fragility](#133-address-codebase-fragility)
+    134. [Re-entrancy and Emitted Events](#134-reentrancy-could-lead-to-incorrect-order-of-emitted-events)
+    135. [Variable Shadowing](#135-variable-shadowing-from-ousd-to-erc20)
+    136. [VaultCore.rebase](#136-vaultcorerebase-functions-have-no-return-statements)
+    137. [Missing Inheritances](#137-multiple-contracts-are-missing-inheritances)
+    138. [Solidity Compiler Optimizations](#138-solidity-compiler-optimizations-can-be-dangerous)
+    139. [Permission Granting](#139-permission-granting-is-too-simplistic-and-not-flexible-enough)
+    140. [Lack of Validation](#140-lack-of-validation-when-setting-the-maturity-value)
 ---
 
 ### [Block 1](https://www.youtube.com/watch?v=IXm6JAprhuw)
@@ -149,3 +170,144 @@
 - Smart contract code should strive to be strict. Strict code behaves predictably, is easier to maintain, and increases a system’s ability to handle nonideal conditions. Our assessment of Growth DeFi found that many of its states, roles, and permissions are loosely defined.
     1. Recommendation: Document the use of administrator permissions. Monitor the usage of administrator permissions. Specify strict operation requirements for each contract.
     2. [ConsenSys's Audit of Growth DeFi](https://consensys.net/diligence/audits/2020/12/growth-defi-v1/#ensure-system-states-roles-and-permissions-are-sufficiently-restrictive)
+
+### [Block 2](https://www.youtube.com/watch?v=yphqu2N35X4)
+#### 121. **Evaluate all tokens prior to inclusion in the system**
+- Review current and future tokens in the system for non-standard behavior.
+- Particularly dangerous functionality to look for includes a callback (ie. ERC777) which would enable an attacker to execute potentially arbitrary code during the transaction, fees on transfers, or inflationary/deflationary tokens.
+    1. Recommendation: Evaluate all tokens prior to inclusion in the system
+    2. [ConsenSys's Audit of Growth DeFi](https://consensys.net/diligence/audits/2020/12/growth-defi-v1/#evaluate-all-tokens-prior-to-inclusion-in-the-system)
+
+#### 122. **Use descriptive names for contracts and libraries**
+- The code base makes use of many different contracts, abstract contracts, interfaces, and libraries for inheritance and code reuse.
+- In principle, this can be a good practice to avoid repeated use of similar code.
+- However, with no descriptive naming conventions to signal which files would contain meaningful logic, codebase becomes difficult to navigate.
+    1. Recommendation: Use descriptive names for contracts and libraries
+    2. [ConsenSys's Audit of Growth DeFi](https://consensys.net/diligence/audits/2020/12/growth-defi-v1/#use-descriptive-names-for-contracts-and-libraries)
+
+#### 123. **Prevent contracts from being used before they are entirely initialized**
+- Many contracts allow users to deposit / withdraw assets before the contracts are entirely initialized, or while they are in a semi-configured state.
+- Because these contracts allow interaction on semi-configured states, the number of configurations possible when interacting with the system makes it incredibly difficult to determine whether the contracts behave as expected in every scenario, or even what behavior is expected in the first place.
+    1. Recommendation: Prevent contracts from being used before they are entirely initialized
+    2. [ConsenSys's Audit of Growth DeFi](https://consensys.net/diligence/audits/2020/12/growth-defi-v1/#prevent-contracts-from-being-used-before-they-are-entirely-initialized)
+
+#### 124. **Potential resource exhaustion by external calls performed within an unbounded loop**
+- _DydxFlashLoanAbstraction_._requestFlashLoan_ performs external calls in a potentially-unbounded loop.
+- Depending on changes made to DyDx’s _SoloMargin_, this may render this flash loan provider prohibitively expensive.
+- In the worst case, changes to _SoloMargin_ could make it impossible to execute this code due to the block gas limit.
+    1. Recommendation: Reconsider or bound the loop
+    2. [ConsenSys's Audit of Growth DeFi](https://consensys.net/diligence/audits/2020/12/growth-defi-v1/#potential-resource-exhaustion-by-external-calls-performed-within-an-unbounded-loop)
+
+#### 125. **Owners can never be removed**
+- The intention of _setOwners_() is to replace the current set of owners with a new set of owners.
+- However, the _isOwner_ mapping is never updated, which means any address that was ever considered an owner is permanently considered an owner for purposes of signing transactions.
+    1. Recommendation: In _setOwners__(), before adding new owners, loop through the current set of owners and clear their _isOwner_ booleans
+    2. Critical finding in [ConsenSys's Audit of Paxos](https://consensys.net/diligence/audits/2020/11/paxos/#owners-can-never-be-removed)
+
+#### 126. **Potential manipulation of stable interest rates using flash loans**
+- Flash loans allow users to borrow large amounts of liquidity from the protocol.
+- It is possible to adjust the stable rate up or down by momentarily removing or adding large amounts of liquidity to reserves.
+    1. Recommendation: This type of manipulation is difficult to prevent especially when flash loans are available. Aave should monitor the protocol at all times to make sure that interest rates are being rebalanced to sane values.
+    2. [ConsenSys's Audit of Aave Protocol V2](https://consensys.net/diligence/audits/2020/09/aave-protocol-v2/#potential-manipulation-of-stable-interest-rates-using-flash-loans)
+
+#### 127. **Only whitelist validated assets**
+- Because some of the functionality relies on correct token behavior, any whitelisted token should be audited in the context of this system.
+- Problems can arise if a malicious token is whitelisted because it can block people from voting with that specific token or gain unfair advantage if the balance can be manipulated.
+    1. Recommendation: Make sure to audit any new whitelisted asset.
+    2. [ConsenSys's Audit of Aave Governance DAO](https://consensys.net/diligence/audits/2020/08/aave-governance-dao/#only-whitelist-validated-assets)
+
+#### 128. **Underflow if** _**TOKEN_DECIMALS**_ **are greater than 18**
+- In _latestAnswer_(), the assumption is made that _TOKEN_DECIMALS_ is less than 18.
+    1. Recommendation: Add a simple check to the constructor to ensure the added token has 18 decimals or less
+    2. [ConsenSys's Audit of Aave CPM Price Provider](https://consensys.net/diligence/audits/2020/05/aave-cpm-price-provider/#underflow-if-token-decimals-are-greater-than-18)
+
+#### 129. **Chainlink’s performance at times of price volatility**
+- In order to understand the risk of the Chainlink oracle deviating significantly, it would be helpful to compare historical prices on Chainlink when prices are moving rapidly, and see what the largest historical delta is compared to the live price on a large exchange.
+    1. Recommendation: Review Chainlink’s performance at times of price volatility
+    2. [ConsenSys's Audit of Aave CPM Price Provider](https://consensys.net/diligence/audits/2020/05/aave-cpm-price-provider/#review-chainlink-s-performance-at-times-of-price-volatility)
+
+#### 130. Consider an iterative approach to launching.
+- Be aware of and prepare for worst-case scenarios
+- The system has many components with complex functionality and no apparent upgrade path.
+    1. Recommendation: We recommend identifying which components are crucial for a minimum viable system, then focusing efforts on ensuring the security of those components first, and then moving on to the others. During the early life of the system, have a method for pausing and upgrading the system.
+    2. [ConsenSys's Audit of Lien Protocol](https://consensys.net/diligence/audits/2020/05/lien-protocol/#consider-an-iterative-approach-to-launching)
+
+#### 131. **Use of modifiers for repeated checks**
+- It is recommended to use modifiers for common checks within different functions.
+- This will result in less code duplication in the given smart contract and adds significant readability into the code base.
+    1. Recommendation: Use of modifiers for repeated checks
+    2. [ConsenSys's Audit of Balancer Finance](https://consensys.net/diligence/audits/2020/05/balancer-finance/#use-of-modifiers-for-repeated-checks)
+
+#### 132. **Switch modifier order**:
+- _BPool_ functions often use modifiers in the following order: __logs__, __lock__.
+- Because __lock__ is a reentrancy guard, it should take precedence over __logs_._
+    1. Recommendation: Place __lock__ before other modifiers; ensuring it is the very first and very last thing to run when a function is called.
+    2. [ConsenSys's Audit of Balancer Finance](https://consensys.net/diligence/audits/2020/05/balancer-finance/#switch-modifier-order-in-bpool)
+
+#### 133. **Address codebase fragility**
+- Software is considered “fragile” when issues or changes in one part of the system can have side-effects in conceptually unrelated parts of the codebase.
+- Fragile software tends to break easily and may be challenging to maintain.
+    1. Recommendation: Building an anti-fragile system requires careful thought and consideration outside of the scope of this review. In general, prioritize the following concepts: 1) Follow the single-responsibility principle of functions 2) Reduce reliance on external systems
+    2. [ConsenSys's Audit of MCDEX Mai Protocol V2](https://consensys.net/diligence/audits/2020/05/mcdex-mai-protocol-v2/#address-codebase-fragility)
+
+#### 134. **Reentrancy could lead to incorrect order of emitted events**
+- The order of operations in the _moveTokensAndETHfromAdjustment_ function in the _BorrowOperations_ contract may allow an attacker to cause events to be emitted out of order.
+- In the event that the borrower is a contract, this could trigger a callback into _BorrowerOperations_, executing the _ _adjustTrove_ flow above again.
+- As the _moveTokensAndETHfromAdjustment_ call is the final operation in the function the state of the system on-chain cannot be manipulated.
+- However, there are events that are emitted after this call.
+- In the event of a reentrant call, these events would be emitted in the incorrect order.
+- The event for the second operation i s emitted first, followed by the event for the first operation.
+- Any off-chain monitoring tools may now have an inconsistent view of on-chain state.
+    1. Recommendation: Apply the checks-effects-interactions pattern and move the event emissions above the call to _ _moveTokensAndETHfromAdjustment_ to avoid the potential reentrancy.
+    2. [ToB's Audit of Liquidity](https://github.com/trailofbits/publications/blob/master/reviews/Liquity.pdf)
+
+#### 135. **Variable shadowing from OUSD to ERC20**
+- OUSD inherits from ERC20, but redefines the _ _allowances_ and _ _totalSupply_ state variables.
+- As a result, access to these variables can lead to returning different values.
+    1. Recommendation: Remove the shadowed variables (_ _allowances_ and _ _totalSupply_) in OUSD.
+    2. [ToB's Audit of Origin Dollar](https://github.com/trailofbits/publications/blob/master/reviews/OriginDollar.pdf)
+
+#### 136. **VaultCore.rebase functions have no return statements**
+- _VaultCore.rebase()_ and _VaultCore.rebase(bool)_ return a _uint_ but lack a return statement.
+- As a result these functions will always return the default value, and are likely to cause issues for their callers.
+- Both _VaultCore.rebase()_ and _VaultCore.rebase(bool)_ are expected to return a _uint256_. _rebase()_ does not have a return statement.
+- _rebase(bool)_ has one return statement in one branch (return 0), but lacks a return statement for the other paths.
+- So both functions will always return zero. As a result, a third-party code relying on the return value might not work as intended.
+    1. Recommendation: Add the missing return statement(s) or remove the return type in _VaultCore.rebase()_ and _VaultCore.rebase(bool)_. Properly adjust the documentation as necessary.
+    2. [ToB's Audit of Origin Dollar](https://github.com/trailofbits/publications/blob/master/reviews/OriginDollar.pdf)
+
+#### 137. **Multiple contracts are missing inheritances**
+- Multiple contracts are the implementation of their interfaces, but do not inherit from them.
+- This behavior is error-prone and might lead the implementation to not follow the interface if the code is updated.
+    1. Recommendation: Ensure contracts inherit from their interfaces
+    2. [ToB's Audit of Origin Dollar](https://github.com/trailofbits/publications/blob/master/reviews/OriginDollar.pdf)
+
+#### 138. **Solidity compiler optimizations can be dangerous**
+- Yield Protocol has enabled optional compiler optimizations in Solidity.
+- There have been several bugs with security implications related to optimizations.
+- Moreover, optimizations are actively being developed .
+- Solidity compiler optimizations are disabled by default, and it is unclear how many contracts in the wild actually use them.
+- Therefore, it is unclear how well they are being tested and exercised.
+- High-severity security issues due to optimization bugs have occurred in the past .
+	- A high-severity bug in the emscripten -generated solc-js compiler used by Truffle and Remix persisted until late 2018.
+		- The fix for this bug was not reported in the Solidity CHANGELOG.
+	- Another high-severity optimization bug resulting in incorrect bit shift results was patched in Solidity 0.5.6 .
+    1. Recommendation: Short term, measure the gas savings from optimizations, and carefully weigh them against the possibility of an optimization-related bug. Long term, monitor the development and adoption of Solidity compiler optimizations to assess their maturity.
+    2. [ToB's Audit of Yield Protocol](https://github.com/trailofbits/publications/blob/master/reviews/YieldProtocol.pdf)
+
+#### 139. **Permission-granting is too simplistic and not flexible enough**
+- The Yield Protocol contracts implement an oversimplified permission system that can be abused by the administrator.
+- The Yield Protocol implements several contracts that need to call privileged functions from each other.
+- However, there is no way to specify which operation can be called for every privileged user.
+- All the authorized addresses can call any restricted function, and the owner can add any number of them.
+- Also, the privileged addresses are supposed to be smart contracts; however, there is no check for that. Moreover, once an address is added, it cannot be deleted.
+    1. Recommendation: Rewrite the authorization system to allow only certain addresses to access certain functions
+    2. [ToB's Audit of Yield Protocol](https://github.com/trailofbits/publications/blob/master/reviews/YieldProtocol.pdf)
+
+#### 140. **Lack of validation when setting the maturity value
+- When a _fyDAI_ contract is deployed, one of the deployment parameters is a maturity date, passed as a Unix timestamp.
+- This is the date at which point _fyDAI_ tokens can be redeemed for the underlying Dai.
+- Currently, the contract constructor performs no validation on this timestamp to ensure it is within an acceptable range.
+- As a result, it is possible to mistakenly deploy a _YDai_ contract that has a maturity date in the past or many years in the future, which may not be immediately noticed.
+    1. Recommendation: Short term, add checks to the _YDai_ contract constructor to ensure maturity timestamps fall within an acceptable range. This will prevent maturity dates from being mistakenly set in the past or too far in the future. Long term, always perform validation of parameters passed to contract constructors. This will help detect and prevent errors during deployment.
+    2. [ToB's Audit of Yield Protocol](https://github.com/trailofbits/publications/blob/master/reviews/YieldProtocol.pdf)
