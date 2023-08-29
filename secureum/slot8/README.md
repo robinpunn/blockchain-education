@@ -64,6 +64,27 @@
     158. [Borrow Rate](#158-borrow-rate-depends-on-approximation-of-blocks-per-year)
     159. [Flash Loan Rate](#159-flash-loan-rate-lacks-bounds-and-can-be-set-arbitrarily)
     160. [Logic Duplicated Across Code](#160-logic-duplicated-across-code)
+4. [Block 4](#block-4)
+    161. [Insufficient Testing](#161-insufficient-testing)
+    162. [Project Dependencies](#162-project-dependencies-contain-vulnerabilities)
+    163. [Lack of Contract Documentation](#163-lack-of-contract-documentation-makes-codebase-difficult-to-understand)
+    164. [ABIEncoderV2](#164-abiencoderv2-is-not-production-ready)
+    165. [Contract Owner Has Too Many Privileges](#165-contract-owner-has-too-many-privileges)
+    166. [Poor Error Handling](#166-poor-error-handling-practices-in-test-suite)
+    167. [Redundant and Unused Code](#167-redundant-and-unused-code)
+    168. [Single Account Can Capture All Supply](#168-single-account-can-capture-all-supply)
+    169. [Insufficient Input Validation](#169-insufficient-input-validation)
+    170. [Unused Event Logs](#170-unused-event-logs)
+    171. [Unintended Token Burning](#171-possible-unintended-token-burning-in-transferfrom-function)
+    172. [DoS Vector From Unbound List](#172-denial-of-service-vector-from-unbound-list)
+    173. [ERC20 Front Running](#173-erc20-implementation-vulnerable-to-front-running)
+    174. [Unnecessary Require Statement](#174-unnecessary-require-statement)
+    175. [Rounding to Zero](#175-rounding-to-zero-if-duration-is-greater-than-reward)
+    176. [Withdrawn Event Log Poisoning](#176-withdrawn-event-log-poisoning)
+    177. [Insufficient Incentives to Liquidator](#177-insufficient-incentives-to-liquidator)
+    178. [Markets Can Become Insolvent](#178-markets-can-become-insolvent)
+    179. [Not Using OpenZeppelin Contracts](#179-not-using-openzeppelin-contracts)
+    180. [Lack of Indexed Parameters](#180-lack-of-indexed-parameters-in-events)
 ---
 
 ### [Block 1](https://www.youtube.com/watch?v=IXm6JAprhuw)
@@ -482,3 +503,153 @@
 - This development practice increases the risk that new bugs will be introduced into the system, as bug fixes must be copied and pasted into files across the system.
     1. Recommendation: Short term, use inheritance to allow code to be reused across contracts. Changes to one inherited contract will be applied to all files without requiring developers to copy and paste them. Long term, minimize the amount of manual copying and pasting required to apply changes made to one file to other files.
     2. [ToB's Audit of Advanced Blockchains](https://github.com/trailofbits/publications/blob/master/reviews/AdvancedBlockchain.pdf)
+
+### [Block 4](https://www.youtube.com/watch?v=poxzr4-srn0)
+#### 161. **Insufficient testing**
+- The repositories under review lack appropriate testing, which increases the likelihood of errors in the development process and makes the code more difficult to review.
+    1. Recommendation: Short term, ensure that the unit tests cover all public functions at least once, as well as all known corner cases. Long term, integrate coverage analysis tools into the development process and regularly review the coverage.
+    2. [ToB's Audit of Advanced Blockchains](https://github.com/trailofbits/publications/blob/master/reviews/AdvancedBlockchain.pdf)
+
+#### 162. **Project dependencies contain vulnerabilities**
+- Although dependency scans did not yield a direct threat to the projects under review, yarn audit identified dependencies with known vulnerabilities.
+- Due to the sensitivity of the deployment code and its environment, it is important to ensure dependencies are not malicious.
+- Problems with dependencies in the JavaScript community could have a significant effect on the repositories under review.
+    1. Recommendation: Short term, ensure dependencies are up to date. Several node modules have been documented as malicious because they execute malicious code when installing dependencies to projects. Keep modules current and verify their integrity after installation. Long term, consider integrating automated dependency auditing into the development workflow. If dependencies cannot be updated when a vulnerability is disclosed, ensure that the codebase does not use and is not affected by the vulnerable functionality of the dependency.
+    2. [ToB's Audit of Advanced Blockchains](https://github.com/trailofbits/publications/blob/master/reviews/AdvancedBlockchain.pdf)
+
+#### 163. **Lack of contract documentation makes codebase difficult to understand**
+- The codebase lacks code documentation, high-level descriptions, and examples, making the contracts difficult to review and increasing the likelihood of user mistakes.
+- The documentation would benefit from more detail.
+    1. Recommendation: Short term, review and properly document the above mentioned aspects of the codebase. Long term, consider writing a formal specification of the protocol.
+    2. [ToB's Audit of Advanced Blockchains](https://github.com/trailofbits/publications/blob/master/reviews/AdvancedBlockchain.pdf)
+
+#### 164. **ABIEncoderV2 is not production-ready**
+- The contracts use the new Solidity ABI encoder, _ABIEncoderV2_.
+- This experimental encoder is not ready for production.
+- More than 3% of all GitHub issues for the Solidity compiler are related to experimental features, primarily _ABIEncoderV2_.
+- Several issues and bug reports are still open and unresolved.
+- _ABIEncoderV2_ has been associated with more than [20 high-severity bugs](https://github.com/ethereum/solidity/issues?q=is:issue+abiencoderv2+label:%22bug+:bug:%22+sort:created-desc), some of which are so recent that they have not yet been included in a Solidity release. For example, in March 2019 a [severe bug](https://blog.ethereum.org/2019/03/26/solidity-optimizer-and-abiencoderv2-bug/) introduced in Solidity 0.5.5 was found in the encoder.
+    1. Recommendation: Short term, use neither _ABIEncoderV2_ nor any other experimental Solidity feature. Refactor the code such that structs do not need to be passed to or returned from functions. Long term, integrate static analysis tools like Slither into your CI pipeline to detect unsafe pragmas.
+    2. [ToB's Audit of Advanced Blockchains](https://github.com/trailofbits/publications/blob/master/reviews/AdvancedBlockchain.pdf)
+
+#### 165. **Contract owner has too many privileges**
+- The owner of the contracts has too many privileges relative to standard users.
+- Users can lose all of their assets if a contract owner private key is compromised.
+- The contract owner can do the following:
+	1) Upgrade the system’s implementation to steal funds
+	2) Upgrade the token’s implementation to act maliciously
+	3) 3)  Increase the amount of _iTokens_ for reward distribution to such an extent that rewards cannot be disbursed
+	4) Arbitrarily update the interest model contracts The concentration of these privileges creates a single point of failure.
+- It increases the likelihood that the owner will be targeted by an attacker, especially given the insufficient protection on sensitive owner private keys. Additionally, it incentivizes the owner to act maliciously.
+    1. Recommendation: Short term: 1) Clearly document the functions and implementations the owner can change. 2) Split privileges to ensure that no one address has excessive ownership of the system. Long term, document the risks associated with privileged users and single points of failure. Ensure that users are aware of all the risks associated with the system.
+    2. [ToB's Audit of dForce Lending](https://github.com/dforce-network/documents/blob/master/audit_report/Lending/dForceLending-Audit-Report-TrailofBits-Mar-2021.pdf)
+
+#### 166. **Poor error-handling practices in test suite**
+- The test suite does not properly test expected behavior, as the contracts run in production.
+- Additionally, certain components lack error-handling methods.
+- These deficiencies can cause failed tests to be overlooked.
+- In particular, the tests fail to properly check error messages. For example, errors are silenced with a try-catch statement.
+- If this error is silenced, there will be no guarantee that a smart contract call has reverted for the right reason.
+- As a result, if the test suite passes, it will provide no guarantee that the transaction call reverted correctly.
+    1. Recommendation: Short term, test these operations against a specific error message. Testing will ensure that errors are never silenced, and the test suite will check that a contract call has reverted for the right reason. Long term, follow standard testing practices for smart contracts to minimize the number of issues during development.
+    2. [ToB's Audit of dForce Lending](https://github.com/dforce-network/documents/blob/master/audit_report/Lending/dForceLending-Audit-Report-TrailofBits-Mar-2021.pdf)
+
+#### 167. **Redundant and Unused Code**:
+- The _recordLoanClosure()_ function returns a boolean ( _loanClosed_ ) which is never used by the calling function (see _closeLoan_() , line [312]).
+- Furthermore, since the _recordLoanClosure_() function is only called via the _closeLoan_() function, this means that _synthLoan.timeClosed_ is always equal to zero (see _require_ statement on line [305]).
+- Therefore, the if statement on line [357] is redundant and unnecessary.
+    1. Recommendation: 1) Using the return value of the _recordLoanClosure_() function or changing the function definition to stop returning _loanClosed_ 2) Removing the if statement in line [357]
+    2. [Sigma Prime's Audit of Synthetix EtherCollateral](https://github.com/sigp/public-audits/blob/master/synthetix/ethercollateral/review.pdf)
+
+#### 168. **Single Account Can Capture All Supply**
+- The _EtherCollateral_ smart contract does not rely on a _maxLoanSize_ to limit the amount of ETH that can be locked for a loan.
+- As a result, a single account can issue a loan that will reach the total minting supply.
+    1. Recommendation: Make sure this behaviour is understood and consider introducing and enforcing a cap ( _maxLoanSize_ ) on the size of the loans allowed to be opened.
+    2. [Sigma Prime's Audit of Synthetix EtherCollateral](https://github.com/sigp/public-audits/blob/master/synthetix/ethercollateral/review.pdf)
+
+#### 169. **Insufficient Input Validation**
+- The constructor of the _EtherCollateral_ smart contract does not check the validity of the addresses provided as input parameters.
+- It is possible to deploy an instance of the _EtherCollateral_ contract with the _synthProxy_ , _sUSDProxy_ and depot addresses set to zero.
+- Similarly, the effective interest rate can be equal to zero if _interestRate_ is set to any value lesser than 31536000 ( _SECONDS_IN_A_YEAR_ ), as _interestPerSecond_ will be null.
+    1. Recommendation: Consider introducing require statements to perform adequate input validation.
+    2. [Sigma Prime's Audit of Synthetix EtherCollateral](https://github.com/sigp/public-audits/blob/master/synthetix/ethercollateral/review.pdf)
+
+#### 170. **Unused Event Logs**
+- Log events are declared but never emitted.
+    1. Recommendation: Remove these events from the EtherCollateral contract.
+    2. [Sigma Prime's Audit of Synthetix EtherCollateral](https://github.com/sigp/public-audits/blob/master/synthetix/ethercollateral/review.pdf)
+
+#### 171. **Possible Unintended Token Burning in** _**transferFrom**_**() Function**
+- _InfiniGold_ allows users to convert/exchange their PMGT tokens to "gold certificates", which are digital artefacts effectively redeemable for actual gold.
+- To do so, users are supposed to send their PMGT tokens to a specific burn address.
+- The _transferFrom_() function does not check the to address against this burn address.
+- Users may send tokens to the burn address, using the _transferFrom_() function, without triggering the emission of the _Burn(address indexed burner, uint256 value)_ event, which dictates how the gold certificates are created and distributed.
+    1. Recommendation: Prevent sending tokens to the burn address in the _transferFrom_() function. This can be achieved by adding a _require_ within _transferFrom_() which disallows the to address to be the _burnAddress_ .
+    2. [Sigma Prime's Audit of InfiniGold](https://github.com/sigp/public-audits/raw/master/infinigold/review.pdf)
+
+#### 172. **Denial of Service Vector from Unbound List**
+- The _reset_() internal function (called by the _replaceAll_() function) resets the role linked list by deleting all the elements (i.e. nodes) part of the bearer mapping.
+- The caller is bound by the number of elements that are being removed for a particular role .
+- Calling the _reset_() function will exceed the current block gas limit (i.e. 8,000,0000) for more than 371 total elements in a role linked list. Similarly, the _size_() and _toArray_() functions also loop through the linked list.
+- This essentially means that listers, unlisters, minters, pausers, unpausers and owners can perform denial of service attacks on the lists they administer.
+- In a scenario where the Roles library is leveraged by other smart contracts, calling these two functions will also result in a potential denial of service after a certain number of elements have been included in the linked list (this number would depend on the gas cost of the Opcodes implemented by the calling functions).
+    1. Recommendation: One way to ensure that the current block gas limit is not exceeded would be to introduce a condition in the _add_() function to check that the linked list size is strictly lesser than 371 elements before adding a new element. This additional condition would significantly increase the gas cost associated with calling the _add_() function, as a call to the _size_() function would be required to fetch the exact number of nodes in the linked list. Alternatively, the _gasleft_() Solidity special function could be used to make sure that going through the linked list does not exceed the block gas limit. Finally, the _reset_() could be changed to allow for removing an arbitrary number of nodes (by taking this number as a function parameter).
+    2. [Sigma Prime's Audit of InfiniGold](https://github.com/sigp/public-audits/raw/master/infinigold/review.pdf)
+
+#### 173. **ERC20 Implementation Vulnerable to Front-Running**
+- Front-running attacks involve users watching the blockchain for particular transactions and, upon observing such a transaction, submitting their own transactions with a greater gas price.
+- This incentivises miners to prioritise the later transaction. The ERC20 implementation is known to be affected by a front-running vulnerability, in its _approve_() function.
+    1. Recommendation: Be aware of the front-running issues in _approve_() , potentially add extended approve functions which are not vulnerable to the front-running vulnerability for future third-party-applications. See the Open-Zeppelin [8] solution for an example. We note that modifying the ERC20 standard to address this issue may lead to backward incompatibilities with external third-party software.
+    2. [Sigma Prime's Audit of InfiniGold](https://github.com/sigp/public-audits/raw/master/infinigold/review.pdf)
+
+#### 174. **Unnecessary** _**require**_ **Statement**
+- The following _require_ statement in _Blacklistable.sol_ can be removed: _require(to != address(0));_ Indeed, this check is implemented in the __transfer_() function in the _ERC20.sol_ smart contract.
+    1. Recommendation: Consider removing the require statement for gas saving purposes.
+    2. [Sigma Prime's Audit of InfiniGold](https://github.com/sigp/public-audits/raw/master/infinigold/review.pdf)
+
+#### 175. **Rounding to Zero if Duration is Greater Than Reward**
+- The _rewardRate_ value is calculated as follows: _rewardRate = reward/duration_.
+- Due to the integer representation of these variables, if duration is larger than reward the value of _rewardRate_ will round to zero.
+- Thus, stakers will not receive any of the reward for their stakes.
+- Furthermore, due to the integer rounding, the total rewards distributed may be rounded down by up to one less than duration .
+- As a result, the Unipool contract may slowly accumulate SNX.
+    1. Recommendation: Beware of the rounding issues when calling the _notifyRewardAmount_() function. We also recommend some way of allowing the excess SNX reward from rounding to be claimed or withdrawn from the Unipool contract.
+    2. [Sigma Prime's Audit of Synthetix Unipool](https://github.com/sigp/public-audits/blob/master/synthetix/unipool/review.pdf)
+
+#### 176. **Withdrawn Event Log Poisoning**
+- Calling the _withdraw_() function will emit the Withdrawn event.
+- No UNI tokens are required as this function can be called with _amount_ = 0 .
+- As a result a user could continually call this function, creating a potentially infinite amount of events.
+- This can lead to an event log poisoning situation where malicious external users spam the Unipool contract to generate arbitrary Withdrawn events.
+    1. Recommendation: Consider adding a _require_ or _if_ statement preventing the _withdraw_() function from emitting the Withdrawn event when the amount variable is zero.
+    2. [Sigma Prime's Audit of Synthetix Unipool](https://github.com/sigp/public-audits/blob/master/synthetix/unipool/review.pdf)
+
+#### 177. **Insufficient incentives to liquidator**
+- The liquidation process is a very important part of every DeFi project because it allows to extinguish the problem of having the whole system under-collateralized under critical conditions of the market, and it needs a design that incentivizes its speed of execution.
+- The Holdefi contract implements the liquidation process for those accounts that may have an under-collateralized balance or that may have been inactive for a whole year without interacting with the project.
+- The liquidator would end up paying for the expensive liquidation process, without receiving any benefit.
+- Buying discounted collateral assets could be considered as an incentive to the liquidators
+    1. Recommendation: Consider improving the incentive design to give the liquidators higher incentives to execute the liquidation process
+    2. [OpenZeppelin's Audit of HoldeFi](https://blog.openzeppelin.com/holdefi-audit)
+
+#### 178. **Markets can become insolvent**
+- When the value of all collateral is worth less than the value of all borrowed assets, we say a market is insolvent.
+- The Holdefi codebase can do many things to reduce the risk of market insolvency, including:
+	- prudent selection of collateral-ratios
+	- incentivizing third-party collateral liquidation
+	- careful selection of which tokens are listed on the platform, etc.
+- However, the risk of insolvency cannot be entirely eliminated, and there are numerous ways a market can become insolvent.
+    1. Recommendation: This risk is not unique to the Holdefi project. All collateralized loans (even non-blockchain loans) have a risk of insolvency. However, it is important to know that this risk does exist, and that it can be difficult to recover from even a small dip into insolvency. Consider adding more targeted tests for these scenarios to better understand the behavior of the protocol, and designing relevant mechanics to make sure the platform operates properly. Also consider communicating the potential risks to the users if needed.
+    2. [OpenZeppelin's Audit of HoldeFi](https://blog.openzeppelin.com/holdefi-audit)
+
+#### 179. **Not using OpenZeppelin contracts**
+- OpenZeppelin maintains a library of standard, audited, community-reviewed, and battle-tested smart contracts.
+- Instead of always importing these contracts, the Holdefi project reimplements them in some cases, while in other cases it just copies them.
+- This increases the amount of code that the Holdefi team will have to maintain and misses all the improvements and bug fixes that the OpenZeppelin team is constantly implementing with the help of the community.
+    1. Recommendation: Consider importing the OpenZeppelin contracts instead of reimplementing or copying them. These contracts can be extended to add the extra functionalities required by Holdefi.
+    2. [OpenZeppelin's Audit of HoldeFi](https://blog.openzeppelin.com/holdefi-audit)
+
+#### 180. **Lack of indexed parameters in events**
+- Throughout the Holdefi’s codebase, none of the parameters in the events defined in the contracts are indexed.
+    1. Recommendation Consider indexing event parameters to avoid hindering the task of off-chain services searching and filtering for specific events.
+    2. [OpenZeppelin's Audit of HoldeFi](https://blog.openzeppelin.com/holdefi-audit)
