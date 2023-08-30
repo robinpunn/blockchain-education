@@ -85,6 +85,28 @@
     178. [Markets Can Become Insolvent](#178-markets-can-become-insolvent)
     179. [Not Using OpenZeppelin Contracts](#179-not-using-openzeppelin-contracts)
     180. [Lack of Indexed Parameters](#180-lack-of-indexed-parameters-in-events)
+5. [Block 5](#block-5)
+    181. [Named Return Variables](#181-named-return-variables)
+    182. [block.timestamp Unreliable](#182-blocktimestamp-unreliable)
+    183. [Assignment in Require Statement](#183-assignment-in-require-statement)
+    184. [Coommented Code](#184-commented-code)
+    185. [Misleading Rever Messages](#185-misleading-revert-messages)
+    186. [Outdated Solidity Versions](#186-multiple-outdated-solidity-versions-in-use)
+    187. [Test and Production Constants](#187-test-and-production-constants-in-the-same-codebase)
+    188. [Small Integer Sizes](#188-unnecessarily-small-integer-sizes)
+    189. [uint Instead of uint256](#189-use-of-uint-instead-of-uint256)
+    190. [Functions with Unexpected Side Effects](#190-functions-with-unexpected-side-effects)
+    191. [Unsafe Casting](#191-unsafe-casting)
+    192. [Missing Error Messages](#192-missing-error-messages-in-require-statements)
+    193. [Uncommented Assembly Block](#193-uncommented-assembly-block)
+    194. [Unnecessary Require Statements](#194-unnecessary-require-statements)
+    195. [Unnecessary Event Emission](#195-unnecessary-event-emission)
+    196. [oToken](#196-otoken-can-be-created-with-a-non-whitelisted-collateral-asset)
+    197. [Mismatches Between Contracts and Interfaces](#197-mismatches-between-contracts-and-interfaces)
+    198. [Actios Not Executed Atomically](#198-actions-not-executed-atomically-might-lead-to-inconsistent-state)
+    199. [Chainlink Pricer Deprecated](#199-chainlink-pricer-is-using-a-deprecated-api)
+    200. [Funds Can Be Lost](#200-funds-can-be-lost)
+    201. [Use Delete to Clear Variables](#201-use-delete-to-clear-variables)
 ---
 
 ### [Block 1](https://www.youtube.com/watch?v=IXm6JAprhuw)
@@ -653,3 +675,137 @@
 - Throughout the Holdefi’s codebase, none of the parameters in the events defined in the contracts are indexed.
     1. Recommendation Consider indexing event parameters to avoid hindering the task of off-chain services searching and filtering for specific events.
     2. [OpenZeppelin's Audit of HoldeFi](https://blog.openzeppelin.com/holdefi-audit)
+
+### [Block 5](https://www.youtube.com/watch?v=0J7KI4WGd0Q)
+#### 181. **Named return variables**
+- There is an inconsistent use of named return variables across the entire codebase.
+    1. Recommendation: Consider removing all named return variables, explicitly declaring them as local variables in the body of the function, and adding the necessary explicit return statements where appropriate. This should favor both explicitness and readability of the project.
+    2. [OpenZeppelin's Audit of HoldeFi](https://blog.openzeppelin.com/holdefi-audit)
+
+#### 182. **block.timestamp Unreliable**
+- Code uses the _block.timestamp_ as part of the calculations and time checks.
+- Nevertheless, timestamps can be slightly altered by miners to favor them in contracts that have logics that depend strongly on them.
+    1. Recommendation: Consider taking into account this issue and warning the users that such a scenario could happen. If the alteration of timestamps cannot affect the protocol in any way, consider documenting the reasoning and writing tests enforcing that these guarantees will be preserved even if the code changes in the future.
+    2. [OpenZeppelin's Audit of HoldeFi](https://blog.openzeppelin.com/holdefi-audit)
+
+#### 183. **Assignment in** _**require**_ **statement**
+- In the _YieldOracle_ contract, there is a _require_ statement that makes an assignment.
+- This deviates from the standard usage and intention of _require_ statements and can easily lead to confusion.
+    1. Recommendation: Consider moving the assignment to its own line before the _require_ statement and then using the _require_ statement solely for condition checking.
+    2. [OpenZeppelin's Audit of BarnBrige Smart Yield Bonds](https://blog.openzeppelin.com/barnbridge-smart-yield-bonds-audit/)
+
+#### 184. **Commented code**
+- Throughout the codebase there are lines of code that have been commented out with //.
+- This can lead to confusion and is detrimental to overall code readability.
+    1. Recommendation: Consider removing commented out lines of code that are no longer needed.
+    2. [OpenZeppelin's Audit of BarnBrige Smart Yield Bonds](https://blog.openzeppelin.com/barnbridge-smart-yield-bonds-audit/)
+
+#### 185. **Misleading** _**revert**_ **messages**
+- Error messages are intended to notify users about failing conditions, and should provide enough information so that the appropriate corrections needed to interact with the system can be applied.
+- Uninformative error messages greatly damage the overall user experience, thus lowering the system’s quality.
+    1. Recommendation: Consider not only fixing the specific issues mentioned, but also reviewing the entire codebase to make sure every error message is informative and user-friendly enough. Furthermore, for consistency, consider reusing error messages when extremely similar conditions are checked.
+    2. [OpenZeppelin's Audit of Compound Governor Bravo](https://blog.openzeppelin.com/compound-governor-bravo-audit/)
+
+#### 186. **Multiple outdated Solidity versions in use**
+- Outdated versions of Solidity are being used in all contracts.
+- The compiler options in the truffle-config file specifies version 0.6.6, which was released on April 6, 2020.
+- Throughout the codebase there are also different versions of Solidity being used.
+    1. Recommendation: As Solidity is now under a fast release cycle, consider using a more recent version of the compiler, such as version 0.7.6. In addition, to avoid unexpected behavior, consider specifying explicit Solidity versions in pragma statements.
+    2. [OpenZeppelin's Audit of Fei Protocol](https://blog.openzeppelin.com/fei-protocol-audit/)
+
+#### 187. **Test and production constants in the same codebase**
+- The _CoreOrchestrator_ contract defines the _TEST_MODE_ boolean variable which is used to define several constants in the system.
+- This decreases legibility of production code, and makes the system’s integral values more error-prone.
+    1. Recommendation: Consider having different environments for production and testing, with different contracts.
+    2. [OpenZeppelin's Audit of Fei Protocol](https://blog.openzeppelin.com/fei-protocol-audit/)
+
+#### 188. **Unnecessarily small integer sizes**
+- In Solidity, using integers smaller than 256 bits tends to increase gas costs because the Ethereum Virtual Machine must perform additional operations to zero out the unused bits.
+- This can be justified by savings in storage costs in some scenarios, however, that is not generally the case in this codebase.
+    1. Recommendation: Consider using integers of size 256 bits to improve gas efficiency and mitigate function reverts.
+    2. [OpenZeppelin's Audit of Fei Protocol](https://blog.openzeppelin.com/fei-protocol-audit/)
+
+#### 189. **Use of** _**uint**_ **instead of** _**uint256**_
+- Across the codebase, there are hundreds of instances of _uint_, as opposed to _uint256_.
+    1. Recommendation: In favor of explicitness, consider replacing all instances of _uint_ with _uint256_.
+    2. [OpenZeppelin's Audit of Fei Protocol](https://blog.openzeppelin.com/fei-protocol-audit/)
+
+#### 190. **Functions with unexpected side-effects**
+- Some functions have side-effects.
+- For example, the _getLatestFundingRate_ function of the _FundingRateApplier_ contract might also update the funding rate and send rewards.
+- The getPrice function of the _OptimisticOracle_ contract might also settle a price request.
+- These side-effect actions are not clear in the name of the functions and are thus unexpected, which could lead to mistakes when the code is modified by new developers not experienced in all the implementation details of the project.
+    1. Recommendation: Consider splitting these functions in separate getters and setters. Alternatively, consider renaming the functions to describe all the actions that they perform.
+    2. [OpenZeppelin's Audit of Uma Phase 4](https://blog.openzeppelin.com/uma-audit-phase-4/)
+
+#### 191. **Unsafe casting**
+- In line 554 of the _TaxCollector_ contract, the value of _coinBalance(receiver)_ is an _uint_.
+- This is cast to an _int_ and then negated.
+- However, since _uint_ can store higher values than _int_, it is possible that casting from _uint_ to _int_ may create an overflow.
+    1. Recommendation: Consider verifying that the value of _coinBalance(receiver)_ is within the acceptable range for negative _int_ values before casting and negating. Consider using OpenZeppelin’s _SafeCast_ contract, which provides functions for safely casting between types.
+    2. [OpenZeppelin's Audit of GEB Protocol](https://blog.openzeppelin.com/geb-protocol-audit/)
+
+#### 192. **Missing error messages in** _**require**_ **statements**
+- There are many places where _require_ statements are correctly followed by their error messages, clarifying what was the triggered exception.
+- However, there are places where _require_ statements are not followed by the corresponding error messages.
+- If any of those _require_ statements were to fail the checked condition, the transaction
+    would revert silently without an informative error message.
+    1. Recommendation: Consider including specific and informative error messages in all _require_ statements.
+    2. [OpenZeppelin's Audit of GEB Protocol](https://blog.openzeppelin.com/geb-protocol-audit/)
+
+#### 193. **Uncommented assembly block**
+- The _OracleRelayer_ contract includes an assembly block in the _rpower_() function.
+- The same assembly block is repeated in the _TaxCollector_ and _CoinSavingsAccount_ contracts.
+- While this does not pose a security risk per se, it is at the same time a complicated and critical part of the system.
+- Moreover, as this is a low-level language that is harder to parse by readers, consider including extensive documentation regarding the rationale behind its use, clearly explaining what every single assembly instruction does.
+- This will make it easier for users to trust the code, for reviewers to verify it, and for developers to build on top of it or update it.
+- Note that the use of assembly discards several important safety features of Solidity, which may render the code unsafer and more error-prone.
+    1. Recommendation: Consider implementing thorough tests to cover all potential use cases of these functions to ensure they behave as expected.
+    2. [OpenZeppelin's Audit of GEB Protocol](https://blog.openzeppelin.com/geb-protocol-audit/)
+
+#### 194. **Unnecessary** _**require**_ **statements**
+- There are several instances in the code base where the _require_ statements or conditional checks are unnecessary.
+- For instance: In the _OracleRelayer_ contract, the _require_ statement in the _modifyParameters_ function at line 189 checks if the input parameter data > 0.
+- This is unnecessary since the same condition is already checked in the _require_ statement at line 187.
+    1. Recommendation: To simplify the code and prevent wastage of gas, consider removing the unnecessary checks.
+    2. [OpenZeppelin's Audit of GEB Protocol](https://blog.openzeppelin.com/geb-protocol-audit/)
+
+#### 195. **Unnecessary event emission**
+- The _popDebtFromQueue_ function of the _AccountingEngine_ contract is emitting a useless event whenever someone tries to call it with a _debtBlockTimestamp_ that has not been saved before.
+    1. Recommendation: To simplify the code and prevent wastage of gas, avoid emitting unnecessary events.
+    2. [OpenZeppelin's Audit of GEB Protocol](https://blog.openzeppelin.com/geb-protocol-audit/)
+
+#### 196. _**oToken**_ **can be created with a non-whitelisted collateral asset**
+- A product consists of a set of assets and an option type.
+- Each product has to be whitelisted by the admin using the _whitelistProduct_ function from the Whitelist contract.
+    1. Recommendation: Consider validating if the assets involved in a product have been already whitelisted before allowing the creation of _oTokens_.
+    2. [OpenZeppelin's Audit of Opyn Gamma Protocol](https://blog.openzeppelin.com/opyn-gamma-protocol-audit/)
+
+#### 197. **Mismatches between contracts and interfaces**
+- Interfaces define the exposed functionality of the implemented contracts.
+- However, in several interfaces there are functions from the counterpart contracts that are not defined.
+    1. Recommendation: Consider applying the necessary changes in the mentioned interfaces and contracts so that definitions and implementations fully match.
+    2. [OpenZeppelin's Audit of Opyn Gamma Protocol](https://blog.openzeppelin.com/opyn-gamma-protocol-audit/)
+
+#### 198. **Actions not executed atomically might lead to inconsistent state**
+- The _setAssetPricer_, _setLockingPeriod,_ and _setDisputePeriod_ functions of the Oracle contract execute actions that are always expected to be performed atomically.
+- Failing to do so can lead to inconsistent states in the system.
+    1. Recommendation: Consider implementing an additional function that calls the _setAssetPricer_, _setLockingPeriod_, and _setDisputePeriod_ functions, so that these actions can be executed atomically in a single transaction.
+    2. [OpenZeppelin's Audit of Opyn Gamma Protocol](https://blog.openzeppelin.com/opyn-gamma-protocol-audit/)
+
+#### 199. **Chainlink pricer is using a deprecated API**
+- The Chainlink Pricer is currently using multiple functions from a deprecated Chainlink API such as _latestAnswer_() in L61, _getTimestamp_() in L74.
+- These functions might suddenly stop working if Chainlink stopped supporting deprecated APIs.
+    1. Recommendation: Consider refactoring these to use the latest Chainlink API.
+    2. [OpenZeppelin's Audit of Opyn Gamma Protocol](https://blog.openzeppelin.com/opyn-gamma-protocol-audit/)
+
+#### 200. **Funds can be lost**
+- The _sweepTimelockBalances_ function accepts a list of users with unlocked balances to distribute.
+- However, if there are duplicate users in the list, their balances will be counted multiple times when calculating the total amount to withdraw from the yield service.
+    1. Recommendation: Consider checking for duplicate users when calculating the amount to withdraw.
+    2. [OpenZeppelin's Audit of PoolTogether V3](https://blog.openzeppelin.com/pooltogether-v3-audit/)
+
+#### 201. **Use** _**delete**_ **to clear variables**
+- The Controller contract sets a variable to the zero address in order to clear it. Similarly, the _SetToken_ clears the locker by assigning the zero address.
+    1. Recommendation: The _delete_ key better conveys the intention and is also more idiomatic. Consider replacing assignments of zero with _delete_ statements.
+    2. [OpenZeppelin's Audit of Set Protocol](https://blog.openzeppelin.com/set-protocol-audit/)
