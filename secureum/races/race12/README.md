@@ -1,5 +1,7 @@
 ### [Race 12](https://ventral.digital/posts/2022/12/6/race-12-of-the-secureum-bootcamp-epoch)
 
+---
+
 ##### Q1 Sensible gas optimization(s) would be
 - [ ] A) Making `MIGRATOR_ROLE` state variable constant 
 - [ ] B) Making `UNDERLYING` state variable constant 
@@ -13,6 +15,7 @@ While MIGRATOR_ROLE can be made both constant or immutable, using constant makes
 UNDERLYING on the other hand can only be immutable since the value is passed in during the contract's construction.
 </p>
 </details> 
+
 ##### Q2 What would a caller with `MIGRATOR_ROLE` permission be capable of? 
 - [ ] A) Manipulating TokenV1's storage 
 - [ ] B) Deleting TokenV1's stored bytecode 
@@ -27,6 +30,7 @@ Replacing the bytecode would only be possible if TokenV1 was deployed via CREATE
 The public grantRole() function is inherited from AccessControl and allows callers with DEFAULT_ADMIN_ROLE to grant the MIGRATOR_ROLE to any address.
 </p>
 </details> 
+
 ##### Q3 Vault initialized with TokenV1 as underlying
 - [ ] A) Can be drained by re-entering during withdrawal 
 - [ ] B) Can be drained during withdrawal due to an integer underflow 
@@ -41,6 +45,7 @@ The fact that a Solidity version >0.8.0 is used without any unchecked blocks sho
 The depositWithPermit() function is relying on the call to TokenV1's permit() method to revert if it's not implemented or the provided signature is invalid. However, TokenV1's fallback() function will make any calls to permit() succeed, making permit() a "phantom function". With any calls succeeding an attacker would be able to make deposits using the allowances of other users without the need for a valid signature.
 </p>
 </details> 
+
 ##### Q4 If Vault were to use `safeTransferFrom` instead of transferFrom then
 - [ ] A) It would be able to safely support tokens that don't revert on error 
 - [ ] B) It would ensure that tokens are only sent to contracts that support handling them 
@@ -54,6 +59,7 @@ The way Vault is currently implemented, its deployer needs to be careful to not 
 Answers B and C talk about the "save" methods of NFT standards such as ERC721. These would check whether a receiving contract declares supporting them and would also offer an opportunity for re-entrancy via the onERC721Received() hook.
 </p>
 </details> 
+
 ##### Q5 Who would need the `MIGRATOR_ROLE` for TokenV2 to function as intended?
 - [ ] A) The deployer of the TokenV2 contract 
 - [ ] B) The TokenV1 contract 
@@ -67,6 +73,7 @@ The deployer of TokenV2 would need DEFAULT_ADMIN_ROLE for granting it the MIGRAT
 TokenV2 is the only contract that requires the role since it needs to (ab)use TokenV1's fallback function trigger a delegate-call to the PermitModule's contract.
 </p>
 </details> 
+
 ##### Q6 With TokenV2 deployed, a Vault initialized with TokenV1 as underlying
 - [ ] A) Is no longer vulnerable in the `depositWithPermit()` function 
 - [ ] B) Becomes more vulnerable due to a Double-Entry-Point 
@@ -80,6 +87,7 @@ A Vault initialized with TokenV1 will always be vulnerable in the depositWithPer
 TokenV2 now acts as a Double-Entry-Point for TokenV1 (and vice versa). This can be exploited via the sweep() function which allows rescuing any stuck tokens as long as they are not the underlying token. Sweeping TokenV2 on a Vault using TokenV1 would effectively drain the Vault.
 </p>
 </details> 
+
 ##### Q7 Vault initialized with TokenV2 as underlying
 - [ ] A) Can be drained by re-entering during withdrawal 
 - [ ] B) Can be drained during withdrawal due to a integer underflow 
@@ -94,6 +102,7 @@ In TokenV2 calling the permit() function will no longer call the fallback but it
 TokenV1 acts as a Double-Entry-Point for TokenV2 (and vice versa). This can be exploited via the sweep() function which allows rescuing any stuck tokens as long as they are not the underlying token. Sweeping TokenV1 on a Vault using TokenV2 would effectively drain the Vault.<br>
 </p>
 </details> 
+
 ##### Q8 The PermitModule contract
 - [ ] A) Acts as a proxy 
 - [ ] B) Acts as an implementation 

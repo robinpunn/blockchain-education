@@ -1,6 +1,7 @@
 ### [Race 15](https://ventral.digital/posts/2023/2/27/race-15-of-the-secureum-bootcamp-epoch-infinity)
 
-#### Questions
+---
+
 ##### Q1 What is/are the correct implementation(s) of the `nonReentrant()` modifier?** 
 - [ ] A)
 ```
@@ -41,6 +42,7 @@ Answer C) requires the starting value to be 1, which is not the default.<br>
 Answer D) works just like B) with the only difference that it uses the number 2 instead of 1.
 </p>
 </details> 
+
 ##### Q2 Who can claim fees using `claimFees()`?
 - [ ] A) Only the owner, due to `onlyOwner` modifier 
 - [ ] B) The owner 
@@ -54,6 +56,7 @@ The _claimFees()_ function uses the _onlyOwner_ modifier which checks the or
 The problem with using the transaction origin for authentication purposes is, that anyone can be the caller of the _claimFees()_ and _setOwner()_ function of this contract. Meaning that one could trick the owner into signing a seemingly unrelated transaction to another contract and that other contract may then call these functions as if it were acting with the approval of the owner. Due to this potential "phishing vector" it is generally considered a bad practice to use _tx.origin_ for authentication and one should normally use _msg.sender_ instead.
 </p>
 </details> 
+
 ##### Q3 In `buyEth()`, we put an `unchecked` block on “`current_eth -= amount`” 
 - [ ] A: Because `current_eth` is `uint` 
 - [ ] B) Because the compiler is protecting us from overflows 
@@ -70,6 +73,7 @@ While the type of _current_eth_ is indeed uint, standing for unsigned integer,
 Option D) will prevent _current_eth_ from underflowing below 0.
 </p>
 </details> 
+
 ##### Q4 In `buyEth()`, are there any reentrancy concerns assuming the `nonReentrant` modifier is implemented correctly?
 - [ ] A) No, because it has the `nonReentrant` modifier 
 - [ ] B) No, and even without the modifier you can't exploit any issue 
@@ -84,6 +88,7 @@ Specifically state variables involved in determining the price (_token_balance_�
 If the _msg.sender_ is actually a contract, it will have a chance to call another protocol that is relying on the _SimpleDEX_'s reported price to be correct (such as the _Seller_ contract). If the malicious contract calls this victim contract while the state of _SimpleDEX_ is incomplete (ie. cross-contract read-only reentrancy) the victim would make use of this incorrect price data which might give the attacker an advantage. (Not in this case though. There's no advantage to exploiting this in _Seller_ since the attacker would actually have to pay a higher price than without exploiting this issue).
 </p>
 </details> 
+
 ##### Q5 What will happen when calling `buyEth()` via `SimpleDexProxy`?
 - [ ] A) `buyEth()` will be called and successfully executed 
 - [ ] B) You can’t call a function that way; it must be called directly 
@@ -96,6 +101,7 @@ D
 The transaction would be reverted since the SimpleDEX's _buyEth()_ function would attempt transferring the tokens from the _msg.sender_, which in this case would be a proxy that has no way to give it the appropriate allowance even if the user were to transfer their tokens to the proxy first.
 </p>
 </details> 
+
 ##### Q6 In `buyEth()`
 - [ ] A) If `amount` is less than 100, it will lead to an incorrect calculation of `fee` 
 - [ ] B) If `token_balance` is already at its `MAX_UINT256`, it will result in overflow and won't revert 
@@ -110,6 +116,7 @@ Starting Solidity 0.8.0, an overflow happening outside of an "unchecked-block" w
 When the _token_amount_ is added to the _token_balance_ there's indeed a casting issue when the amount's value does not fit into a uint64 type.
 </p>
 </details> 
+
 ##### Q7 Can `getEthPrice()` return zero?
 - [ ] A) Yes, if the owner initializes the contract with more ETH than `token_balance` 
 - [ ] B) Yes, a carefully crafted `buyEth()` transaction can result in `getEthPrice()` returning zero 
@@ -124,6 +131,7 @@ There isn't anything special you can "craft" for a call to _buyEth()_ to resul
 Once all the ETH are sold, _getEthPrice()_ won't return zero but revert instead due to a division-by-zero.
 </p>
 </details> 
+
 ##### Q8 Which of the following invariants (written in propositional logic) hold on a correct implementation of the code?
 - [ ] A): `this.balance == current_eth` <=> `token.balanceOf(this) == token_balance` 
 - [ ] B) `this.balance >= current_eth` && `token.balanceOf(this) >= token_balance` 

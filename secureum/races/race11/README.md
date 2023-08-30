@@ -1,5 +1,7 @@
 ### [Race 11](https://ventral.digital/posts/2022/10/31/race-11-of-the-secureum-bootcamp-epoch)
 
+---
+
 ##### Q1 Which statements are true in withdraw()?
 - [ ] A) Can be successfully executed when contract is paused 
 - [ ] B) User can withdraw only after _minDepositLockTime elapsed since last withdrawal 
@@ -15,6 +17,7 @@ Does not follow the CEI pattern since calling _safeTransferFrom()_ on the __t
 When a user attempts to withdraw an _amount_ larger than their current balance, it'll simply be set to 0 and the requested amount would be send without any issue as long as the user does not attempt to send more tokens than the contract owns.
 </p>
 </details> 
+
 ##### Q2 Which mitigations are applicable to withdraw()?
 - [ ] A) Transferred amount should be minimum of amount and _userBalances[msg.sender] 
 - [ ] B) Move if/else block before safeTransferFrom 
@@ -30,6 +33,7 @@ Using a _require_ to ensure the _amount_ isn't larger than the users actual 
 The last mitigation suggestion makes use of the fact that Solidity ^0.8.0 will automatically check whether there'd be an integer underflow when subtracting the _amount_ from the user's balance. This is likely the most gas efficient solution, although it won't offer a good error message for the user when it happens.
 </p>
 </details> 
+
 ##### Q3 The security concern(s) in pause() is/are:** 
 - [ ] A) Does not emit an event 
 - [ ] B) Access control is not strict enough 
@@ -44,6 +48,7 @@ The access control is actually very strict. So strict in fact that the _pause()
 But the constructor isn't preventing both from being the same address and even then, anyone can call _changeGovernance()_ and make it the same. So claiming it would always revert isn't correct either.
 </p>
 </details> 
+
 ##### Q4 Which statement(s) is/are true for unpause()?
 - [ ] A) Will unpause deposits and withdrawals 
 - [ ] B) Will unpause withdrawals only 
@@ -57,6 +62,7 @@ Although the _withdraw()_ function does, the _deposit()_ function does not e
 Even though _unpause()_ function appears to correctly _require_ the caller to be the __governance_ address, anyone can call _changeGovernance()_ to set it to themselves.
 </p>
 </details> 
+
 ##### Q5 Which statement(s) is/are true in depositFor()?
 - [ ] A) Can be executed when contract is paused 
 - [ ] B) Allows a user to deposit for another user 
@@ -70,6 +76,7 @@ Although the _withdraw()_ function does, the _deposit()_ function does not e
 In order to make a deposit for another _user_, that user needs to have approved the contract to make use of their tokens. It's not possible for one user to use their funds for a deposit for another user.
 </p>
 </details> 
+
 ##### Q6 The issue(s) in depositFor() is/are:
 - [ ] A) Cannot be paused for emergency 
 - [ ] B) Exploitable re-entrancy attack 
@@ -84,6 +91,7 @@ The only external call made is one to the __token_. The token is chosen by the 
 There's indeed an opportunity to Deny another user the Service to withdraw their funds. That is because anyone can call the function with an _amount_ of 0 and the victim's address as depositor. In that case, no matter whether the victim has an open allowance with the contract, an attacker can keep increasing __userLastDeposit_ indefinitely to delay when the withdrawal is possible. The attacker would have to regularly keep calling the function and pay for the gas that uses though.
 </p>
 </details> 
+
 ##### Q7 Which of the following statement(s) is/are true?
 - [ ] A) Withdraw event is emitted with incorrect amount 
 - [ ] B) Withdraw event is emitted with correct user 
@@ -97,6 +105,7 @@ The event emitted during withdrawal appears to be used correctly.<br>
 It seems more correct to log the user that the deposit is being made for instead of the calling address.
 </p>
 </details> 
+
 ##### Q8 Potential gas optimization(s) is/are
 - [ ] A) Use immutable for all variables assigned in constructor 
 - [ ] B) Use immutable for _token, _operator and _minDepositLockTime 

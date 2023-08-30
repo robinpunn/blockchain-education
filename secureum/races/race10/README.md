@@ -1,5 +1,7 @@
 ### [Race 10](https://ventral.digital/posts/2022/10/3/secureum-bootcamp-epoch-october-race-10)
 
+---
+
 ##### Q1 Which statements are true in _Test1()_? 
 - [ ] A) The function does not use all supplied extra data 
 - [ ] B) The function can revert due to an underflow 
@@ -14,6 +16,7 @@ Both B and C are true since a Solidity version (^0.8.0) is used, that automatica
 You could argue that accessing _msg.data_ directly should be avoided when possible. But this doesn't access memory but read-only calldata. Therefore no memory is accessed that should not be.
 </p>
 </details> 
+
 ##### Q2 Which statements are true in _Test2()_?
 - [ ] A) Result of _encodePacked_ is deterministic 
 - [ ] B) _abi.decode_ always succeeds 
@@ -28,6 +31,7 @@ Test2's _abi.decode_ will only succeed if no error happens in _Test1()_. If 
 Answer D leaves some room for interpretation. _uint_ is an alias of _uint256_ and there should not be an issue using it here. But it's a common best practice to avoid the shorter alias and instead use the longer-named version of the type. While this is generally considered to improve readability, I'd argue that consistency (always using the same type) is more important.
 </p>
 </details> 
+
 ##### Q3 Which statements are true in _NextBookNonce()_?
 - [ ] A) _wrap_ and _unwrap_ cost additional gas 
 - [ ] B) It is safe to use _unchecked_ 
@@ -43,6 +47,7 @@ Answer C sounds rather ominous but it's simply pointing out that Nonces are comm
 Arithmetic operations cannot be executed on custom types without unwrapping the number first.
 </p>
 </details> 
+
 ##### Q4 Which statements are true in _Test3()_?
 - [ ] A) _bookIndex.nonce_ is incremented in the loop 
 - [ ] B) _bookIndex.nonce_ cannot be incremented because _NextBookNonce_ is pure 
@@ -57,6 +62,7 @@ The increment of _i_ within the loop can indeed be made _unchecked_ since it
 The _memory_ location can't simply be changed to _storage_ without various further changes such as assigning it to a specific storage slot before being able to make use of it.
 </p>
 </details> 
+
 ##### Q5 Which statements are true In _Test4()_?
 - [ ] A) The function always reverts with _ZeroAddress()_ 
 - [ ] B) The function always reverts with _ZeroAmount()_ 
@@ -69,6 +75,7 @@ C,D
 The first array elements of both _a_ and _amounts_ will always be zero-like. Both _1_ for _ZeroAddress_ and _2_ for _ZeroAmount_ will be OR-combined resulting in 3. Once this value is set as an error, further iterations will not influence it. After the loop has finished, this error value is not checked for and instead, the function returns the _total_ without reverting.
 </p>
 </details> 
+
 ##### Q6 Which statements are true in _Test5()_?
 - [ ] A) modifier _checkInvariants_ will pause the contract if too much is minted 
 - [ ] B) modifier _checkInvariants_ will never pause the contract 
@@ -82,6 +89,7 @@ While the _checkInvariants_ modifier does intend to pause the contract if too 
 A single call to _require_ would fix this issue and also be more efficient.
 </p>
 </details> 
+
 ##### Q7 Which statements are true about the _owner_?
 - [ ] A) The _owner_ is initialized 
 - [ ] B) The _owner_ is not initialized 
@@ -94,6 +102,7 @@ A,D
 Although not visible here, the _owner_ is indeed initialized by the constructor inherited from _Ownable_, which also comes with functions allowing to change the _owner_ at a later point.
 </p>
 </details> 
+
 ##### Q8 Which statements are true In _Test5()_ and related functions?
 - [ ] A) _pause_ is unsafe 
 - [ ] B) _unpause_ is unsafe 

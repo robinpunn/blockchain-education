@@ -1,5 +1,7 @@
 ### [Race 7](https://ventral.digital/posts/2022/07/secureum-bootcamp-epoch-june-race-7)
 
+---
+
 ##### Q1 The mint price of an _InSecureumApe_ is
 - [ ] A) 0.0008 ETH 
 - [ ] B) 0.008 ETH 
@@ -15,6 +17,7 @@ The https://eth-toolbox.com/ website offers a quick way to convert between these
 It would've been a lot better if the code made use of denominations, this would've made the code much more readable and likely prevented the issue: `0.08 ether`.
 </p>
 </details>
+
 ##### Q2 The security concern(s) with InSecureumApe access control is/are
 - [ ] A) Owner can arbitrarily pause public minting of InSecureumApes
 - [ ] B) Owner can arbitrarily mint InSecureumApes
@@ -30,6 +33,7 @@ The `transferOwnership()` function inherited from OpenZeppelin's Ownable contr
 None of the functions using the `onlyOwner` modifier emit events or have any sort of time-delay for their action, due to this users can suffer from unwanted surprises that are difficult to monitor for.
 </p>
 </details>
+
 ##### Q3 The security concern(s) with _InSecureumApe_ constructor is/are
 - [ ] A) Missing sanity/threshold check on _maxNftSupply_ 
 - [ ] B) Missing sanity/threshold check on _saleStart_ 
@@ -43,6 +47,7 @@ None of the mentioned parameters are sanity/threshold checked which would allow 
 Unlike in Solidity 0.8.x, integer overflows aren't automatically checked for in this version, so an extremely high `saleStart` value could indeed cause an integer overflow, although unlikely for sane values. The best practice is to use a SafeMath library here.
 </p>
 </details>
+
 ##### Q4 The total number of _InSecureumApe_s that can ever be minted is
 - [ ] A) _maxApePurchase_ 
 - [ ] B) _MAX_APES_ 
@@ -55,6 +60,7 @@ D
 Since the `reserveApes()` function allows the owner to arbitrarily mint tokens without checking the `MAX_APES` variable, it's possible to mint as many tokens as the totalSupply variable can hold, which is the maximum value an uint256 can have.
 </p>
 </details>
+
 ##### Q5 The public minting of _InSecureumApe_s
 - [ ] A) Must be paid the exact amount in Ether 
 - [ ] B) May be performed 19 NFTs at a time 
@@ -69,6 +75,7 @@ The contract doesn't correctly check how many tokens can be minted at a time, it
 The contract indeed uses the `_safeMint()` function that'll ensure that if the receiver is a contract, it must correctly implement the `onERC721Received()` function, proving that the receiver is capable of handling NFTs and that they won't be stuck after receiving them.
 </p>
 </details>
+
 ##### Q6 The security concern(s) with _InSecureumApe_ is/are
 - [ ] A) Use of a floating pragma and an older compiler version 
 - [ ] B) Oracle price manipulation 
@@ -83,6 +90,7 @@ The contract does not make use of any oracles.<br>
 Since `_safeMint()` is used and calls `onERC721Received()` on receiving contracts, a NFT receiver can indeed call back into the `mintApe()` function and bypass how many tokens can be minted within a single transaction. But this check can be bypassed by simply repeatedly calling `mintApe()` from a custom contract since the function doesn't ensure that only EOAs can call it.
 </p>
 </details>
+
 ##### Q7 The starting index determination
 - [ ] A) Is meant to randomize NFT reveal post-mint 
 - [ ] B) Can be triggered by the owner at any time 
@@ -97,6 +105,7 @@ The 9-day delay of the `REVEAL_TIMESTAMP` variable can be overriden at any poi
 It accounts for the block hash access limitation by falling back to using the hash of the previous block instead.
 </p>
 </details>
+
 ##### Q8 Potential gas optimization(s) in _InSecureumApe_ is/are
 - [ ] A) Caching of storage variables 
 - [ ] B) Avoiding initializations of variables to default values of their types 

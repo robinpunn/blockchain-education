@@ -11,7 +11,6 @@
 <summary>Answer</summary>
 </details>
 
----
 
 ##### [Q2] In InSecureum
 (A): decimals() can have pure state mutability instead of view
@@ -22,7 +21,6 @@
 <summary>Answer</summary>
 </details>
 
----
 
 ##### [Q3] InSecureum transferFrom()
 (A): Is susceptible to an integer underflow
@@ -33,7 +31,6 @@
 <summary>Answer</summary>
 </details>
 
----
 
 ##### [Q4] In InSecureum
 (A): increaseAllowance is susceptible to an integer overflow
@@ -44,7 +41,6 @@
 <summary>Answer</summary>
 </details>
 
----
 
 ##### [Q5] InSecureum _transfer()
 (A): Is missing a zero-address validation
@@ -55,7 +51,6 @@
 <summary>Answer</summary>
 </details>
 
----
 
 ##### [Q6] InSecureum _mint()
 (A): Is missing a zero-address validation
@@ -66,7 +61,6 @@
 <summary>Answer</summary>
 </details>
 
----
 
 ##### [Q7] InSecureum _burn()
 (A): Is missing a zero-address validation
@@ -76,9 +70,6 @@
 <details>
 <summary>Answer</summary>
 </details>
-
-
----
 
 [Q8] InSecureum _approve()
 (A): Is missing a zero-address validation

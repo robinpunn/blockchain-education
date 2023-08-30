@@ -1,5 +1,7 @@
 ### [Race 17](https://ventral.digital/posts/2023/5/1/race-17-of-the-secureum-bootcamp-epoch-infinity)
 
+---
+
 ##### Q1 deposit() can revert
 - [ ] A) If insufficient ETH was sent with the call 
 - [ ] B) If the caller has insufficient WETH balance 
@@ -15,6 +17,7 @@ C: For the "cap exceeded" error to be thrown, `totalContributions + amount > TO
 D: The _deposit()_ function is a external. An attempt to call it internally would not revert but never compile in the first place. The contract could still call this function via _this.deposit()_ though, which would make the contract CALL itself like it would an external contract.
 </p>
 </details> 
+
 ##### Q2 What issues pertain to the `deposit()` function?
 - [ ] A) Funds can be drained through re-entrancy 
 - [ ] B) Accounting mismatch if user specifies `amount` > `msg.value` 
@@ -29,6 +32,7 @@ B/C: If the specified _amount_ was larger than the sent _msg.value_, the func
 D: The fact that _totalContributionCap_ isn't enforced on an individual level does not cause an issue as _totalContributions_'s value would revert before any individual contributor would be able to make deposits beyond the cap.
 </p>
 </details> 
+
 ##### Q3 Which of the following is/are true about `withdraw()`?
 - [ ] A) Funds can be drained through re-entrancy 
 - [ ] B) Funds can be drained due to improper amount accounting in `deposit()` 
@@ -44,6 +48,7 @@ C: As only 63/64 gas is forwarded, the function should have sufficient gas remai
 D: True, if msg.sender reverts (eg. is a contract that lacks payable / fallback function).
 </p>
 </details> 
+
 ##### Q4 Which of the following parameters are correctly emitted in the `ContributorsUpdated()` event?
 - [ ] A)`newContributor` 
 - [ ] B) `oldNumContributors` 
@@ -58,6 +63,7 @@ B: Generally, it's not save to make assumptions about the evaluation order of ex
 C: One of the most common gas optimizations seen in Code4rena reports is how the prefix increment (++i) is more efficient than postfix (i++). However, most aren't aware of a key difference: Prefix increments returns the value AFTER the increment, postfix returns the value BEFORE.
 </p>
 </details> 
+
 ##### Q5 The vault deployer can pause the following functions:
 - [ ] A) `deposit()` 
 - [ ] B) `withdraw()` 
@@ -71,6 +77,7 @@ The contract can't be paused because the pause and unpause functionality aren't 
 Author notes: Sort of a trick question that requires knowledge about the Pausable contract. As mentioned in the Spearbit community workshop I gave recently, it can be difficult to spot what's absent, not just what's present.
 </p>
 </details> 
+
 ##### Q6 What is the largest possible allowance given to the controller?
 - [ ] A) 40% of `totalContributionCap` 
 - [ ] B) 60% of `totalContributionCap` 
@@ -83,6 +90,7 @@ C
 The allowance is only capped as long as the specified _amount_ is larger the current _totalContributions_. That means as soon as the _totalContributions_ are larger than _ALLOWANCE_CAP_, it's possible to give an allowance of 100%.
 </p>
 </details> 
+
 ##### Q7 The `requestAllowance()` implementation would have failed after the 1st call for tokens that only allow zero to non-zero allowances. Which of the following mitigations do NOT work?
 - [ ] A) `safeApprove(0)` followed by `safeApprove(type(uint256).max)` 
 - [ ] B) `safeIncreaseAllowance(type(uint256).max)` 
@@ -96,6 +104,7 @@ There are some implementations of ERC20 tokens that require an approval to be re
 The _safeIncreaseAllowance()_ / _safeDecreaseAllowance()_ functions request the current allowance, adding/subtracting the specified amount and then update it by calling _approve()_. These functions do not set the approval to 0 in between, so for these tokens the function would still fail after the 1st call.
 </p>
 </details> 
+
 ##### Q8 Which of the following gas optimizations are relevant in reducing runtime gas costs for the vault contract?
 - [ ] A) Changing `ALLOWANCE_CAP` type from immutable to constant, ie. `uint256 public constant ALLOWANCE_CAP = 40 * uint256(TOTAL_CONTRIBUTION_CAP) / 100;` 
 - [ ] B) Increase number of solc runs (assuming default was 200 runs) 

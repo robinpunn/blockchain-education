@@ -1,4 +1,7 @@
 ### [Race 13](https://ventral.digital/posts/2023/1/3/race-13-of-the-secureum-bootcamp-epoch)
+
+---
+
 ##### Q1 In `transferFrom()`, `unchecked` is not used in the allowance subtraction
 - [ ] A) To save gas 
 - [ ] B) To avoid unauthorized transfers 
@@ -14,6 +17,7 @@ Solidity's overflow-checks will make the code revert if the _amount_ is larger
 Whether an _unchecked_ block is used or not has nothing to do with reentrancy, therefore answer C is false.
 </p>
 </details> 
+
 ##### Q2 In `transfer()` and `transferFrom()`, the use of `unchecked` would not be desired:
 - [ ] A) When the token uses large number of decimals 
 - [ ] B) When the token uses small number of decimals 
@@ -28,6 +32,7 @@ This assumed though, that the operation can overflow, which it actually can't in
 Although the use of large decimals doesn't negatively impact the token's own logic, it should still be mentioned that it might cause issues for other contracts that would like to integrate the tokens. An example for this would be the multiplication of two user's balances where, as per best practice, multiplication would happen before division (to avoid loss of precision) and might cause an overflow.
 </p>
 </details> 
+
 ##### Q3 In `name()` and `symbol()`, the returned values are incorrect because 
 - [ ] A) The string encoding is too short 
 - [ ] B) Inline assembly `return` does not leave the function 
@@ -44,6 +49,7 @@ While this seems like an elegant approach, the problem now is that only the firs
 Finally, the RETURN operation in inline assembly not only leaves the function, but stops the execution of the transaction. It's is told to return 0x60 (3x32) bytes starting at offset 0x0, effectively returning all of the memory slots that had been written to:
 </p>
 </details>
+
 ##### Q4 To correct `name()`, one could make the following change(s)
 - [ ] A)
     ```
@@ -70,6 +76,7 @@ Answer A moves the memory used for the return value by one 32-byte slot "to the 
 Answers B and C are basically equivalent and represent the usual ways one would do it in Solidity.
 </p>
 </details>
+
 ##### Q5 The concern(s) with the check in `notify()` is/are
 - [ ] A) Selector 0x00000000 is the `fallback` function 
 - [ ] B) Selector 0x00000000 is the `receive` function 
@@ -83,6 +90,7 @@ A and B are simply not true, as _fallback_ and _receive_ don't have selector
 Answer C is regarding the possibility that, although unlikely, a normal external function could end up having 0x00000000 as function selector. In such a case, Solidity will revert (thinking that the variable was not properly initialized) when attempting to call said callback. Therefore a valid callback would not be called.
 </p>
 </details>
+
 ##### Q6 The concern(s) with the call in `notify()` is/are:
 - [ ] A) The call always reverts 
 - [ ] B) The passed function pointer is internal and therefore not accessible via an external call 
@@ -112,6 +120,7 @@ The use of _delegatecall_ would cause immediate exploits here.<br>
 Enforcing _staticcall_ instead could prevent unseen potential issues, since it wouldn't allow any state changes from that call. Note that this could of course be different from the intended behavior.
 </p>
 </details>
+
 ##### Q8 How can the contract be exploited for loss-of-funds via notify callback reentrancy?
 - [ ] A) During the callback, while being the sender of a transfer, repeat the transfer 
 - [ ] B) During the callback, while being the recipient of a transfer, call `transfer` again in the token contract sending the tokens back to the original sender 

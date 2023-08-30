@@ -1,5 +1,7 @@
 [Race 8](https://ventral.digital/posts/2022/7/25/secureum-bootcamp-epoch-july-race-8)
 
+---
+
 ##### Q1 Which of the following is/are true?
 - [ ] A) NFT ownership is tracked by __ownerOf_ 
 - [ ] B) NFT balance is tracked by __balanceOf_ 
@@ -13,6 +15,7 @@ The variables `_ownerOf`, `_balanceOf` and `getApproved` indeed keep track 
 And NFT operators are by definition able to transfer all NFTs of the owners that elected them to be their operators.
 </p>
 </details>
+
 ##### Q2 _InSecureumERC721_ recognizes the following role(s)
 - [ ] A) Owner 
 - [ ] B) Spender (Approved address) 
@@ -25,6 +28,7 @@ A,B,C
 This is quite apparent from ERC721 implementation parameter names. They can also be found in the [EIP721 spec](https://eips.ethereum.org/EIPS/eip-721).
 </p>
 </details>
+
 ##### Q3 The security concern(s) addressed explicitly in __mint_ include
 - [ ] A) Prevent minting to zero address 
 - [ ] B) Prevent reminting of NFTs 
@@ -37,6 +41,7 @@ A,B,C
 	The `_mint()` function addresses both A and B with the first two requires. Also C is correct since the emission of the Transfer event allows for easy tracking of mints and therefore transparency.
 </p>
 </details> 
+
 ##### Q4 The security concerns in __burn_ include** 
 - [ ] A) Anyone can arbitrarily burn NFTs 
 - [ ] B) Potential integer underflow because of _unchecked_ 
@@ -51,6 +56,7 @@ Answer B is not a concern thanks to the ownership check ensuring that it cannot 
 The emission of the event follows the event declaration and therefore C is not a concern either.
 </p>
 </details> 
+
 ##### Q5 The security concern(s) addressed explicitly in __safeMint_ include
 - [ ] A) Validating if the recipient is an EOA 
 - [ ] B) Ensuring that the recipient can only be an EOA 
@@ -63,6 +69,7 @@ A,C
 This function ensures that if (A) the recipient is an EOA the mint functions normally thanks to the `to.code.length == 0` check, but if (C) the recipient is a contract (non-EOA) it must be "ERC721 aware" by implementing the `ERC721TokenReceiver`interface.
 </p>
 </details> 
+
 ##### Q6 Function _approve_
 - [ ] A) Allows the NFT owner to approve a spender 
 - [ ] B) Allows the NFT spender to approve an operator 
@@ -75,6 +82,7 @@ A,C
 The require shows that only (A) the NFT owner and (C) the operator that the owner gave access to manage all their NFTs have the ability to approve spenders. A spender cannot approve other spenders and especially not operators.
 </p>
 </details> 
+
 ##### Q7 Function _setApprovalForAll_
 - [ ] A) Approves _msg.sender_ to manage operator’s NFTs 
 - [ ] B) Gives everyone approval to manage _msg.sender_’s NFTs 
@@ -87,6 +95,7 @@ D
 The `setApprovalForAll()` function authorizes an address (called the operator) to manage all of the owner's NFTs in the contract. A, B and C are therefore incorrect.
 </p>
 </details> 
+
 ##### Q8 The security concern(s) in _transferFrom_ include
 - [ ] A): Allowing the _msg.sender_ to transfer any NFT 
 - [ ] B) NFTs potentially stuck in recipient contracts 

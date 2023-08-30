@@ -1,5 +1,7 @@
 ### [Race 9](https://ventral.digital/posts/2022/8/29/secureum-bootcamp-epoch-august-race-9)
 
+---
+
 ##### Q1 The function signature is the first 4 bytes of the keccak hash which
 - [ ] A) Includes the function name 
 - [ ] B) Includes a comma separated list of parameter types 
@@ -14,6 +16,7 @@ The fact that the return value type isn't part of the signature is basically giv
 Since it's used for calling external and public functions of a contract, only these functions need a signature to be called by. Internal and private functions can only be directly JUMPed to within the bytecode of the contract that contains them.
 </p>
 </details> 
+
 ##### Q2 The Proxy contract is most similar to a
 - [ ] A): UUPS Proxy 
 - [ ] B) Beacon Proxy 
@@ -29,6 +32,7 @@ This makes it most similar to a Transparent Proxy.<br>
 A "Metamorphic" Proxy isn't really a thing. Contracts referred to being metamorphic usually achieve upgradeability not thanks to a proxy, but due to the fact that they can be re-deployed to the same address via CREATE2.
 </p>
 </details> 
+
 ##### Q3 Gas will be saved with the following changes
 - [ ] A) Skipping initialization of _counter_ variable 
 - [ ] B) Making _increase()_ function external to avoid copying from calldata to memory 
@@ -45,6 +49,7 @@ Addresses are too large (20 bytes) for multiple of them to be packed into a sing
 Constants are basically placeholders in the bytecode for expressions that are filled during compile time. It would not make a difference whether the compiler fills them or whether we've already "filled" them by hand. It might however improve readability to do so.
 </p>
 </details> 
+
 ##### Q4 Calling the _increase()_ function on the Proxy contract
 - [ ] A) Will revert since the Proxy contract has no _increase()_ function 
 - [ ] B) Will revert for any other caller than the one that deployed the Proxy 
@@ -62,6 +67,7 @@ The _increase()_ function will increment the value of the counter state variab
 This means that whatever value is currently located at the Proxy contract's storage slot with index 1 will be increased by one even if there's no variable called counter in the Proxy itself.
 </p>
 </details> 
+
 ##### Q5 Calling the _decrease()_ function on the Proxy contract
 - [ ] A) Will revert because it was not correctly registered on the proxy 
 - [ ] B) Will succeed and return the value of counter after it was decreased 
@@ -77,6 +83,7 @@ Since no check is made to prevent _calls_ when no matching signature is found 
 The EVM implicitly assumes that all bytecode ends with the STOP opcode, even if the STOP opcode isn't explicitly mentioned in the bytecode itself. So to the EVM an empty bytecode actually always contains one opcode: STOP - the opcode for stopping execution without errors.
 </p>
 </details> 
+
 ##### Q6 Due to a storage clash between the Proxy and the Mastercopy contracts
 - [ ] A) Proxy's _implementations_ would be overwritten by 0 during initialization of the Mastercopy 
 - [ ] B) Proxy's _implementations_ would be overwritten when the _counter_ variable changes 
@@ -90,6 +97,7 @@ Mappings leave their assigned storage slot unused. The actual values of a mappin
 That means that, even though the Proxy's _implementations_ and the Mastercopy's _counter_ variables make use of the same slot, they actually do not interfere with each other and nothing will happen when _counter_'s value changes.
 </p>
 </details> 
+
 ##### Q7 The Proxy contract
 - [ ] A) Won't be able to receive any ether when _calldatasize_ is 0 due to a missing _receive()_ 
 - [ ] B) Will be the owner of the Mastercopy contract 
@@ -104,6 +112,7 @@ Ownable always initializes the owner with the msg.sender. When the Proxy deploys
 Both the Proxy contract and the Mastercopy contract first inherit from Ownable ensuring that the storage slot at index 0 will be used in the same manner on both contracts preventing any issues.
 </p>
 </details> 
+
 ##### Q8 The _fallback()_ function's assembly block
 - [ ] A) Can be marked as "_memory-safe_" for gas optimizations 
 - [ ] B) Has the result of the delegate-call overwrite the the call parameters in memory 

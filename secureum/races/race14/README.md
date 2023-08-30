@@ -1,4 +1,7 @@
 ### [Race 14](https://ventral.digital/posts/2023/1/30/race-14-of-the-secureum-bootcamp-epoch-infinity)
+
+---
+
 ##### Q1 Lending platforms have a few options to configure when it comes to adding new tokens as collateral. For example, you’ll have to set up an oracle for the price of the collateral, and you have to configure a margin requirement. The security concern with using the given collateral configuration is:
 - [ ] A) The periodic fee parameter is static 
 - [ ] B) The collateral ratio of loans is too low 
@@ -13,6 +16,7 @@ While it might seem okay to keep collateralisation of a stable coin at 100% it h
 There's no general reason to not use USDC as collateral.
 </p>
 </details> 
+
 ##### Q2 Assuming payFees() is periodically called by a function, which iteratively calls payFees() of all collateral contracts, the security concern(s) is/are
 - [ ] A) Collateral tokens can define their own fee rewards and have the protocol pay too much fees 
 - [ ] B) There could be many lenders 
@@ -28,6 +32,7 @@ The token in question is USDC, an ERC20 token that does not have hooks allowing 
 Nothing prevents someone to game the reward system by sandwiching the payFees() call with a large deposit() and withdrawal(). The current reward system does not incentivice that depositors keep their money in the system for a long time.
 </p>
 </details> 
+
 ##### Q3 The developers want to prevent people from accidentally sending ETH instead of WETH and have implemented a noETH modifier, as defined above, and annotated the deposit function with it. They have also not implemented a receive function. Which of the following statements is true?
 - [ ] A) Developers can either use the modifier or achieve the same effect by omitting the payable keyword on deposit function 
 - [ ] B) Developers should use the modifier because it achieves a different effect from omitting the payable keyword on deposit function 
@@ -41,6 +46,7 @@ Omitting the payable keyword does not have the same effect. The modifier checks 
 The developers should NOT use the modifier because of this difference since it will lead to Denial of Service once the contract's balance becomes non-zero (it's possible forcefully injecting ether into a contract, eg. via _SELFDESTRUCT_).
 </p>
 </details> 
+
 ##### Q4 Developers have used assembly to make their code a bit less repetitive. They use it to annotate a bunch of functions that have as their last argument a pool address. Unfortunately they made a mistake. Which of the following options fixes the bug?
 - [ ] A) Replace the modifier with require(isValid(pool)); in every function with the modifier 
 - [ ] B) Make all functions using checkedPool external 
@@ -55,6 +61,7 @@ Making all of the function external (therefore preventing them to be called inte
 As mentioned, the code snippet is certainly not fine. It attempts loading the pool parameter from the calldata and assumes that it would always be located in the last 32 bytes - there's no guarantee for that being the case.
 </p>
 </details> 
+
 ##### Q5 The lending protocol has also built in a liquidation function to be called in the case of under-collateralization. Anyone can call the function and be rewarded for calling it by taking a small percentage of the liquidation. The liquidation function has a vulnerability which can be exploited because
 - [ ] A) The lender can open a position with a low amount of collateral and the fee payout reverts 
 - [ ] B) The lender can make the position “unliquidatable” with reentrancy 
@@ -68,6 +75,7 @@ At first the code might look like the checks-effects-interactions pattern is fol
 Aside from answer B, the other options are mostly nonsensical decoys.
 </p>
 </details> 
+
 ##### Q6 Assume that the vulnerability referenced in the previous question has been fixed by changing the line with the Liquidation event emission to emit Liquidation(lender, oldDeposit). The protocol team has built a bot that monitors and liquidates under-collateralized positions automatically. Even though the bot does not monitor the mempool, it simulates the full transaction and, if successful, sends transactions with the exact amount to be able to execute the function + 100000 gas for minimal execution in the onLiquidation() callback. Which of these attacks can be executed in a harmful way towards the protocol?
 - [ ] A) An attacker can liquidate positions, reenter the contract and steal tokens 
 - [ ] B) The liquidated lender can monitor the mempool and frontrun the protocol bot with a deposit, griefing it 
@@ -83,6 +91,7 @@ A liquidated lender could, when called, only use up all of the gas it was given 
 Gas tokenization is no longer viable since EIP-3529 has reduced refunds.
 </p>
 </details> 
+
 ##### Q7 In the context of Questions 5 and 6, someone built a MEV frontrunner bot that is exploiting liquidations in different protocols. It monitors the mempool for collateral contracts deployed from the lending factory and simulates transactions in a mainnet fork within Foundry to check whether it should attack them. The logic behind the bot is that it checks only the token’s “Transfer” events for its success conditions. More precisely, it checks if there is liquidity in an AMM to exchange to ETH and make sure it turns a profit at the end. If so, it sends a Flashbot bundle to make a profit by frontrunning the liquidator. Knowing the factory for this new contract is permissionless, how could you extract assets out of this bot?
 - [ ] A) Open a position with a low collateral amount to grief the bot 
 - [ ] B) Build a similar bot that frontruns this one 
@@ -97,6 +106,7 @@ Option C actually happened on mainnet and was labelled ["Salmonella Attack"](ht
 Since it's using Flashbot Bundles, frontrunning it should not be possible since the transaction would be private.
 </p>
 </details> 
+
 ##### Q8 The protocol implemented a function to transfer collateral from lender A to lender B with a signature from A, as shown above. Is there a way you can break it?
 - [ ] A) Lender B can get more than the intended amount from lender A (assuming there is more than double the amount in A’s account) 
 - [ ] B) Lender A can pretend to transfer to lender B but then steal amount from him 
