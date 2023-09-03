@@ -25,18 +25,3 @@ describe("GuessTheRandomNumberChallenge", () => {
     expect(await contract.isComplete()).to.be.true;
   });
 });
-
-// const deploymentTransaction = await contract.deploymentTransaction();
-
-// const blockHash = deploymentTransaction?.blockHash;
-
-// const block = await ethers.provider.getBlock(blockHash!);
-
-// const blockNumber = block!.number;
-// const timeStamp = block!.timestamp;
-// const previousBlock = await ethers.provider.getBlock(blockNumber - 1);
-// const concat = previousBlock + timeStamp.toString();
-
-// const challengeAnswer = ethers.keccak256(concat);
-
-// console.log("answer:", answer, "challengeAnswer:", challengeAnswer);
