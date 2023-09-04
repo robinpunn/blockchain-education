@@ -2,7 +2,7 @@
 pragma solidity ^0.8.4;
 
 interface IGuessTheNewNumberChallenge {
-    function guess(bytes32) external payable;
+    function guess(uint8) external payable;
 
     function isComplete() external view returns (bool);
 }
@@ -17,7 +17,9 @@ contract GuessTheNumberSolver {
     function solve() external payable {
         require(address(this).balance >= 1 ether, "");
         
-        bytes32 answer = keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp));
+        bytes32 hash = keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp));
+        uint256 number = uint256(hash);
+        uint8 answer = uint8(number);
         
         challengeContract.guess{value:1 ether}(answer);
         

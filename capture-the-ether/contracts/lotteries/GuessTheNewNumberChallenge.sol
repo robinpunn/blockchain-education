@@ -10,9 +10,11 @@ contract GuessTheNewNumberChallenge {
         return address(this).balance == 0;
     }
 
-    function guess(bytes32 n) public payable {
+    function guess(uint8 n) public payable {
         require(msg.value == 1 ether);
-        bytes32 answer = keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp));
+        bytes32 hash = keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp));
+        uint256 number = uint256(hash);
+        uint8 answer = uint8(number);
 
         if (n == answer) {
             payable(msg.sender).transfer(2 ether);
