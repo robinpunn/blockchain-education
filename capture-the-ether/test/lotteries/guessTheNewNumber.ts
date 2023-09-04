@@ -3,10 +3,6 @@ import { ethers } from "hardhat";
 
 describe("GuessTheNewNumberChallenge", () => {
   it("Solves the challenge", async () => {
-    const GuessTheNewNumber = await ethers.getContractFactory(
-      "GuessTheNewNumberChallenge"
-    );
-
     const amount = ethers.parseEther("1");
 
     // deploy the challenge contract
