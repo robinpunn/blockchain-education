@@ -8,9 +8,28 @@ However, the challenges can be completed using something like the Remix IDE
 Or we can use devlopment environments like Hardhat or Foundry
 This repo uses Hardhat v2.17.2.
 It has the contracts, deploy scripts, and tests needed to complete the challenges
-In order to compile the contracts with older pragma versions, I had to use the following syntax:
-```
-pragma solidity >= 0.4.21;
+Add the old compiler version to ``hardhat.config.ts``
+```js
+import { HardhatUserConfig } from "hardhat/config";
+import "@nomicfoundation/hardhat-toolbox";
+
+const config: HardhatUserConfig = {
+  solidity: {
+    compilers: [
+      {
+        version: "0.4.21",
+      },
+      {
+        version: "0.8.19",
+      },
+    ],
+  },
+  mocha: {
+    timeout: 1000000,
+  },
+};
+
+export default config;
 ```
 
 #### Local Hardhat node
@@ -36,84 +55,26 @@ Deploy the contract and call the ``callMe()`` function
 [Script]
 
 ##### [Choose a nickname](https://capturetheether.com/challenges/warmup/nickname/)
-I had to make a few changes to this contract
-Older version of Solidity did not have the constructor keyword, so this function:
-```js
-// Your address gets passed in as a constructor parameter.
-function NicknameChallenge(address _player) public {
-    player = _player;
-}
-```
-was changed to:
-```js
-// Your address gets passed in as a constructor parameter.
-constructor (address _cte, address _player) {
-    cte = CaptureTheEther(_cte);
-    player = _player;
-}
-```
-Additionally, this state variable was changed:
-```js
-CaptureTheEther cte = CaptureTheEther(msg.sender);
-```
-to:
-```js
-CaptureTheEther cte;
-```
-This was done so the constructor could take in the contract address of the first contract as an argument.
-To pass the tests, we need to take the ``bytes32`` version of our string:
+Before setting a nickname, it needs to be encoded
 ```js
 let name = ethers.encodeBytes32String("Robin");
 ```
-and use that as an argument for the ``setNickname`` function
-Then the second contract can be deplyed with two arguments, the address for the first contract and the player address
-Calling ``isComplete()`` should return true
+Accessing the nickname from the mapping and comparing it the name variable should return true
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/warmup/captureTheEther.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/warmup/captureTheEther.ts)
 
 
 #### Lotteries
 ##### [Guess the Number](https://capturetheether.com/challenges/lotteries/guess-the-number/)
 The number is stored as a variable so we can use it as an argument in the ``guess()`` function
-The constructor function needs to be updated from
 ```js
-function GuessTheNumberChallenge() public payable {
-    require(msg.value == 1 ether);
-}
-```
-to
-```js
-constructor() payable {
-    require(msg.value == 1 ether);
-}
+const tx = await contract.guess(42, {
+    value: ethers.parseEther("1"),
+});
 ```
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/lotteries/guessTheNumber.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/lotteries/guessTheNumberChallenge.ts)
 
 ##### [Guess the Secret Number](https://capturetheether.com/challenges/lotteries/guess-the-secret-number/)
 To solve this challenge, we use the ``uint8`` parameter of ``guess()`` as a hint. ``uint8`` is an unsigned integer with 8 bits. It can hold a maximum value of 255, so we know the answer is between 0 and 255.
-The constructor function needs to changed from
-```js
-function GuessTheSecretNumberChallenge() public payable {
-    require(msg.value == 1 ether);
-}
-```
-to
-```js
-constructor () payable {
-    require(msg.value == 1 ether);
-}
-```
-The ``keccak256`` function has been updated from
-```js
-if (keccak256(n) == answerHash) {
-    msg.sender.transfer(2 ether);
-}
-```
-to
-```js
-if (keccak256(abi.encodePacked(n)) == answerHash) {
-    payable(msg.sender).transfer(2 ether);
-}
-```
 We can use a forloop to find the answer
 ```js
 const answerHash =
@@ -137,23 +98,6 @@ In this challenge, the constructor calculates the answer using the blocknumber a
 ```js
 const answer = await ethers.provider.getStorage(contract.target, 0);
 ```
-- Start by updating the constructor changing it from:
-```js
-function GuessTheRandomNumberChallenge() public payable {
-    require(msg.value == 1 ether);
-    answer = uint8(keccak256(block.blockhash(block.number - 1), now));
-}
-```
-to
-```js
-constructor() payable {
-    require(msg.value == 1 ether);
-    bytes32 hash = keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp));
-    uint256 number = uint256(hash);
-    answer = uint8(number);
-}
-```
-Older Solidity compilers were able to directly convert ``bytes32`` to ``uint8``, but with newer versions we have to take the extra steps shown above.
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/lotteries/guessTheRandomNumber.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/lotteries/guessTheRandomNumber.ts)
 
 ##### [Guess the New Number](https://capturetheether.com/challenges/lotteries/guess-the-new-number/)
@@ -165,19 +109,7 @@ interface IGuessTheNewNumberChallenge {
     function isComplete() external view returns (bool);
 }
 ```
-But first, the constuctor function needs to be changed from
-```js
-function GuessTheNewNumberChallenge() public payable {
-    require(msg.value == 1 ether);
-}
-```
-to
-```js
-constructor() payable {
-    require(msg.value == 1 ether);
-}
-```
-The newer compiler versions don't have the ability to directly convert from ``bytes32`` to ``uint8``
+The newer compiler versions don't have the ability to directly convert from ``bytes32`` to ``uint8`` like this
 ```js
 function guess(uint8 n) public payable {
     require(msg.value == 1 ether);
@@ -188,20 +120,7 @@ function guess(uint8 n) public payable {
     }
 }
 ```
-Change ``guess`` to
-```js
-function guess(uint8 n) public payable {
-    require(msg.value == 1 ether);
-    bytes32 hash = keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp));
-    uint256 number = uint256(hash);
-    uint8 answer = uint8(number);
-
-    if (n == answer) {
-        payable(msg.sender).transfer(2 ether);
-    }
-}
-```
-The second contract will contain a function that replicated the original ``guess`` function
+The second contract will contain a function that replicates the original ``guess`` function requiring a few extra steps to get to a ``uint8``
 ```js
 function solve() external payable {
     require(address(this).balance >= 1 ether, "");
@@ -226,18 +145,6 @@ As with the last challenge, this challenge will use a second contract that inter
 bytes32 hash = keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp));
 uint256 number = uint256(hash);
 uint8 answer = uint8(number % 10);
-```
-Change the constructor function from
-```js
-function PredictTheFutureChallenge() public payable {
-    require(msg.value == 1 ether);
-}
-```
-to
-```js
-constructor () payable {
-    require(msg.value == 1 ether);
-}
 ```
 The second contract will call the ``lockInguess`` function from the first contract with ``0`` as the guess. The logic from the second contract will require that the answer is ``0`` before the ``settle`` function from the first contract is called
 ```js
@@ -267,20 +174,8 @@ while (!(await contract.isComplete())) {
 ```
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/lotteries/predictTheFuture.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/lotteries/predeictTheFutureChallenge.ts)
 
-##### [Predict the Blockhash]
+##### [Predict the Blockhash](https://capturetheether.com/challenges/lotteries/predict-the-block-hash/)
 This challenge uses the blocknumber to create a hash that is used as a comparison to the hash that is guessed. [blocknumber](https://docs.soliditylang.org/en/v0.8.21/units-and-global-variables.html#block-and-transaction-properties) only includes the 256 most recent blocks. Anything outside of this range returns 0.
-Change the contructor from
-```js
-function PredictTheBlockHashChallenge() public payable {
-    require(msg.value == 1 ether);
-}
-```
-to
-```js
-constructor() payable {
-    require(msg.value == 1 ether);
-}
-```
 We can use a forloop to mine blocks after we input our guess of "0x0000000000000000000000000000000000000000000000000000000000000000"
 ```js
 for (let i = 0; i < 257; i++) {
@@ -290,3 +185,24 @@ for (let i = 0; i < 257; i++) {
 ```
 At this point, the ``settle`` function is called, but the block for our guess is from 256 blocks ago. This ensures that the hash is going to match our guess.
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/lotteries/predictTheBlockHash.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/lotteries/predictTheBlockHashChallenge.ts)
+
+#### Math
+##### [Token Sale](https://capturetheether.com/challenges/math/token-sale/)
+The goal of this challenge is to extract ether so the remaining balance is less than one. When the contract is deployed, it will be deployed with 1 ether. This challenge involves taking advantage of the fact that older compiler versions don't check for overflow/underflow. We can cause an overflow taking advantage of
+```js
+uint256 constant PRICE_PER_TOKEN = 1 ether;
+...
+require(msg.value == numTokens * PRICE_PER_TOKEN);
+```
+We can cause on overflow with the following logic, buying a large amount of tokens with less that one ETH and selling a token for one ETH
+```js
+const numNumerator = BigInt(2) ** BigInt(256);
+const numDenominator = BigInt(10) ** BigInt(18);
+const numResult = numNumerator / numDenominator + BigInt(1); // 115792089237316195423570985008687907853269984665640564039458
+
+const ethNumerator = BigInt(2) ** BigInt(256);
+const ethDenominator = BigInt(10) ** BigInt(18);
+const ethResult =
+    (ethNumerator / ethDenominator + BigInt(1)) * ethDenominator -
+    ethNumerator; // 415992086870360064
+```

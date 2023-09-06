@@ -12,12 +12,11 @@ describe("CaptureTheEther", () => {
 
     let name = ethers.encodeBytes32String("Robin");
 
-    await contract.setNickname(name);
+    const setNickname = await contract.setNickname(name);
+    await setNickname.wait();
 
-    const nickName = await contract.nicknameOf(accounts[0].address);
+    const nickNameHash = await contract.nicknameOf(accounts[0].address);
 
-    const check = nickName === name;
-
-    expect(check).to.be.true;
+    expect(nickNameHash === name).to.be.true;
   });
 });

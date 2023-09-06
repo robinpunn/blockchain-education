@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >= 0.4.21;
+pragma solidity ^0.4.21;
 
 // Relevant part of the CaptureTheEther contract.
 contract CaptureTheEther {
@@ -17,7 +17,7 @@ contract NicknameChallenge {
     address player;
 
     // Your address gets passed in as a constructor parameter.
-    constructor (address _player) {
+    function NicknameChallenge(address _player) public {
         player = _player;
     }
 

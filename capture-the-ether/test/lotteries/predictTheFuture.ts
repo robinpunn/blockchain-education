@@ -31,8 +31,7 @@ describe("PredictTheFutureChallenge", () => {
         console.log(`attack failed`);
       }
       const blockNumber = await ethers.provider.getBlockNumber();
-      console.log(`Tried block number: ${blockNumber}`);
-      //   await new Promise((resolve) => setTimeout(resolve, 500));
+      console.log(`block number: ${blockNumber}`);
     }
 
     expect(await contract.isComplete()).to.be.true;

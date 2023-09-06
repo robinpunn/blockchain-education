@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.4.21;
+pragma solidity ^0.4.21;
 
 contract GuessTheNewNumberChallenge {
-    constructor() payable {
+    function GuessTheNewNumberChallenge() public payable {
         require(msg.value == 1 ether);
     }
 
@@ -12,12 +12,10 @@ contract GuessTheNewNumberChallenge {
 
     function guess(uint8 n) public payable {
         require(msg.value == 1 ether);
-        bytes32 hash = keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp));
-        uint256 number = uint256(hash);
-        uint8 answer = uint8(number);
+        uint8 answer = uint8(keccak256(block.blockhash(block.number - 1), now));
 
         if (n == answer) {
-            payable(msg.sender).transfer(2 ether);
+            msg.sender.transfer(2 ether);
         }
     }
 }

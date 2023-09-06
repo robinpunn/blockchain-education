@@ -11,21 +11,12 @@ async function main() {
 
   let name = ethers.encodeBytes32String("Robin");
 
-  await capture.setNickname(name);
+  const setNickname = await capture.setNickname(name);
+  await setNickname.wait();
 
-  const NicknameChallenge = await ethers.getContractFactory(
-    "NicknameChallenge"
-  );
+  const nickNameHash = await capture.nicknameOf(accounts[0].address);
 
-  const nickName = await NicknameChallenge.deploy(accounts[0].address);
-
-  await nickName.waitForDeployment();
-
-  console.log(`Nickname deployed to ${nickName.target}`);
-
-  const isComplete = await nickName.player();
-
-  console.log("isComplete:", isComplete);
+  console.log(nickNameHash === name);
 }
 main().catch((error) => {
   console.error(error);

@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >= 0.4.21;
+pragma solidity ^0.4.21;
 
 contract GuessTheRandomNumberChallenge {
     uint8 answer;
 
-    constructor() payable {
+    function GuessTheRandomNumberChallenge() public payable {
         require(msg.value == 1 ether);
-        bytes32 hash = keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp));
-        uint256 number = uint256(hash);
-        answer = uint8(number);
+        answer = uint8(keccak256(block.blockhash(block.number - 1), now));
     }
 
     function isComplete() public view returns (bool) {
@@ -19,7 +17,7 @@ contract GuessTheRandomNumberChallenge {
         require(msg.value == 1 ether);
 
         if (n == answer) {
-            payable(msg.sender).transfer(2 ether);
+            msg.sender.transfer(2 ether);
         }
     }
 }

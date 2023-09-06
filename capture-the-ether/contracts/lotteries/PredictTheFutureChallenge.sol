@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.4.21;
+pragma solidity ^0.4.21;
 
 contract PredictTheFutureChallenge {
     address guesser;
-    uint guess;
+    uint8 guess;
     uint256 settlementBlockNumber;
 
-    constructor () payable {
+    function PredictTheFutureChallenge() public payable {
         require(msg.value == 1 ether);
     }
 
@@ -15,7 +15,7 @@ contract PredictTheFutureChallenge {
     }
 
     function lockInGuess(uint8 n) public payable {
-        require(guesser == address(0));
+        require(guesser == 0);
         require(msg.value == 1 ether);
 
         guesser = msg.sender;
@@ -27,13 +27,11 @@ contract PredictTheFutureChallenge {
         require(msg.sender == guesser);
         require(block.number > settlementBlockNumber);
 
-        bytes32 hash = keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp));
-        uint256 number = uint256(hash);
-        uint8 answer = uint8(number % 10);
+        uint8 answer = uint8(keccak256(block.blockhash(block.number - 1), now)) % 10;
 
-        guesser = address(0);
+        guesser = 0;
         if (guess == answer) {
-            payable(msg.sender).transfer(2 ether);
+            msg.sender.transfer(2 ether);
         }
     }
 }
