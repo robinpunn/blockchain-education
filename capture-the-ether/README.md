@@ -2,7 +2,7 @@
 
 ---
 
-### Capture the Ether using Hardat
+#### Capture the Ether using Hardat
 These challenges were originally deployed to the Ropsten testnet which is now deprecated
 However, the challenges can be completed using something like the Remix IDE
 Or we can use devlopment environments like Hardhat or Foundry
@@ -206,3 +206,29 @@ const ethResult =
     (ethNumerator / ethDenominator + BigInt(1)) * ethDenominator -
     ethNumerator; // 415992086870360064
 ```
+
+##### [Token Whale](https://capturetheether.com/challenges/math/token-whale/)
+Like the previous challenge, we take advantage of an older compiler version by exploiting overflow/underflow. In this case, we use underflow to acheive to goal of underflow to create a large token amount. The ``transferFrom`` and ``_transfer`` function will be exploited
+```js
+function _transfer(address to, uint256 value) internal {
+  balanceOf[msg.sender] -= value;
+  balanceOf[to] += value;
+
+  emit Transfer(msg.sender, to, value);
+}
+
+function transferFrom(address from, address to, uint256 value) public {
+  require(balanceOf[from] >= value);
+  require(balanceOf[to] + value >= balanceOf[to]);
+  require(allowance[from][msg.sender] >= value);
+
+  allowance[from][msg.sender] -= value;
+  _transfer(to, value);
+}
+```
+In our hardhat script, we use two accounts to achieve our goal
+```js
+const accounts = await ethers.getSigners();
+const [player, friend] = accounts.slice(0, 2);
+```
+Deploying the contract will net the player with 1000 tokens. The friend account will approve a transfer of 1000 tokens to the player account. The player account will send 501 tokens to the friend account. Then the player account will ``transferFrom`` the friend account an amount of 500. Because the player account is the ``msg.sender``, the transfer account will subtract 500 from the player account. But because the player sent 501 tokens to the friend account, this will cause an underflow.
