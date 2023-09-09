@@ -206,6 +206,7 @@ const ethResult =
     (ethNumerator / ethDenominator + BigInt(1)) * ethDenominator -
     ethNumerator; // 415992086870360064
 ```
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/tokenSale.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/tokenSaleChallenge.ts)
 
 ##### [Token Whale](https://capturetheether.com/challenges/math/token-whale/)
 Like the previous challenge, we take advantage of an older compiler version by exploiting overflow/underflow. In this case, we use underflow to acheive to goal of underflow to create a large token amount. The ``transferFrom`` and ``_transfer`` function will be exploited
@@ -232,6 +233,7 @@ const accounts = await ethers.getSigners();
 const [player, friend] = accounts.slice(0, 2);
 ```
 Deploying the contract will net the player with 1000 tokens. The friend account will approve a transfer of 1000 tokens to the player account. The player account will send 501 tokens to the friend account. Then the player account will ``transferFrom`` the friend account an amount of 500. Because the player account is the ``msg.sender``, the transfer account will subtract 500 from the player account. But because the player sent 501 tokens to the friend account, this will cause an underflow.
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/tokenWhale.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/tokenWhaleChallenge.ts)
 
 ##### [Retirement Fund](https://capturetheether.com/challenges/math/retirement-fund/)
 This challenge requires that the balance of the contract in order to achieve completion. Only the owner can call the ``withdraw()`` function, but the ``collectPenalty()`` function has a line that can be exploited
@@ -260,6 +262,7 @@ contract RetirementFundSolver {
     }
 }
 ```
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/retirementFund.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/retirementFundChallenge.ts)
 
 ##### [Mapping](https://capturetheether.com/challenges/math/mapping/)
 This challenge exploits the layout of state variables in storage. As there is no function to change ``isComplete`` to true, we have to manipulate storage to make the change. By exploiting the max storage slot of a dymanic array, we can cause an overflow allowing us to change value of ``isComplete``.
@@ -271,3 +274,34 @@ const MAX_UINT_256 = BigInt("2") ** BigInt("256") - BigInt("1");
 const tx = await contract.set(MAX_UINT_256 - BigInt("1"), 0);
 await tx.wait();
 ```
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/mapping.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/mappingChallenge.ts)
+
+##### [Donation](https://capturetheether.com/challenges/math/donation/)
+Our goal is to become the owner of this contract. This challenge also takes advantage of storage slots in order to exploit the contract. In the ``donation()`` function declares ``Donation`` but it does not specifiy location.
+```js
+function donate(uint256 etherAmount) public payable {
+    // amount is in ether, but msg.value is in wei
+    uint256 scale = 10**18 * 1 ether;
+    require(msg.value == etherAmount / scale);
+
+    Donation donation;
+    donation.timestamp = now;
+    donation.etherAmount = etherAmount;
+
+    donations.push(donation);
+}
+```
+The line ``Donation donation`` should specify the location. But because it doesn't, interacting with this function will manipulate the state variables. The ``donations`` array of structs would take up the first slot and the ``owner``variable takes the second.
+```js
+Donation[] public donations;
+address public owner;
+```
+When this function is called, the first slot will be assigned ``donation.timestamp`` and the second slot will be assigned ``donation.etherAmount``. As the second slot is the ``owner`` variable, the solution to this challegene is passing an address as an argument for the ``donate()`` function.
+There is also the require statement to consider:
+```js
+uint256 scale = 10**18 * 1 ether;
+require(msg.value == etherAmount / scale);
+```
+Since ``1 ether`` in Solidity is the equivalent of ``10**18``, scale is actually ``10**36``. So dividing ``etherAmount`` by ``scale`` means the transaction amount needs to be ``1 wei``.
+
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/donation.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/donationChallenge.ts)
