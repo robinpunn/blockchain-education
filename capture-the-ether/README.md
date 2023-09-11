@@ -305,3 +305,28 @@ require(msg.value == etherAmount / scale);
 Since ``1 ether`` in Solidity is the equivalent of ``10**18``, scale is actually ``10**36``. So dividing ``etherAmount`` by ``scale`` means the transaction amount needs to be ``1 wei``.
 
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/donation.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/donationChallenge.ts)
+
+##### Fifty Years
+Like Donation, this challenge will exploit an uninitialized storage pointer. In the ``upsert`` function, the ``storage`` keyword is used in the ``if`` block, but it's left out in the ``else`` block.
+```js
+function upsert(uint256 index, uint256 timestamp) public payable {
+    require(msg.sender == owner);
+
+    if (index >= head && index < queue.length) {
+        // Update existing contribution amount without updating timestamp.
+        Contribution storage contribution = queue[index];
+        contribution.amount += msg.value;
+    } else {
+        // Append a new contribution. Require that each contribution unlock
+        // at least 1 day after the previous one.
+        require(timestamp >= queue[queue.length - 1].unlockTimestamp + 1 days);
+
+        contribution.amount = msg.value;
+        contribution.unlockTimestamp = timestamp;
+        queue.push(contribution);
+    }
+}
+```
+This means that ``contribution.amount`` and ``contribution.unlockTimestamp`` will actually target the ``slot(0)`` and ``slot(1)`` in storage. With the ``upsert`` function, we will be able to manipulate ``Contribution[] queue;`` and ``uint256 head;`` as they are in ``slot(0)`` and ``slot(1)`` respectively.
+
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/fiftyYears.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/fiftyYearsChallenge.ts)
