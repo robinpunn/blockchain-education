@@ -353,3 +353,22 @@ function authenticate() public {
 }
 ```
 Passing the first require statement involves creating a second contract that will return bytes32 "smarx". Passing the second require statement involves using a brute force method of finding a privatekey that generates a wallet address that includes "badcode"
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/accounts/fuzzyIdentity.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/accounts/fuzzyIdentityChallenge.ts)
+
+##### [Public Key](https://capturetheether.com/challenges/accounts/public-key/)
+Completing this challenge requires accessing transaction data from the provided address in the smart contract. The transaction data is on the deprecated Ropsten testnet.
+
+##### [Account Takeover](https://capturetheether.com/challenges/accounts/account-takeover/)
+Completing this challenge requires accessing transaction data from the provided address in the smart contract. The transaction data is on the deprecated Ropsten testnet.
+
+#### Miscellaneous
+##### [Assume Ownership](https://capturetheether.com/challenges/miscellaneous/assume-ownership/)
+Since Solidity 0.5, constructors have to be defined with the constructor keyword. In this older version, a constructor is defined by using the contract name as a function. However, in this challenge the constructor is misspelled and the function is public. All that needs to be done is to call the misspelled function and authenticate.
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/miscellaneous/ownership.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/miscellaneous/assumeOwnershipChallenge.ts)
+
+
+#### Resources
+[cmichel](https://cmichel.io/capture-the-ether-solutions/)
+[tomas](https://medium.com/@tomasfrancisco)
+[0xJauancito](https://github.com/0xJuancito/capture-the-ether-solutions)
+[kyrers](https://mirror.xyz/kyrers.eth/dSjaARoTkYitJyQA8CFKLrS5CXbRVf-K4ol8Nla-bj0)
