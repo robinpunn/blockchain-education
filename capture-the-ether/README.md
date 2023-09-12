@@ -306,7 +306,7 @@ Since ``1 ether`` in Solidity is the equivalent of ``10**18``, scale is actually
 
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/donation.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/donationChallenge.ts)
 
-##### Fifty Years
+##### [Fifty Years](https://capturetheether.com/challenges/math/fifty-years/)
 Like Donation, this challenge will exploit an uninitialized storage pointer. In the ``upsert`` function, the ``storage`` keyword is used in the ``if`` block, but it's left out in the ``else`` block.
 ```js
 function upsert(uint256 index, uint256 timestamp) public payable {
@@ -327,6 +327,29 @@ function upsert(uint256 index, uint256 timestamp) public payable {
     }
 }
 ```
-This means that ``contribution.amount`` and ``contribution.unlockTimestamp`` will actually target the ``slot(0)`` and ``slot(1)`` in storage. With the ``upsert`` function, we will be able to manipulate ``Contribution[] queue;`` and ``uint256 head;`` as they are in ``slot(0)`` and ``slot(1)`` respectively.
+This means that in the else block, ``contribution.amount`` and ``contribution.unlockTimestamp`` will actually target the ``slot(0)`` and ``slot(1)`` in storage. With the ``upsert`` function, we will be able to manipulate ``Contribution[] queue;`` and ``uint256 head;`` as they are in ``slot(0)`` and ``slot(1)`` respectively.
+In this process, we end up sending 2 wei to the contract, so the withdraw function will revert unless the contract recieves 2 wei. We solve this problem by using the ``selfdestruct`` method with a separate contract.
+```js
+contract FiftyYearsSolver {
+    constructor(address payable target) payable {
+        require(msg.value>0);
+        selfdestruct(target);
+    }
+}
+```
 
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/fiftyYears.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/fiftyYearsChallenge.ts)
+
+
+#### Accounts
+##### [Fuzzy Identity](https://capturetheether.com/challenges/accounts/fuzzy-identity/)
+The goal for this challenge is to be able to call the ``authenticate`` function
+```js
+function authenticate() public {
+    require(isSmarx(msg.sender));
+    require(isBadCode(msg.sender));
+
+    isComplete = true;
+}
+```
+Passing the first require statement involves creating a second contract that will return bytes32 "smarx". Passing the second require statement involves using a brute force method of finding a privatekey that generates a wallet address that includes "badcode"

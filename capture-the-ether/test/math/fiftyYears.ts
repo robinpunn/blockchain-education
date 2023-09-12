@@ -17,7 +17,9 @@ describe("FiftyYearsChallenge", () => {
     let transaction = await contract.upsert("1", overflow, { value: "1" });
     await transaction.wait();
 
+    // set head to 0
     transaction = await contract.upsert("2", "0", { value: "2" });
+    await transaction.wait();
 
     // solver contract to send 2 wei
     const solveFactory = await ethers.getContractFactory("FiftyYearsSolver");

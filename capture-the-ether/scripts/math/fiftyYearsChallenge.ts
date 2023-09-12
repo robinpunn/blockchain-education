@@ -12,10 +12,12 @@ async function main() {
   // cause an overflow
   const overflow = BigInt("2") ** BigInt("256") - BigInt(24 * 60 * 60);
 
-  let transaction = await contract.upsert("1", overflow, { value: "1" });
+  let transaction = await contract.upsert(1, overflow, { value: "1" });
   await transaction.wait();
 
-  transaction = await contract.upsert("2", "0", { value: "2" });
+  // set head to 0
+  transaction = await contract.upsert(2, 0, { value: "2" });
+  await transaction.wait();
 
   // solver contract to send 2 wei
   const solveFactory = await ethers.getContractFactory("FiftyYearsSolver");
