@@ -366,6 +366,19 @@ Completing this challenge requires accessing transaction data from the provided 
 Since Solidity 0.5, constructors have to be defined with the constructor keyword. In this older version, a constructor is defined by using the contract name as a function. However, in this challenge the constructor is misspelled and the function is public. All that needs to be done is to call the misspelled function and authenticate.
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/miscellaneous/ownership.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/miscellaneous/assumeOwnershipChallenge.ts)
 
+##### [Token Bank](https://capturetheether.com/challenges/miscellaneous/token-bank/)
+This challenge involves utilizing a re-entrancy attack. The withdraw function updates the balance after the transfer call which allows the re-entrancy:
+```js
+function withdraw(uint256 amount) public {
+    require(balanceOf[msg.sender] >= amount);
+
+    require(token.transfer(msg.sender, amount));
+    balanceOf[msg.sender] -= amount;
+}
+```
+Using a second contract can exploit this recursively until the challenge is completed.
+
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/miscellaneous/ownership.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/miscellaneous/assumeOwnershipChallenge.ts)
 
 #### Resources
 [cmichel](https://cmichel.io/capture-the-ether-solutions/)
