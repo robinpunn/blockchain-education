@@ -13,6 +13,17 @@
     8. [Gas II](#gas-ii)
     9. [Gass II Summary](#gas-ii-summary)
     10. [High Level Blockchain Fundamentals](#high-level-blockchain-fundamentals)
+2. [Lesson 2: Welcome to Remix](#lesson-2-welcome-to-remix)
+	1. [Introduction](#introduction)
+	2. [Setting Up Your First Contract](#setting-up-your-first-contract)
+	3. [Basic Solidity: Types](#basic-solidity-types)
+	4. [Basic Solidity: Functions](#basic-solidity-functions)
+	5. [Basic Solidity: Structs and Arrays](#basic-solidity-structs-and-arrays)
+	6. [Basic Solidity: Compiler Errors and Warnings](#basic-solidity-compiler-errors-and-warnings)
+	7. [Memory, Storage, Calldata](#memory-storage-calldata)
+	8. [Basic Solidity: Mappings](#basic-solidity-mappings)
+	9. [Deploying Your First Smart Contract](#deploying-your-first-smart-contract)
+	10. [The EVM and Recap](#the-evm-and-recap)
 ---
 
 ### [Lesson 1: Blockchain Basics](https://www.youtube.com/watch?v=umepbfKp5rI&t=834s)
@@ -226,3 +237,145 @@
 	- Sharding and rollups are scalability solutions
 	- Only so many transactions can fit into a block
 	- Gas prices are how much it costs to interact with the blockchain
+
+### [Lesson 2: Welcome to Remix](https://www.youtube.com/watch?v=umepbfKp5rI&t=7842s)
+#### Introduction
+- [Remix](https://remix.ethereum.org/)
+	- A popular web based IDE
+- [Solidity Documentation](https://docs.soliditylang.org/en/latest/index.html)
+
+#### Setting Up Your First Contract
+- Versioning
+	- We start out by declaring the version: ``pragma solidity 0.8.4``
+	- ``pragma solidity ^0.8.18`` the caret indicates that any compiler version greater than or equal to 0.8.18 can be used
+	- we can also indicate a range ``pragma solidity >=0.8.18 < 0.9.0``
+- Take notes in your code!
+	- with solidity comments can be created with ``//`` or ``/**/``
+- [What is a software license](https://snyk.io/learn/what-is-a-software-license/)
+- SPDX License
+	- Not required, the compiler will still run without it, but recommended
+	- ``//SPDX-License-Identifier: MIT;``
+- Compiling
+	- Transforming our code in to computer code (bytecode)
+	- Computer code is very specific instructions for the blockchain to use for our contract
+- Contract Declaration
+	- The ``contract`` keyword indicates to solidity the name of our contract
+	- Similar to a class in JavaScript/Python
+
+#### Basic Solidity: Types
+- [Types & Declaring Variables](https://docs.soliditylang.org/en/v0.8.13/)
+    - `uint256`, `int256`, `bool`, `string`, `address`, `bytes32`
+	    - ``uint`` defaults to ``uint256``
+	    - For readability, its better to be explicit and use ``uint256`` over ``uint``
+	    - ``int`` can be positive or negative whereas ``uint``, is always positive (unsigned integer)
+	    - A ``string`` is text that represents words... it is a bytes object specifically for text... a string can easily be converted to a bytes object
+	    - ``bytes32`` and ``bytes`` are actually not the same unlike ``uint`` and ``uint256``
+    - [Solidity Types](https://docs.soliditylang.org/en/latest/types.html)
+    - [Bits and Bytes](https://www.youtube.com/watch?v=Dnd28lQHquU)
+- Default Initializations
+	- values are initialized to 0 if no values are given
+- Comments
+	- with solidity comments can be created with ``//`` or ``/**/``
+
+#### Basic Solidity: Functions
+- Functions
+	- Function or methods are a sub section of code that when called will execute a very specific small piece of the codebase
+	- Identified by the keyword ``function``
+- Deploying a Contract
+    - Smart Contracts have addresses just like our wallets
+    - Deploying a contract uses the exact same process as sending a transaction... the input field is populated with the bytecode of the transaction
+    - Deploying a contract is modifying the blockchain, so it requires gas
+- Calling a public state-changing Function
+- [Visibility](https://docs.soliditylang.org/en/latest/contracts.html#visibility-and-getters)
+	- Visibility is defaulted to internal
+	- Functions can have one of four visibility specifiers: public, external, internal, private
+		- public: visible internally and externally (creates a getter for storage/state variables)
+	- Everything on the blockchain is public, so using private isn't a good way to "hide" information
+- Gas III | An example
+	- Every time the state of the blockchain is updated, it's going to cost gas
+- Scope
+	- Like other languages, variables are scoped to the block they were created in
+	- If a variable is created inside a function, it is only accessible inside that function
+- View & Pure Functions
+	- A function marked view means we're only going to read state, state cannot be updated
+	- Pure functions can't modify or read from state
+	- View and pure functions won't cost gas
+	- If a gas cost transaction is calling a view or pure function, then there will be a gas cost
+
+#### Basic Solidity: Structs and Arrays
+- Structs
+	- Allows for the creation of custom data types
+```js
+struct Person {
+	uint256 favoriteNumber;
+	string name;
+}
+
+Person public rob = Person(17,"Rob");
+Person public bor = Person({favoriteNumber:17,name:"Bor"});
+```
+- Intro to Storage
+	- Smart contracts have permanent storage where variables are saved
+	- We can also use the memory keyword to utilize non permanent memory
+- Arrays
+	- ``uint256[]`` the bracket syntax identifies that we have a list of uint256 values
+	- an array in Solidity is similar to arrays in other languages
+	- arrays are 0 indexed
+	- We can combine the idea of structs and arrays and create an array of structs: ``Person[] public listOfPeople;``
+- Dynamic & Fixed Sized
+	- Arrays can be fixed in size or dynamic
+	- Fixed size arrays are declared when created and dynamic sized arrays can go to any size
+- `push` array function
+	- Arrays come built in with the ``push`` function
+
+#### Basic Solidity: Compiler Errors and Warnings
+- Yellow: Warnings are Ok
+	- This won't prevent us from compiling our code
+- Red: Errors are not Ok
+	- Prevent from compiling code
+
+#### Memory, Storage, Calldata
+- 6 Places you can store and access data
+    - calldata
+    - memory
+    - storage
+    - code
+    - logs
+    - stack
+- calldata, memory, and storage are they only keywords that we actually use
+- calldata and memory indicate that data is only going to exist temporarily... the duration of the function call
+	- Inside of functions, most variables automatically default to memory variables
+	- strings are a special type?? you have to specify memory or call data (has to do with how arrays work in memory)
+	- The difference between memory and calldata is that memory can be changed
+	- If a calldata variable is passed as an argument, it can't be modified inside the function while memory can be modified
+	- storage is for permanent variables that can be modified
+- Arrays, structs, and mappings are special types in Solidity and we have to use these keywords when dealing with them
+	- Something like uint256 is a primitive type and Solidity knows where to put a primitive
+	- A string is an array of bytes, and Solidity needs direction for storage
+	- We don't use the storage keyword when declaring function parameters, only memory or calldata
+
+#### Basic Solidity: Mappings
+- [Mappings](https://solidity-by-example.org/mapping)
+	- A mapping is like a dictionary... a set of keys with each key returning a special set of information
+	- ``mapping(string => uint256) public variableName;
+	- In a mapping, the default value for all the keys is 0... looking up a key that doesn't exist will return 0
+
+#### Deploying Your First Smart Contract
+- A testnet or mainnet
+- Connecting Metamask
+- [Find a faucet here](https://docs.chain.link/docs/link-token-contracts/#Sepolia)
+- See the faucets at the top of this readme!
+- Interacting with Deployed Contracts
+
+#### The EVM and Recap
+- The EVM
+	- When smart contracts are compiled, it gets compiled down to the EVM (Ethereum Virtual Machine)
+	- Any blockchain that's EVM compatible should be able to handle Solidity code
+	- Ethereum, Polygon, Arbitrum, Optimishm, Zksync
+- The first thing to do in a Solidity smart contract is declare the version and above the version the SPDX license identifier
+- A contract is similar to a class in other programming languages
+- Solidity has many different types such as: string, bytes, uint, boolean
+- A struct is a custom type that can be created
+- Arrays and mappings handle a list or dictionary of data
+- Functions can modify or read from state
+- We can specify different data locations in the parameters of functions
