@@ -206,7 +206,7 @@ const ethResult =
     (ethNumerator / ethDenominator + BigInt(1)) * ethDenominator -
     ethNumerator; // 415992086870360064
 ```
-[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/tokenSale.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/tokenSaleChallenge.ts)
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/tokenSale.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/tokenSaleChallenge.ts)
 
 ##### [Token Whale](https://capturetheether.com/challenges/math/token-whale/)
 Like the previous challenge, we take advantage of an older compiler version by exploiting overflow/underflow. In this case, we use underflow to acheive to goal of underflow to create a large token amount. The ``transferFrom`` and ``_transfer`` function will be exploited
@@ -233,7 +233,7 @@ const accounts = await ethers.getSigners();
 const [player, friend] = accounts.slice(0, 2);
 ```
 Deploying the contract will net the player with 1000 tokens. The friend account will approve a transfer of 1000 tokens to the player account. The player account will send 501 tokens to the friend account. Then the player account will ``transferFrom`` the friend account an amount of 500. Because the player account is the ``msg.sender``, the transfer account will subtract 500 from the player account. But because the player sent 501 tokens to the friend account, this will cause an underflow.
-[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/tokenWhale.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/tokenWhaleChallenge.ts)
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/tokenWhale.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/tokenWhaleChallenge.ts)
 
 ##### [Retirement Fund](https://capturetheether.com/challenges/math/retirement-fund/)
 This challenge requires that the balance of the contract in order to achieve completion. Only the owner can call the ``withdraw()`` function, but the ``collectPenalty()`` function has a line that can be exploited
@@ -262,7 +262,7 @@ contract RetirementFundSolver {
     }
 }
 ```
-[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/retirementFund.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/retirementFundChallenge.ts)
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/retirementFund.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/retirementFundChallenge.ts)
 
 ##### [Mapping](https://capturetheether.com/challenges/math/mapping/)
 This challenge exploits the layout of state variables in storage. As there is no function to change ``isComplete`` to true, we have to manipulate storage to make the change. By exploiting the max storage slot of a dymanic array, we can cause an overflow allowing us to change value of ``isComplete``.
@@ -274,7 +274,7 @@ const MAX_UINT_256 = BigInt("2") ** BigInt("256") - BigInt("1");
 const tx = await contract.set(MAX_UINT_256 - BigInt("1"), 0);
 await tx.wait();
 ```
-[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/mapping.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/mappingChallenge.ts)
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/mapping.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/mappingChallenge.ts)
 
 ##### [Donation](https://capturetheether.com/challenges/math/donation/)
 Our goal is to become the owner of this contract. This challenge also takes advantage of storage slots in order to exploit the contract. In the ``donation()`` function declares ``Donation`` but it does not specifiy location.
@@ -304,7 +304,7 @@ require(msg.value == etherAmount / scale);
 ```
 Since ``1 ether`` in Solidity is the equivalent of ``10**18``, scale is actually ``10**36``. So dividing ``etherAmount`` by ``scale`` means the transaction amount needs to be ``1 wei``.
 
-[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/donation.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/donationChallenge.ts)
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/donation.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/donationChallenge.ts)
 
 ##### [Fifty Years](https://capturetheether.com/challenges/math/fifty-years/)
 Like Donation, this challenge will exploit an uninitialized storage pointer. In the ``upsert`` function, the ``storage`` keyword is used in the ``if`` block, but it's left out in the ``else`` block.
@@ -338,7 +338,7 @@ contract FiftyYearsSolver {
 }
 ```
 
-[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/fiftyYears.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/fiftyYearsChallenge.ts)
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/fiftyYears.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/fiftyYearsChallenge.ts)
 
 
 #### Accounts
@@ -353,7 +353,7 @@ function authenticate() public {
 }
 ```
 Passing the first require statement involves creating a second contract that will return bytes32 "smarx". Passing the second require statement involves using a brute force method of finding a privatekey that generates a wallet address that includes "badcode"
-[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/accounts/fuzzyIdentity.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/accounts/fuzzyIdentityChallenge.ts)
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/accounts/fuzzyIdentity.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/accounts/fuzzyIdentityChallenge.ts)
 
 ##### [Public Key](https://capturetheether.com/challenges/accounts/public-key/)
 Completing this challenge requires accessing transaction data from the provided address in the smart contract. The transaction data is on the deprecated Ropsten testnet.
@@ -364,7 +364,7 @@ Completing this challenge requires accessing transaction data from the provided 
 #### Miscellaneous
 ##### [Assume Ownership](https://capturetheether.com/challenges/miscellaneous/assume-ownership/)
 Since Solidity 0.5, constructors have to be defined with the constructor keyword. In this older version, a constructor is defined by using the contract name as a function. However, in this challenge the constructor is misspelled and the function is public. All that needs to be done is to call the misspelled function and authenticate.
-[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/miscellaneous/ownership.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/miscellaneous/assumeOwnershipChallenge.ts)
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/miscellaneous/ownership.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/miscellaneous/assumeOwnershipChallenge.ts)
 
 ##### [Token Bank](https://capturetheether.com/challenges/miscellaneous/token-bank/)
 This challenge involves utilizing a re-entrancy attack. The withdraw function updates the balance after the transfer call which allows the re-entrancy:
@@ -378,10 +378,10 @@ function withdraw(uint256 amount) public {
 ```
 Using a second contract can exploit this recursively until the challenge is completed.
 
-[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/miscellaneous/ownership.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/miscellaneous/assumeOwnershipChallenge.ts)
+[Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/miscellaneous/ownership.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/miscellaneous/assumeOwnershipChallenge.ts)
 
 #### Resources
-[cmichel](https://cmichel.io/capture-the-ether-solutions/)
-[tomas](https://medium.com/@tomasfrancisco)
-[0xJauancito](https://github.com/0xJuancito/capture-the-ether-solutions)
+[cmichel](https://cmichel.io/capture-the-ether-solutions/)<br>
+[tomas](https://medium.com/@tomasfrancisco)<br>
+[0xJauancito](https://github.com/0xJuancito/capture-the-ether-solutions)<br>
 [kyrers](https://mirror.xyz/kyrers.eth/dSjaARoTkYitJyQA8CFKLrS5CXbRVf-K4ol8Nla-bj0)
