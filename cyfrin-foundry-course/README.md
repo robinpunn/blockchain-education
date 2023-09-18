@@ -24,6 +24,12 @@
 	8. [Basic Solidity: Mappings](#basic-solidity-mappings)
 	9. [Deploying Your First Smart Contract](#deploying-your-first-smart-contract)
 	10. [The EVM and Recap](#the-evm-and-recap)
+3. [Lesson 3: Storage Factory](#lesson-3-storage-factory)
+	1. [Introduction](#introduction)
+	2. [Importing Contracts into Other Contracts](#basic-solidity-importing-contracts-into-other-contracts)
+	3. [Interacting with other Contracts](#basic-solidity-interacting-with-other-contracts)
+	4. [Inheritance and Overrides](#basic-solidity-inheritance-and-overrides)
+	5. [Summary](#summary)
 ---
 
 ### [Lesson 1: Blockchain Basics](https://www.youtube.com/watch?v=umepbfKp5rI&t=834s)
@@ -379,3 +385,43 @@ Person public bor = Person({favoriteNumber:17,name:"Bor"});
 - Arrays and mappings handle a list or dictionary of data
 - Functions can modify or read from state
 - We can specify different data locations in the parameters of functions
+
+### [Lesson 3: Storage Factory](https://www.youtube.com/watch?v=umepbfKp5rI&t=12598s)
+#### Introduction
+- [Factory Pattern](https://betterprogramming.pub/learn-solidity-the-factory-pattern-75d11c3e7d29)
+- We can use a "factory contract" that can deploy other smart contracts
+
+#### Basic Solidity: Importing Contracts into other Contracts
+- Composability
+	- The ability of smart contracts to seamlessly interact with each other
+- [Solidity new keyword](https://docs.soliditylang.org/en/latest/control-structures.html?highlight=new#creating-contracts-via-new)
+	- the general structure of a variable is: type visibility name === uint256 public favoriteNumber;
+	- we can do the same thing with a contract... just as we invoke a struct's name to create a new struct variable, we can do the same with a contract: ContractName visbility contractName
+		- Solidity is case sensitive, so this naming pattern is used often with contracts
+	- Then we use the ``new`` keyword to create an instance of a contract
+- [Importing Code in solidity](https://solidity-by-example.org/import)
+	- One way to link contracts is to have both contracts in one file... however, it is best practice to keep contracts in separate files
+	- Instead of having contracts in the same file, we can import: ``import {SimpleStorage} from './SimpleStorage.sol';``
+		- Using named imports is best practice
+
+#### Basic Solidity: Interacting with other Contracts
+- To interact, you always need: ABI + Address
+- [ABI](https://docs.soliditylang.org/en/latest/abi-spec.html?highlight=abi)
+	- Application Binary Interface tells our code how it can interact with another contract
+
+#### Basic Solidity: Inheritance and Overrides
+- [Inheritance](https://solidity-by-example.org/inheritance)
+	- Using the ``is`` keyword, we can have a child contract Inherit from its parent contract
+	- ``Contract A is Contract B{}``
+- [Override & Virtual Keyword](https://docs.soliditylang.org/en/latest/contracts.html?highlight=override#function-overriding)
+	- In order to "override" a function in the child contract, the parent contract needs to designate the function as virtual
+	- The ``virtual`` keyword indicates that a function is overridable
+
+#### Summary
+- With the ``new`` keyword, we can deploy contracts from other contracts
+- Importing contracts into other contracts is the same as copy/pasting the contract
+- Named imports are best practice
+- We can interact with other contracts as long as we have the address and the abi
+	- Using a contract type automatically gives us the address and the abi
+- If we want a child contract to inherit the functionality of some other contract, we can import it and use the ``is`` keyword
+	- To override a function from the parent contract, the parent contract must use the ``virtual`` keyword while the
