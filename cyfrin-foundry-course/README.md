@@ -30,6 +30,25 @@
 	3. [Interacting with other Contracts](#basic-solidity-interacting-with-other-contracts)
 	4. [Inheritance and Overrides](#basic-solidity-inheritance-and-overrides)
 	5. [Summary](#summary)
+4. [Lesson 4: Remix Fund Me](#lesson-4-remix-fund-me)
+	1. [Sending Eth through a function](#sending-eth-through-a-function)
+	2. [Getting real world price data (Chainlink)](#getting-real-world-price-data-chainlink)
+	3. [Interfaces](#interfaces)
+	4. [Importing from NPM/GitHub](#importing-from-npm--github)
+	5. [Getting Prices from Chainlink](#getting-prices-from-chainlink)
+	6. [More Solidity Math](#more-solidity-math)
+	7. [msg.sender](#msgsender)
+	8. [Library](#library)
+	9. [SafeMath](#safemath)
+	10. [For Loop](#for-loop)
+	11. [Resetting an Array](#resetting-an-array)
+	12. [Transfer, Send, and Call](#transfer-send-and-call)
+	13. [Constructor](#constructor)
+	14. [Modifiers](#modifiers)
+	15. [Testnet Demo](#testnet-demo)
+	16. [Immutable and Constant](#immutable--constant)
+	17. [Custom Errors](#custom-errors)
+	18. [Receive and Fallback Function](#receive-and-fallback-function)
 ---
 
 ### [Lesson 1: Blockchain Basics](https://www.youtube.com/watch?v=umepbfKp5rI&t=834s)
@@ -425,3 +444,216 @@ Person public bor = Person({favoriteNumber:17,name:"Bor"});
 	- Using a contract type automatically gives us the address and the abi
 - If we want a child contract to inherit the functionality of some other contract, we can import it and use the ``is`` keyword
 	- To override a function from the parent contract, the parent contract must use the ``virtual`` keyword while the
+
+### [Lesson 4: Remix Fund Me](https://www.youtube.com/watch?v=umepbfKp5rI&t=14948s)
+#### Sending ETH through a function
+- How do we send eth?
+	- Whenever eth is sent on the blockchain, there is a value field that gets populated
+	- The value field is the amount of native blockchain cryptocurrency that gets sent with every transaction
+- payable
+	- the first thing we need to to do to send cryptocurrency is use the - [payable](https://solidity-by-example.org/payable) keyword
+	- like wallets, contracts can hold funds
+- Global values
+	- we can access the value of a transaction by using a solidity global, msg.value
+	- [msg.value & Other global keywords](https://docs.soliditylang.org/en/latest/cheatsheet.html?highlight=cheatsheet#global-variables)
+- [require](https://codedamn.com/news/solidity/what-is-require-in-solidity)
+	- we can use a require statement to ensure certain conditions are met
+	- ``require(msg.value > 1e18);``
+	- ``1e18 = 1 ETH = 1000000000000000000 = 1 * 10 ** 18``
+	- on the blockchain, value is handled in wei
+	- we can use [Ethereum Unit Converter](https://eth-converter.com/) to make easier conversions
+	- require can have an option message: ``require(msg.value > 1e18, "didn't send enough eth");``
+- [revert](https://medium.com/blockchannel/the-use-of-revert-assert-and-require-in-solidity-and-the-new-revert-opcode-in-the-evm-1a3a7990e06e)
+	- A revert undoes any actions that have been done, and sends the remaining gas back
+	- A failed transaction still will require some gas
+- [Fields in a Transaction](https://ethereum.org/en/developers/docs/transactions/)
+	- Nonce: tx count for the account
+	- Gas Price: price per unit of gas (in wei)
+	- Gas Limit: max gas that this tx can use
+	- To: address that the tx is sent to
+	- Value: amount of wei to send
+	- Data: what to send to the To address
+	- v,r,s: components of tx signature
+- [More on v,r,s](https://ethereum.stackexchange.com/questions/15766/what-does-v-r-s-in-eth-gettransactionbyhash-mean)
+
+#### Getting real world price data (Chainlink)
+- [What is a blockchain oracle?](https://chain.link/education/blockchain-oracles)
+	- Blockchains are deterministic systems which means they can't interact with real world data and events
+	- Blockchains are deterministic by design so all the nodes can reach consensus
+	- Oracles can help get offchain data
+	- A blockchain oracle is any device that interacts with the off-chain world to provide external data or computation to smart contracts
+- [What is the oracle problem?](https://blog.chain.link/what-is-the-blockchain-oracle-problem/)
+	- Smart contracts are unable to connect with external systems or perform external computation
+	- Nodes would never be able to reach consesus if variable/random data from api calls were incorporated
+	- Centralized oracles are a point of failure
+- [Chainlink](https://chain.link/)
+	- Chainlink is a decentralized oracle network for bringing data and external computation into our smart contracts
+	- A modular decentralized oracle network that can be customized to deliver any data or do any external computation
+	- Customizing can be a lot of work, but there are many chainlink features that come out of the box that are ready to be used in smart contracts
+- [Chainlink Price Feeds (Data Feeds)](https://docs.chain.link/docs/get-the-latest-price/)
+    - A network of chainlink nodes get data from different exchanges and data providers and brings that information through a network of decentralized chainlink nodes
+    -  [data.chain.link](https://data.chain.link/)
+- [Chainlink VRF](https://docs.chain.link/docs/chainlink-vrf/)
+	- Chainlink verifiable randomness function
+- [Chainlink Keepers](https://docs.chain.link/docs/chainlink-keepers/introduction/)
+	- Chainklink keepers are chainlink nodes that listen for a registration contract for different specified events
+- [Chainlink API Calls](https://docs.chain.link/docs/request-and-receive-data/)
+- [Importing Tokens into your Metamask](https://consensys.net/blog/metamask/how-to-add-your-custom-tokens-in-metamask/)
+- [Request and Receive Chainlink Model](https://docs.chain.link/docs/architecture-request-model/)
+
+#### Interfaces
+- There is a concept in solidity known as the interface
+	- For reference - [ChainLink Interface's Repo](https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol)
+	- The interface has functions defined without any logic, allowing it to be easily used for abi??
+	- We don't know what the functions do, we just need to know how to interact with the contract
+- A common way people interact with other contracts outside of their projects
+	- Get the interface of contract using interface keyword
+	- The interface compiles and in return we get an ABI
+	- wrap an address around interface keyword allowing us to call any function associated with the interface:
+	- ``return AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306).version();``
+
+#### Importing from NPM / GitHub
+- Using too many interfaces pasted into our file can look very cluttered
+	- Instead, we can use imports:
+	- ``import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";``
+- [Chainlink NPM Package](https://www.npmjs.com/package/@chainlink/contracts)
+	- A package manager that keeps different versions of combinations of code
+	- Remix automatically downloads this, but for projects with local IDEs, we have to install the package
+
+#### Getting Prices from Chainlink
+```js
+function getPrice() public view returns(uint256){
+	AggregatorV3Interface priceFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
+	(, int256 price,,,) = priceFeed.latestRoundData();
+	return uint256(price * 1e10);
+}
+```
+
+#### More Solidity math
+- Multiply before you divide
+	- Solidity only works with whole numbers
+- [tuple](https://docs.soliditylang.org/en/latest/abi-spec.html?highlight=tuple#handling-tuple-types)
+- [Floating Point Numbers in Solidity](https://stackoverflow.com/questions/58277234/does-solidity-supports-floating-point-number)
+- [Type Casting](https://ethereum.stackexchange.com/questions/6891/type-casting-in-solidity)
+- Gas Estimation Failed
+    - Someone should make an article explaining this error
+    - It is a boilerplate error for "something went wrong"... it could be a number of issues... but if the require/revert has a message, then the message should show when this pops up
+
+#### msg.sender
+- [msg.sender](https://docs.soliditylang.org/en/latest/cheatsheet.html?highlight=msg.sender)
+	- a global variable
+	- The account that is interacting with the contract (calling a function / sending eth)
+- named mappings
+	- We can provide names for the key value pair when we create a mapping:
+	- ``mapping(address funder => uint256 amountFunded) public addressToAmountFunded;``
+
+#### Library
+- [Library](https://docs.soliditylang.org/en/v0.8.14/contracts.html?highlight=library#libraries)
+	- Libraries are similar to contracts but you can't declare any state variables and you can't send ether
+	- A library is embedded into the contract if all library functions are internal... otherwise the library must be deployed and then linked before the contract is deployed
+	- like a contract is created with the ``contract`` keyword, libraries are created with the ``library`` keyword
+- The first input variable for a library is going to be type that we use with the library:
+	- ``msg.value.getConversionRate();``
+	- If thee function had more parameters, then we would just add it to the library function:
+	- ``msg.value.getConversionRate(123);``
+- [Solidity-by-example Library](https://solidity-by-example.org/library)
+
+#### SafeMath
+- [Openzeppelin Safemath](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/math/SafeMath.sol)
+	- A common library that was used a lot in smart contracts
+	- Compiler versions before 0.8.x did no prevent overflow/underflow
+	- The safemath library provided overflow/underflow checks
+- [unchecked vs. checked](https://docs.soliditylang.org/en/latest/control-structures.html#checked-or-unchecked-arithmetic)
+	- In newer compilers, we can revert to the unchecked version with the ``unchecked`` keyword
+	- A reason the ``unchecked`` keyword might be used is to save gas
+
+#### For Loop
+- [For Loop](https://solidity-by-example.org/loop)
+	- A for loop is a way to loop through a list, or to do something in a repeated amount of times
+	- For loops in Solidity are similar to loops from other languages
+- `/* */` is another way to make comments
+```js
+for (/*starting index, ending index, step amount*/)
+```
+
+#### Resetting an array
+- We have an existing address array: ``address[] public funders;``
+- If we wanted to reset it, inside a function we could do: ``funders = new address[](0);``
+	- We use the new keyword to reset the funders array to a blank array of addresses
+	- We use 0 to indicate the length
+
+#### Transfer, Send, and Call
+- [Transfer, Send, Call](https://solidity-by-example.org/sending-ether/)
+	- These are the three different ways we can send ether
+	- transfer (2300 gas, throws error)
+		- ``payable(msg.sender).transfer(address(this).balance);``
+		- transfer automatically reverts
+	- send (2300 gas, returns bool)
+		- first we have to declare a variable name:
+			- ``bool sendSuccess = payable(msg.sender).send(address(this).balance);``
+		- then we have to use it in a require statement with an optional message:
+			- ``require(sendSuccess,"Didn't work");``
+		- send will only revert with the require statement
+	- call (forward all gas or set gas, returns bool)
+		- call is a lower level function which can be used to call virtually any function in all of ethereum without needing the abi
+		- call returns two variables, bool and a bytes object, and we can account for that using parentheses
+			- ``(bool success, bytes memory dataReturned) = payable(msg.sender).call{value: address(this).balance}("");``
+			- the bool will be true if the function was successfully called... and if we were to have called a function, than the bytes would be the data returned
+	- It can be case by case, but as of now, call is the recommended way to send and receive ethereum
+- [this keyword](https://ethereum.stackexchange.com/questions/1781/what-is-the-this-keyword-in-solidity)
+
+#### Constructor
+- [Constructor](https://solidity-by-example.org/constructor)
+	- using the ``constructor`` keyword, we designate a function that is called when we deploy our contract
+```js
+constructor() {
+	owner = msg.sender;
+}
+```
+
+#### Modifiers
+- [Double equals](https://www.geeksforgeeks.org/solidity-operators/)
+	- A single `=`  indicates assignment wheras a double `==` is a comparison
+- [Modifier](https://solidity-by-example.org/function-modifier)
+	- modifiers allow us create keywords that we can use in function declarations
+	- the ``_;`` is a placeholder for the logic in the function that the modifier is applied to
+```js
+modifier onlyOwner() {
+	require(msg.sender == owner, "not the owner");
+	_;
+}
+```
+
+#### Testnet Demo
+- [Disconnecting Metamask](https://help.1inch.io/en/articles/4666771-metamask-how-to-connect-disconnect-and-switch-accounts-with-metamask-on-1inch-network)
+
+#### Immutable & Constant
+- [Immutable](https://solidity-by-example.org/immutable)
+	- If we assign a variable once outside of the block that it is declared, we can use the ``immutable`` keyword
+	- immutables aren't stored in storage slots but in the bytecode of the contract
+	- the naming convention for immutable variables is to prefix them with ``i_``
+- [Constant](https://solidity-by-example.org/constants)
+	- If we assign a variable once outside of a function and never change it, we can use the ``constant`` keyword
+	- like immutable, constant keywords don't take up a storage spot
+	- the naming convention with constants is to use all caps with underscores
+- [Current ETH Gas Prices](https://etherscan.io/gastracker)
+- If we have variables that only get set one time, we can use Solidity tools to make them more gas efficient
+- Naming Conventions
+    - [Someone make this!](https://github.com/smartcontractkit/full-blockchain-solidity-course-js/issues/13)
+
+#### Custom Errors
+- [Custom Errors Introduction](https://blog.soliditylang.org/2021/04/21/custom-errors/)
+	- When we use require statements, the messages have to be stored as strings
+	- ``0.8.4`` introduced custom errors that are declared at the top outside of the contract
+	- instead of using require, we use if statements
+
+#### Receive and Fallback Function
+- [Solidity Docs Special Functions](https://docs.soliditylang.org/en/latest/contracts.html?highlight=fallback#special-functions)
+- [Receive](https://docs.soliditylang.org/en/latest/contracts.html?highlight=fallback#receive-ether-function)
+	- ``receive() external payable {}``
+	- A contract can have at most one receive function declared without using the function keyword
+	- The function cannot have arguments, cannot return anything, and must have external visibility with payable state mutability
+	- As long as there is no data associated with the transaction (no function specified, no calldata), the receive function will get triggered
+		- Whenever we call a function, we're populating the calldata of the transaction with data that points to the function
+- [Fallback](https://solidity-by-example.org/fallback)
+	- Similar to the receive function, but it works even if data is sent with the transaction
