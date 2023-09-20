@@ -1,10 +1,10 @@
-#### You will beat this level if
-1. you guess the correct outcome 10 times in a row
+## Coinflip
+Guess the correct outcome 10 times in a row
 
 
 ##### Things that might help
-- Use Remix to write the code and deploy it in the corresponding network See Remix Solidity IDE.
-- Setup a local truffle project to develop and deploy the attack contracts. See Truffle Framework.
+Use Remix to write the code and deploy it in the corresponding network See Remix Solidity IDE.
+Setup a local truffle project to develop and deploy the attack contracts. See Truffle Framework.
 
 #### Understanding the contract
 1. State Variables
@@ -56,8 +56,8 @@ function flip(bool _guess) public returns (bool) {
     - If ``side`` and ``_guess`` are not equivalent, then ``consecutiveWins`` is set to 0 and ``flip`` returns false
 
 #### Solving
-- Solving this contract takes advantage of the fact that the contract uses ``blockNumber`` to create randomness. A second contract can be created that copies the logic from the original contract, making a call to the original contract after a solution is found
-```s
+Solving this contract takes advantage of the fact that the contract uses ``blockNumber`` to create randomness. A second contract can be created that copies the logic from the original contract, making a call to the original contract after a solution is found
+```js
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
@@ -81,10 +81,17 @@ contract CoinFlipExploit {
     }
 }
 ```
-- I compiled this contract with remix and connected my metmask wallet with the injected provider option
-- To check the status after each flip, use the console:
+I compiled this contract with remix and connected my metmask wallet with the injected provider option
+To check the status after each flip, use the console:
 ```js
 await contract.consecutiveWins()
 ```
-- Calling the ``exploit`` function will cause the ``words`` array inside the return object will increment on each flip
-- After 10 flips, hitting submit should complete the challenge
+Calling the ``exploit`` function will cause the ``words`` array inside the return object will increment on each flip
+After 10 flips, hitting submit should complete the challenge
+
+#### Summary
+Generating random numbers in solidity can be tricky. There currently isn't a native way to generate them, and everything you use in smart contracts is publicly visible, including the local variables and state variables marked as private. Miners also have control over things like blockhashes, timestamps, and whether to include certain transactions - which allows them to bias these values in their favor.
+
+To get cryptographically proven random numbers, you can use [Chainlink VRF](https://docs.chain.link/docs/get-a-random-number), which uses an oracle, the LINK token, and an on-chain contract to verify that the number is truly random.
+
+Some other options include using Bitcoin block headers (verified through [BTC Relay](http://btcrelay.org/), [RANDAO](https://github.com/randao/randao), or [Oraclize](http://www.oraclize.it/)).

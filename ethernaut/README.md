@@ -1,5 +1,5 @@
 # [Ethernaut](https://ethernaut.openzeppelin.com/)
-- Solutions for challenges from ethernaut
+Solutions for challenges from ethernaut
 
 #### [Fallback](https://github.com/robinpunn/blockchain-education/tree/main/ethernaut/01-fallback)
 

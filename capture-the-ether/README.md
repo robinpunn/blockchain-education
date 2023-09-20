@@ -2,7 +2,7 @@
 
 ---
 
-#### Capture the Ether using Hardat
+### Capture the Ether using Hardat
 These challenges were originally deployed to the Ropsten testnet which is now deprecated
 However, the challenges can be completed using something like the Remix IDE
 Or we can use devlopment environments like Hardhat or Foundry
@@ -32,7 +32,7 @@ const config: HardhatUserConfig = {
 export default config;
 ```
 
-#### Local Hardhat node
+### Local Hardhat node
 The challenges were completed using a local node
 ```
 npx hardhat node
@@ -45,16 +45,16 @@ npx hardhat test <test file>
 npx hardhat run <script file>
 ```
 
-#### Warmup
-##### [Deploy A Contract](https://capturetheether.com/challenges/warmup/deploy/)
+### Warmup
+#### [Deploy A Contract](https://capturetheether.com/challenges/warmup/deploy/)
 Deploy the contract and call the ``isComplete()`` function
 [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/warmup/deployChallenge.ts)
 
-##### [Call Me](https://capturetheether.com/challenges/warmup/call-me/)
+#### [Call Me](https://capturetheether.com/challenges/warmup/call-me/)
 Deploy the contract and call the ``callMe()`` function
-[Script]
+[Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/warmup/callMeChallenge.ts)
 
-##### [Choose a nickname](https://capturetheether.com/challenges/warmup/nickname/)
+#### [Choose a nickname](https://capturetheether.com/challenges/warmup/nickname/)
 Before setting a nickname, it needs to be encoded
 ```js
 let name = ethers.encodeBytes32String("Robin");
@@ -63,8 +63,8 @@ Accessing the nickname from the mapping and comparing it the name variable shoul
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/warmup/captureTheEther.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/warmup/captureTheEther.ts)
 
 
-#### Lotteries
-##### [Guess the Number](https://capturetheether.com/challenges/lotteries/guess-the-number/)
+### Lotteries
+#### [Guess the Number](https://capturetheether.com/challenges/lotteries/guess-the-number/)
 The number is stored as a variable so we can use it as an argument in the ``guess()`` function
 ```js
 const tx = await contract.guess(42, {
@@ -73,7 +73,7 @@ const tx = await contract.guess(42, {
 ```
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/lotteries/guessTheNumber.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/lotteries/guessTheNumberChallenge.ts)
 
-##### [Guess the Secret Number](https://capturetheether.com/challenges/lotteries/guess-the-secret-number/)
+#### [Guess the Secret Number](https://capturetheether.com/challenges/lotteries/guess-the-secret-number/)
 To solve this challenge, we use the ``uint8`` parameter of ``guess()`` as a hint. ``uint8`` is an unsigned integer with 8 bits. It can hold a maximum value of 255, so we know the answer is between 0 and 255.
 We can use a forloop to find the answer
 ```js
@@ -93,14 +93,14 @@ for (let i = 0; i <= 255; i++) {
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/lotteries/guessTheSecretNumber.ts) &nbsp;
 [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/lotteries/guessTheSecretNumber.ts)
 
-##### [Guess the Random Number](https://capturetheether.com/challenges/lotteries/guess-the-random-number/)
+#### [Guess the Random Number](https://capturetheether.com/challenges/lotteries/guess-the-random-number/)
 In this challenge, the constructor calculates the answer using the blocknumber and timestamp. But the answer is stored as a state variable. We can [access storage variables starting from position 0](https://docs.soliditylang.org/en/v0.6.6/miscellaneous.html#layout-of-state-variables-in-storage)
 ```js
 const answer = await ethers.provider.getStorage(contract.target, 0);
 ```
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/lotteries/guessTheRandomNumber.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/lotteries/guessTheRandomNumber.ts)
 
-##### [Guess the New Number](https://capturetheether.com/challenges/lotteries/guess-the-new-number/)
+#### [Guess the New Number](https://capturetheether.com/challenges/lotteries/guess-the-new-number/)
 To solve this challenge, a second contract can be created that interfaces with the first contract
 ```js
 interface IGuessTheNewNumberChallenge {
@@ -186,8 +186,8 @@ for (let i = 0; i < 257; i++) {
 At this point, the ``settle`` function is called, but the block for our guess is from 256 blocks ago. This ensures that the hash is going to match our guess.
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/lotteries/predictTheBlockHash.ts) &nsbp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/lotteries/predictTheBlockHashChallenge.ts)
 
-#### Math
-##### [Token Sale](https://capturetheether.com/challenges/math/token-sale/)
+### Math
+#### [Token Sale](https://capturetheether.com/challenges/math/token-sale/)
 The goal of this challenge is to extract ether so the remaining balance is less than one. When the contract is deployed, it will be deployed with 1 ether. This challenge involves taking advantage of the fact that older compiler versions don't check for overflow/underflow. We can cause an overflow taking advantage of
 ```js
 uint256 constant PRICE_PER_TOKEN = 1 ether;
@@ -208,7 +208,7 @@ const ethResult =
 ```
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/tokenSale.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/tokenSaleChallenge.ts)
 
-##### [Token Whale](https://capturetheether.com/challenges/math/token-whale/)
+#### [Token Whale](https://capturetheether.com/challenges/math/token-whale/)
 Like the previous challenge, we take advantage of an older compiler version by exploiting overflow/underflow. In this case, we use underflow to acheive to goal of underflow to create a large token amount. The ``transferFrom`` and ``_transfer`` function will be exploited
 ```js
 function _transfer(address to, uint256 value) internal {
@@ -235,7 +235,7 @@ const [player, friend] = accounts.slice(0, 2);
 Deploying the contract will net the player with 1000 tokens. The friend account will approve a transfer of 1000 tokens to the player account. The player account will send 501 tokens to the friend account. Then the player account will ``transferFrom`` the friend account an amount of 500. Because the player account is the ``msg.sender``, the transfer account will subtract 500 from the player account. But because the player sent 501 tokens to the friend account, this will cause an underflow.
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/tokenWhale.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/tokenWhaleChallenge.ts)
 
-##### [Retirement Fund](https://capturetheether.com/challenges/math/retirement-fund/)
+#### [Retirement Fund](https://capturetheether.com/challenges/math/retirement-fund/)
 This challenge requires that the balance of the contract in order to achieve completion. Only the owner can call the ``withdraw()`` function, but the ``collectPenalty()`` function has a line that can be exploited
 ```js
 function collectPenalty() public {
@@ -264,7 +264,7 @@ contract RetirementFundSolver {
 ```
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/retirementFund.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/retirementFundChallenge.ts)
 
-##### [Mapping](https://capturetheether.com/challenges/math/mapping/)
+#### [Mapping](https://capturetheether.com/challenges/math/mapping/)
 This challenge exploits the layout of state variables in storage. As there is no function to change ``isComplete`` to true, we have to manipulate storage to make the change. By exploiting the max storage slot of a dymanic array, we can cause an overflow allowing us to change value of ``isComplete``.
 ```js
 // max uint to overflow array
@@ -276,7 +276,7 @@ await tx.wait();
 ```
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/mapping.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/mappingChallenge.ts)
 
-##### [Donation](https://capturetheether.com/challenges/math/donation/)
+#### [Donation](https://capturetheether.com/challenges/math/donation/)
 Our goal is to become the owner of this contract. This challenge also takes advantage of storage slots in order to exploit the contract. In the ``donation()`` function declares ``Donation`` but it does not specifiy location.
 ```js
 function donate(uint256 etherAmount) public payable {
@@ -306,7 +306,7 @@ Since ``1 ether`` in Solidity is the equivalent of ``10**18``, scale is actually
 
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/donation.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/donationChallenge.ts)
 
-##### [Fifty Years](https://capturetheether.com/challenges/math/fifty-years/)
+#### [Fifty Years](https://capturetheether.com/challenges/math/fifty-years/)
 Like Donation, this challenge will exploit an uninitialized storage pointer. In the ``upsert`` function, the ``storage`` keyword is used in the ``if`` block, but it's left out in the ``else`` block.
 ```js
 function upsert(uint256 index, uint256 timestamp) public payable {
@@ -341,8 +341,8 @@ contract FiftyYearsSolver {
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/math/fiftyYears.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/math/fiftyYearsChallenge.ts)
 
 
-#### Accounts
-##### [Fuzzy Identity](https://capturetheether.com/challenges/accounts/fuzzy-identity/)
+### Accounts
+#### [Fuzzy Identity](https://capturetheether.com/challenges/accounts/fuzzy-identity/)
 The goal for this challenge is to be able to call the ``authenticate`` function
 ```js
 function authenticate() public {
@@ -355,18 +355,18 @@ function authenticate() public {
 Passing the first require statement involves creating a second contract that will return bytes32 "smarx". Passing the second require statement involves using a brute force method of finding a privatekey that generates a wallet address that includes "badcode"
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/accounts/fuzzyIdentity.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/accounts/fuzzyIdentityChallenge.ts)
 
-##### [Public Key](https://capturetheether.com/challenges/accounts/public-key/)
+#### [Public Key](https://capturetheether.com/challenges/accounts/public-key/)
 Completing this challenge requires accessing transaction data from the provided address in the smart contract. The transaction data is on the deprecated Ropsten testnet.
 
-##### [Account Takeover](https://capturetheether.com/challenges/accounts/account-takeover/)
+#### [Account Takeover](https://capturetheether.com/challenges/accounts/account-takeover/)
 Completing this challenge requires accessing transaction data from the provided address in the smart contract. The transaction data is on the deprecated Ropsten testnet.
 
-#### Miscellaneous
-##### [Assume Ownership](https://capturetheether.com/challenges/miscellaneous/assume-ownership/)
+### Miscellaneous
+#### [Assume Ownership](https://capturetheether.com/challenges/miscellaneous/assume-ownership/)
 Since Solidity 0.5, constructors have to be defined with the constructor keyword. In this older version, a constructor is defined by using the contract name as a function. However, in this challenge the constructor is misspelled and the function is public. All that needs to be done is to call the misspelled function and authenticate.
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/miscellaneous/ownership.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/miscellaneous/assumeOwnershipChallenge.ts)
 
-##### [Token Bank](https://capturetheether.com/challenges/miscellaneous/token-bank/)
+#### [Token Bank](https://capturetheether.com/challenges/miscellaneous/token-bank/)
 This challenge involves utilizing a re-entrancy attack. The withdraw function updates the balance after the transfer call which allows the re-entrancy:
 ```js
 function withdraw(uint256 amount) public {
@@ -380,7 +380,7 @@ Using a second contract can exploit this recursively until the challenge is comp
 
 [Test](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/test/miscellaneous/ownership.ts) &nbsp; [Script](https://github.com/robinpunn/blockchain-education/blob/main/capture-the-ether/scripts/miscellaneous/assumeOwnershipChallenge.ts)
 
-#### Resources
+### Resources
 [cmichel](https://cmichel.io/capture-the-ether-solutions/)<br>
 [tomas](https://medium.com/@tomasfrancisco)<br>
 [0xJauancito](https://github.com/0xJuancito/capture-the-ether-solutions)<br>

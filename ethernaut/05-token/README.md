@@ -1,9 +1,9 @@
-#### You will beat this level if
-- The goal of this level is for you to hack the basic token contract below.
-- You are given 20 tokens to start with and you will beat the level if you somehow manage to get your hands on any additional tokens. Preferably a very large amount of tokens.
+## Token
+The goal of this level is for you to hack the basic token contract below.
+You are given 20 tokens to start with and you will beat the level if you somehow manage to get your hands on any additional tokens. Preferably a very large amount of tokens.
 
 ##### Things that might help
-- What is an odometer?
+What is an odometer?
 
 #### Understanding the contract
 1. State Variables
@@ -50,8 +50,23 @@ function balanceOf(address _owner) public view returns (uint balance) {
 - The function checks the balance of the address used as an argument in the ``balances`` mapping and returns its asssociated uint value
 
 #### Solving
-- Solving this challenge involves exploiting overflow/underflow which is possible because of the version ``pragma solidity ^0.6.0;``
-- The older compiler versions before ``0.8.x`` don't have the "Checked Arithmetic" feature... older libraries should use "SafeMath" to prevent overflows and underflows
-- So this line can be exploited: ``require(balances[msg.sender] - _value >= 0);``
+Solving this challenge involves exploiting overflow/underflow which is possible because of the version ``pragma solidity ^0.6.0;``
+The older compiler versions before ``0.8.x`` don't have the "Checked Arithmetic" feature... older libraries should use "SafeMath" to prevent overflows and underflows
+So this line can be exploited: ``require(balances[msg.sender] - _value >= 0);``
     - Using a value greater than ``balances[msg.sender]`` should lead to an underflow instead of a negative value and ``balances[msg.sender] -= _value;`` should create a very large balance
-- Sending an amount of 21 to any address other than our own should complete the challenge: ``await contract.transfer("0x0000000000000000000000000000000000000000", 21)``
+Sending an amount of 21 to any address other than our own should complete the challenge: ``await contract.transfer("0x0000000000000000000000000000000000000000", 21)``
+
+#### Summary
+Overflows are very common in solidity and must be checked for with control statements such as:
+```
+if(a + c > a) {
+  a = a + c;
+}
+```
+
+An easier alternative is to use OpenZeppelin's SafeMath library that automatically checks for overflows in all the mathematical operators. The resulting code looks like this:
+
+```
+a = a.add(c);
+```
+If there is an overflow, the code will revert.

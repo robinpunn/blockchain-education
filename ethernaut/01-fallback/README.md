@@ -1,13 +1,13 @@
-#### You will beat this level if
-1. you claim ownership of the contract
-2. you reduce its balance to 0
+## Fallback
+1. Claim ownership of the contract
+2. Reduce its balance to 0
   
 
 ##### Things that might help
-- How to send ether when interacting with an ABI
-- How to send ether outside of the ABI
-- Converting to and from wei/ether units (see help() command)
-- Fallback methods
+How to send ether when interacting with an ABI
+How to send ether outside of the ABI
+Converting to and from wei/ether units (see help() command)
+Fallback methods
 
 #### Understanding the contract
 1. State variables
@@ -88,29 +88,34 @@ receive() external payable {
 - ``payable`` declarations allow functions and addresses to recieve ether
 
 #### Solving
-- After having understood the contract we can see that there are two ways to become the owner:
+After having understood the contract we can see that there are two ways to become the owner:
     1. We can send more that 1000 ether to the contract
     2. After making a contribution of less that 0.001 ether, we can send additional ether (>0) to the contract to become the owner
 
-- We can follow these steps to accomplish method 2:
+We can follow these steps to accomplish method 2:
     1. ``contribute()`` ether (less than 0.001) so our address is in the contributions mapping
     2. Now, if we send ether to the contract with the ``receive()`` function, our address should become the owner
     3. As the owner, we can use the ``withdraw`` function which should give us the entire balance of the contract
 
-- We can use ``web3`` in the console and it will show us a variety of methods we can use
+We can use ``web3`` in the console and it will show us a variety of methods we can use
     - For this challenge, we can use the ``toWei`` and ``sendTransaction`` methods
-- We can store the amount in a variable:
+We can store the amount in a variable:
 ```js
 const amount = web3.utils.toWei("0.0005", "ether")
 ```
-- We'll use .0005 to meet the <.001 requirements for ``contribute()``
-- Next, we can send ether directly to the contract:
+We'll use .0005 to meet the <.001 requirements for ``contribute()``
+Next, we can send ether directly to the contract:
 ```js
 await contract.sendTransaction({value:amount})
 ```
-- This should now make our address the owner
-- We can check this with:
+This should now make our address the owner
+We can check this with:
 ```js
 await contract.owner()
 ```
-- Our address should be returned confirming we are the owner, and we can now call ``withdraw()``
+Our address should be returned confirming we are the owner, and we can now call ``withdraw()``
+
+#### Summary
+You know the basics of how ether goes in and out of contracts, including the usage of the fallback method.
+
+You've also learnt about OpenZeppelin's Ownable contract, and how it can be used to restrict the usage of some methods to a privileged address.

@@ -1,8 +1,8 @@
-#### You will beat this level if
-- you claim ownership of the contract.
+## Fal1out
+Claim ownership of the contract.
 
 ##### Things that might help
-- Solidity Remix IDE
+Solidity Remix IDE
 
 #### Understanding the contract
 1. Libraries
@@ -85,13 +85,28 @@ function allocatorBalance(address allocator) public view returns (uint) {
     - When called, the function will show the balance of the address that was used as the input of this function using the allocations mapping
 
 #### Solving
-- We only need to gain ownership of the contract in order to pass this level
-- Analyzing all of the functions, none of them have the ability to change ownership except for the "contructor"
-- When we analyze ``Fal1out``, we see that it is a constructor prototype
+We only need to gain ownership of the contract in order to pass this level
+Analyzing all of the functions, none of them have the ability to change ownership except for the "contructor"
+When we analyze ``Fal1out``, we see that it is a constructor prototype
     - A traditional constructor function is only executed once when the contract is deployed
     - However, ``Fal1out`` is set to public, and it appears as though it can be called multiple times after deployment
-- All we need to do is to call ``Fal1out``
+All we need to do is to call ``Fal1out``
 ```solidity
 await contract.Fal1out()
 ```
-- We should now be the owner of the contract... calling ``owner()`` should return our address
+We should now be the owner of the contract... calling ``owner()`` should return our address
+
+#### Summary
+That was silly wasn't it? Real world contracts must be much more secure than this and so must it be much harder to hack them right?
+
+Well... Not quite.
+
+The story of Rubixi is a very well known case in the Ethereum ecosystem. The company changed its name from 'Dynamic Pyramid' to 'Rubixi' but somehow they didn't rename the constructor method of its contract:
+```js
+contract Rubixi {
+  address private owner;
+  function DynamicPyramid() { owner = msg.sender; }
+  function collectAllFees() { owner.transfer(this.balance) }
+  ...
+```
+This allowed the attacker to call the old constructor and claim ownership of the contract, and steal some funds. Yep. Big mistakes can be made in smartcontractland.
