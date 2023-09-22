@@ -49,6 +49,10 @@
 	16. [Immutable and Constant](#immutable--constant)
 	17. [Custom Errors](#custom-errors)
 	18. [Receive and Fallback Function](#receive-and-fallback-function)
+5. [Lessong 5: AI Prompting and Forums](#lesson-5-ai-prompting-and-forums)
+	1. [7 Tips for this course](#7-tips-for-this-course)
+	2. [Formatting a Question](#formatting-a-question)
+	3. [Speedrun Ethereum](#speedrunethereum)
 ---
 
 ### [Lesson 1: Blockchain Basics](https://www.youtube.com/watch?v=umepbfKp5rI&t=834s)
@@ -657,3 +661,30 @@ modifier onlyOwner() {
 		- Whenever we call a function, we're populating the calldata of the transaction with data that points to the function
 - [Fallback](https://solidity-by-example.org/fallback)
 	- Similar to the receive function, but it works even if data is sent with the transaction
+
+### [Lesson 5: AI Prompting and Forums](https://www.youtube.com/watch?v=umepbfKp5rI&t=21600s)
+#### 7 Tips for this Course
+- [Original Video](https://www.youtube.com/watch?v=IS5dAkFSo_Y)
+- Tinker
+	- Try to pinpoint you error
+- Ask your AI
+	- Works best if you have pinpointed your error
+	1. Write clear and specific instructions
+	2. Give as much context as possible
+	3. Use delimiters to clearly indicate distinct parts of the input
+	4. Look out for hallucinations
+- Read docs
+- Web search
+- Ask in a forum
+	- peeranah.io
+	- stack exchange
+- Ask on the support forum or github
+- Iterate
+
+#### Formatting a question
+- [markdown](https://www.markdownguide.org/basic-syntax/)
+- It's a good idea to ask your AI buddy to format your questions in markdown
+
+#### SpeedRunEthereum
+- A good next step after this course
+- [Challenges](https://speedrunethereum.com/)
