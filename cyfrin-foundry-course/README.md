@@ -53,6 +53,30 @@
 	1. [7 Tips for this course](#7-tips-for-this-course)
 	2. [Formatting a Question](#formatting-a-question)
 	3. [Speedrun Ethereum](#speedrunethereum)
+6. [Lesson 6: Foundry Simple Storage](#lesson-6-foundry-simple-storage)
+	1. [Introduction](#introduction-2)
+	2. [Installation and Setup](#installation--setup)
+	3. [Local Development Introduction](#local-development-introduction)
+	4. [Foundry Install](#foundry-install)
+	5. [VSCode Setup II](#vscode-setup-ii)
+	6. [Foundry Setup](#foundry-setup)
+	7. [Formatting Solidity in VSCode](#formatting-solidity-in-vscode)
+	8. [Compiling in Foundry](#compiling-in-foundry)
+	9. [Compiling in Foundry](#compiling-in-foundry)
+	10. [Deploying to a local chain (Anvil or Ganache)](#deploying-to-a-local-chain-anvil-or-ganache)
+	11. [Adding Another Network on Metamask](#adding-another-network-on-metamask)
+	12. [Deploying to a local chain (Forge Create)](#deploying-to-a-local-chain-forge-create)
+	13. [Deploying to a local chain (Forge Script)](#deploying-to-a-local-chain-forge-script)
+	14. [What is a transaction?](#what-is-a-transaction)
+	15. [Private Keys](#private-keys)
+	16. [ThirdWeb Deploy](#thirdweb-deploy)
+	17. [Private Key Summary](#private-key-summary)
+	18. [Cast Send](#cast-send)
+	19. [Deploying to a testnet or mainnet](#deploying-to-a-testnet-or-mainnet)
+	20. [Verifying a contract the manual way](#verifying-a-contract-the-manual-way)
+	21. [Cleaning up the Project](#cleaning-up-the-project)
+	22. [Alchemy and the mempool](#alchemy-and-the-mempool)
+	23. [Summary](#summary)
 ---
 
 ### [Lesson 1: Blockchain Basics](https://www.youtube.com/watch?v=umepbfKp5rI&t=834s)
@@ -688,3 +712,603 @@ modifier onlyOwner() {
 #### SpeedRunEthereum
 - A good next step after this course
 - [Challenges](https://speedrunethereum.com/)
+
+### [Lesson 6: Foundry Simple Storage](https://www.youtube.com/watch?v=umepbfKp5rI&t=22979s)
+#### Introduction
+- [Foundry](https://book.getfoundry.sh/)
+	- A smart contract development framework
+	- Known specifically for its speed, the fastest to work with
+	- Foundry is completely solidity based as opposed to hardhat being js based and brownie being python based
+#### Installation & Setup
+- [Visual Studio Code](https://code.visualstudio.com/)
+    - [Crash Course](https://www.youtube.com/watch?v=WPqXP_kLzpo)
+- [VSCode Keybindings](https://code.visualstudio.com/docs/getstarted/keybindings)
+- [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- [What is a terminal?](https://code.visualstudio.com/docs/editor/integrated-terminal)
+
+##### Windows Setup (WSL)
+- Special Guest [Vasiliy](https://twitter.com/cromewar)
+- [WSL](https://docs.microsoft.com/en-us/windows/wsl/install)
+    - When working in WSL, use Linux commands instead of Windows commands
+- [TroubleShooting](https://docs.microsoft.com/en-us/windows/wsl/troubleshooting)
+- `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash`
+
+> ⚠️ Please use Gitpod as an absolute last resort
+>
+##### Gitpod
+- [Gitpod](https://www.gitpod.io/)
+    - **If using this, NEVER share a private key with real money on Gitpod**
+    - Ideally you figure out the MacOS, Linux, or Windows install though
+#### Local Development Introduction
+- `CMD + K` or `CTRL + K` clears the terminal
+- `code .` to open VSCode in a new VSCode window
+#### Foundry Install
+- [https://getfoundry.sh](https://getfoundry.sh/)
+	- ``curl -L https://foundry.paradigm.xyz | bash``
+	- ``source /c/Users/User/.bashrc``
+	- ``foundryup``
+- Foundry comes with 4 components
+	- forge
+	- cast
+	- anvil
+	- chisel
+#### VSCode Setup II
+- CoPilot
+- Copilot labs
+- Hardhat Solidity Extension
+- VSCodium
+	- open source version of VScode
+- Create project directory
+	- `mkdir foundry-f23`
+	- `cd foundry-f23`
+	- `mkdir foundry-simple-storage-f23`
+#### Foundry Setup
+- [Freecodecamp Bash](https://www.freecodecamp.org/news/bash-scripting-tutorial-linux-shell-script-and-command-line-for-beginners/)
+- [Foundry Docs Creating a new project](https://book.getfoundry.sh/projects/creating-a-new-project)
+	- $ forge init hello_foundry
+#### Formatting Solidity in VSCode
+- Format your solidity code with in your `settings.json`
+```json
+"[solidity]": {
+	"editor.defaultFormatter": "NomicFoundation.hardhat-solidity"
+},
+"[javascript]":{
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
+}
+```
+#### Compiling in Foundry
+- ``forge build`` or ``forge compile``
+#### Deploying to a local chain (Anvil or Ganache)
+- ``anvil``
+	- creates a local blockchain node similar to ``hardhat node``
+- [Ganache](https://trufflesuite.com/ganache/)
+	- A "on click blockchain" that provides a user interface
+#### Adding Another Network on Metamask
+- [ETH JSON RPC](https://ethereum.github.io/execution-apis/api-documentation/)
+	- Network name: Localhost
+	- New RPC URL: http://127.0.0.1/8545
+	- ChainID: 31337
+#### Deploying to a local chain (Forge Create)
+- ``forge --help``
+```
+Build, test, fuzz, debug and deploy Solidity contracts.
+
+Usage: forge.exe <COMMAND>
+
+Commands:
+  bind               Generate Rust bindings for smart contracts
+  build              Build the project's smart contracts [aliases: b, compile]
+  cache              Manage the Foundry cache
+  clean              Remove the build artifacts and cache directories [aliases: cl]
+  completions        Generate shell completions script [aliases: com]
+  config             Display the current config [aliases: co]
+  coverage           Generate coverage reports
+  create             Deploy a smart contract [aliases: c]
+  debug              Debugs a single smart contract as a script [aliases: d]
+  doc                Generate documentation for the project
+  flatten            Flatten a source file and all of its imports into one file [aliases: f]
+  fmt                Format Solidity source files
+  geiger             Detects usage of unsafe cheat codes in a project and its dependencies
+  generate           Generate scaffold files
+  generate-fig-spec  Generate Fig autocompletion spec [aliases: fig]
+  help               Print this message or the help of the given subcommand(s)
+  init               Create a new Forge project
+  inspect            Get specialized information about a smart contract [aliases: in]
+  install            Install one or multiple dependencies [aliases: i]
+  remappings         Get the automatically inferred remappings for the project [aliases: re]
+  remove             Remove one or multiple dependencies [aliases: rm]
+  script             Run a smart contract as a script, building transactions that can be sent onchain
+  selectors          Function selector utilities [aliases: se]
+  snapshot           Create a snapshot of each test's gas usage [aliases: s]
+  test               Run the project's tests [aliases: t]
+  tree               Display a tree visualization of the project's dependency graph [aliases: tr]
+  update             Update one or multiple dependencies [aliases: u]
+  upload-selectors   Uploads abi of given contract to the https://api.openchain.xyz function selector database [aliases: up]
+  verify-check       Check verification status on Etherscan [aliases: vc]
+  verify-contract    Verify smart contracts on Etherscan [aliases: v]
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+```
+
+- ``forge create ContractName --interactive``
+	- deploy a contract and a private key will be requested
+- ``forge create ContractName --private-key PRIVATEKEY``
+	- deploy a contract with a private key
+	- This is not the best option as we never want to have our private key in plain text
+	- use ``history -c`` to clear bash history
+- ``forge create ContractName --rpc-url URL --private-key PRIVATE KEY``
+	- a more explicit way to deploy
+#### Deploying to a local chain (Forge Script)
+- Foundry allows us to write a script in Solidity in order to deploy
+	- Foundry has a lot built in to give Solidity more functionality outside of just smart contracts
+- ``ContractName.s.sol``
+	- We use the .s convention when naming our deploy contract/script?
+- ``import {Script} from "forge-std/Script.sol";``
+	- We need to use this import statement and then apply it to our contract
+	- ``contract SimpleStorageScript is Script {}``
+- [Cheatcodes](https://book.getfoundry.sh/forge/cheatcodes)
+	- The vm keyword is a special keyword we can only use in Foundry
+	- You can access cheatcodes easily via the `vm` instance
+```js
+function run() external returns(SimpleStorage) {
+	vm.startBroadcast();
+	SimpleStorage simpleStorage = new SimpleStorage();
+	vm.stopBroadcast();
+	return simpleStorage;
+}
+```
+- The code between these two commands is what we actually send and deploy (transactions)
+- ``forge script /script/ContractName.s.sol``
+	- Deploys the script with the file we created
+	- If we don't specify an RPC, it will run the script on a temporary anvil chain
+- ``forge script /script/ContractName.s.sol --rpc-url URL``
+	- While anvil is running, this command simulates deployment
+- ``forge script /script/ContractName.s.sol --rpc-url UR --broadcast --private-key PRIVATE KEY``
+	- Deploys to to local node running with anvil
+#### What is a transaction?
+- transaction data from "./broadcast/ContractName/dry-run/"
+```json
+ "transaction": {
+        "type": "0x02",
+        "from": "0x1804c8ab1f12e6bbf3894d4083f33e07309d1f38",
+        "gas": "0xb5c8a",
+        "value": "0x0",
+        "data": "0x6000805460ff1916905560101960025560c0604052600960809081526839b2bb32b73a32b2b760b91b60a05260039061003890826101a9565b50600480546001600160a01b031916733c44cdddb6a900fa2b585dd299e03d12fa4293bc1790556218d85d60ea1b60055560408051808201825260118152815180830190925260038252622937b160e91b60208381019190915281018290528051600b9081559091600c906100ad90826101a9565b505060408051808201825260118152815180830190925260038252622137b960e91b60208381019190915281018290528051600d90815590925090600e906100f590826101a9565b50505034801561010457600080fd5b50610268565b634e487b7160e01b600052604160045260246000fd5b600181811c9082168061013457607f821691505b60208210810361015457634e487b7160e01b600052602260045260246000fd5b50919050565b601f8211156101a457600081815260208120601f850160051c810160208610156101815750805b601f850160051c820191505b818110156101a05782815560010161018d565b5050505b505050565b81516001600160401b038111156101c2576101c261010a565b6101d6816101d08454610120565b8461015a565b602080601f83116001811461020b57600084156101f35750858301515b600019600386901b1c1916600185901b1785556101a0565b600085815260208120601f198616915b8281101561023a5788860151825594840194600190910190840161021b565b50858210156102585787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b6105f6806102776000396000f3fe608060405234801561001057600080fd5b50600436106100885760003560e01c80636f760f411161005b5780636f760f41146100e6578063b11cdb3a146100f9578063c164682714610102578063e853a1c21461012d57600080fd5b806319e96ec61461008d5780632e64cec1146100ac5780632ebce631146100be5780636057361d146100d1575b600080fd5b610095610135565b6040516100a39291906102e3565b60405180910390f35b6001545b6040519081526020016100a3565b6100956100cc36600461031d565b6101cc565b6100e46100df36600461031d565b600155565b005b6100e46100f43660046103d9565b610201565b6100b060025481565b6100b061011036600461041e565b8051602081830181018051600a8252928201919093012091525481565b6100956102ab565b600b8054600c80549192916101499061045b565b80601f01602080910402602001604051908101604052809291908181526020018280546101759061045b565b80156101c25780601f10610197576101008083540402835291602001916101c2565b820191906000526020600020905b8154815290600101906020018083116101a557829003601f168201915b5050505050905082565b600981815481106101dc57600080fd5b600091825260209091206002909102018054600182018054919350906101499061045b565b604080518082019091528181526020810183815260098054600181018255600091909152825160029091027f6e1540171b6c0c960b71a7020d9f60077f6af931a8bbf590da0223dacf75c7af8101918255915190917f6e1540171b6c0c960b71a7020d9f60077f6af931a8bbf590da0223dacf75c7b0019061028390826104e4565b50505080600a8360405161029791906105a4565b908152604051908190036020019020555050565b600d8054600e80549192916101499061045b565b60005b838110156102da5781810151838201526020016102c2565b50506000910152565b82815260406020820152600082518060408401526103088160608501602087016102bf565b601f01601f1916919091016060019392505050565b60006020828403121561032f57600080fd5b5035919050565b634e487b7160e01b600052604160045260246000fd5b600082601f83011261035d57600080fd5b813567ffffffffffffffff8082111561037857610378610336565b604051601f8301601f19908116603f011681019082821181831017156103a0576103a0610336565b816040528381528660208588010111156103b957600080fd5b836020870160208301376000602085830101528094505050505092915050565b600080604083850312156103ec57600080fd5b823567ffffffffffffffff81111561040357600080fd5b61040f8582860161034c565b95602094909401359450505050565b60006020828403121561043057600080fd5b813567ffffffffffffffff81111561044757600080fd5b6104538482850161034c565b949350505050565b600181811c9082168061046f57607f821691505b60208210810361048f57634e487b7160e01b600052602260045260246000fd5b50919050565b601f8211156104df57600081815260208120601f850160051c810160208610156104bc5750805b601f850160051c820191505b818110156104db578281556001016104c8565b5050505b505050565b815167ffffffffffffffff8111156104fe576104fe610336565b6105128161050c845461045b565b84610495565b602080601f831160018114610547576000841561052f5750858301515b600019600386901b1c1916600185901b1785556104db565b600085815260208120601f198616915b8281101561057657888601518255948401946001909101908401610557565b50858210156105945787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b600082516105b68184602087016102bf565b919091019291505056fea2646970667358221220b36d7516bd2e81c318a8ad665aad931e6d330cdd7ca5094e5bb5e0ce93413b4764736f6c63430008150033",
+        "nonce": "0x2",
+        "accessList": []
+      },
+```
+- Any time state is changed on the blockchain, it does it in a transaction
+	- The differentiator is whatever is in the ``data`` field
+	- The data field contains the opcodes
+- ``cast`` is a built in foundry command
+	- ``cast --to-base 0x714c2 dec // 464066``
+- ``cast --help``
+```
+Perform Ethereum RPC calls from the comfort of your command line
+
+Usage: cast.exe <COMMAND>
+
+Commands:
+  4byte                  Get the function signatures for the given
+                             selector from https://openchain.xyz [aliases:
+                             4, 4b]
+  4byte-decode           Decode ABI-encoded calldata using
+                             https://openchain.xyz [aliases: 4d, 4bd]
+  4byte-event            Get the event signature for a given topic 0
+                             from https://openchain.xyz [aliases: 4e, 4be]
+  abi-decode             Decode ABI-encoded input or output data
+                             [aliases: ad, --abi-decode]
+  abi-encode             ABI encode the given function argument,
+                             excluding the selector [aliases: ae]
+  access-list            Create an access list for a transaction
+                             [aliases: ac, acl]
+  address-zero           Prints the zero address [aliases:
+                             --address-zero, az]
+  admin                  Fetch the EIP-1967 admin account [aliases:
+                             adm]
+  age                    Get the timestamp of a block [aliases: a]
+  balance                Get the balance of an account in wei [aliases:
+                             b]
+  base-fee               Get the basefee of a block [aliases: ba, fee,
+                             basefee]
+  bind                   Generate a rust binding from a given ABI
+                             [aliases: bi]
+  block                  Get information about a block [aliases: bl]
+  block-number           Get the latest block number [aliases: bn]
+  call                   Perform a call on an account without
+                             publishing a transaction [aliases: c]
+  calldata               ABI-encode a function with arguments [aliases:
+                             cd]
+  calldata-decode        Decode ABI-encoded input data [aliases:
+                             --calldata-decode, cdd]
+  chain                  Get the symbolic name of the current chain
+  chain-id               Get the Ethereum chain ID [aliases: ci, cid]
+  client                 Get the current client version [aliases: cl]
+  code                   Get the runtime bytecode of a contract
+                             [aliases: co]
+  codesize               Get the runtime bytecode size of a contract
+                             [aliases: cs]
+  completions            Generate shell completions script [aliases:
+                             com]
+  compute-address        Compute the contract address from a given
+                             nonce and deployer address [aliases: ca]
+  concat-hex             Concatenate hex strings [aliases:
+                             --concat-hex, ch]
+  create2                Generate a deterministic contract address
+                             using CREATE2 [aliases: c2]
+  decode-transaction     Decodes a raw signed EIP 2718 typed
+                             transaction [aliases: dt]
+  disassemble            Disassembles hex encoded bytecode into
+                             individual / human readable opcodes [aliases:
+                             da]
+  estimate               Estimate the gas cost of a transaction
+                             [aliases: e]
+  etherscan-source       Get the source code of a contract from
+                             Etherscan [aliases: et, src]
+  find-block             Get the block number closest to the provided
+                             timestamp [aliases: f]
+  format-bytes32-string  Formats a string into bytes32 encoding
+                             [aliases: --format-bytes32-string]
+  from-bin               "Convert binary data into hex data." [aliases:
+                             --from-bin, from-binx, fb]
+  from-fixed-point       Convert a fixed point number into an integer
+                             [aliases: --from-fix, ff]
+  from-rlp               Decodes RLP encoded data [aliases: --from-rlp]
+  from-utf8              Convert UTF8 text to hex [aliases:
+                             --from-ascii, --from-utf8, from-ascii, fu, fa]
+  from-wei               Convert wei into an ETH amount [aliases:
+                             --from-wei, fw]
+  gas-price              Get the current gas price [aliases: g]
+  generate-fig-spec      Generate Fig autocompletion spec [aliases:
+                             fig]
+  hash-zero              Prints the zero hash [aliases: --hash-zero,
+                             hz]
+  help                   Print this message or the help of the given
+                             subcommand(s)
+  implementation         Fetch the EIP-1967 implementation account
+                             [aliases: impl]
+  index                  Compute the storage slot for an entry in a
+                             mapping [aliases: in]
+  interface              Generate a Solidity interface from a given ABI
+                             [aliases: i]
+  keccak                 Hash arbitrary data using Keccak-256 [aliases:
+                             k]
+  logs                   Get logs by signature or topic [aliases: l]
+  lookup-address         Perform an ENS reverse lookup [aliases: la]
+  max-int                Prints the maximum value of the given integer
+                             type [aliases: --max-int, maxi]
+  max-uint               Prints the maximum value of the given integer
+                             type [aliases: --max-uint, maxu]
+  min-int                Prints the minimum value of the given integer
+                             type [aliases: --min-int, mini]
+  namehash               Calculate the ENS namehash of a name [aliases:
+                             na, nh]
+  nonce                  Get the nonce for an account [aliases: n]
+  parse-bytes32-address  Parses a checksummed address from bytes32
+                             encoding. [aliases: --parse-bytes32-address]
+  parse-bytes32-string   Parses a string from bytes32 encoding
+                             [aliases: --parse-bytes32-string]
+  pretty-calldata        Pretty print calldata [aliases: pc]
+  proof                  Generate a storage proof for a given storage
+                             slot [aliases: pr]
+  publish                Publish a raw transaction to the network
+                             [aliases: p]
+  receipt                Get the transaction receipt for a transaction
+                             [aliases: re]
+  resolve-name           Perform an ENS lookup [aliases: rn]
+  rpc                    Perform a raw JSON-RPC request [aliases: rp]
+  run                    Runs a published transaction in a local
+                             environment and prints the trace [aliases: r]
+  send                   Sign and publish a transaction [aliases: s]
+  shl                    Perform a left shifting operation
+  shr                    Perform a right shifting operation
+  sig                    Get the selector for a function [aliases: si]
+  sig-event              Generate event signatures from event string
+                             [aliases: se]
+  storage                Get the raw value of a contract's storage slot
+                             [aliases: st]
+  to-ascii               Convert hex data to an ASCII string [aliases:
+                             --to-ascii, tas, 2as]
+  to-base                Converts a number of one base to another
+                             [aliases: --to-base, --to-radix, to-radix, tr,
+                             2r]
+  to-bytes32             Right-pads hex data to 32 bytes [aliases:
+                             --to-bytes32, tb, 2b]
+  to-check-sum-address   Convert an address to a checksummed format
+                             (EIP-55) [aliases: --to-checksum-address,
+                             --to-checksum, to-checksum, ta, 2a]
+  to-dec                 Converts a number of one base to decimal
+                             [aliases: --to-dec, td, 2d]
+  to-fixed-point         Convert an integer into a fixed point number
+                             [aliases: --to-fix, tf, 2f]
+  to-hex                 Converts a number of one base to another
+                             [aliases: --to-hex, th, 2h]
+  to-hexdata             Normalize the input to lowercase, 0x-prefixed
+                             hex [aliases: --to-hexdata, thd, 2hd]
+  to-int256              Convert a number to a hex-encoded int256
+                             [aliases: --to-int256, ti, 2i]
+  to-rlp                 RLP encodes hex data, or an array of hex data
+                             [aliases: --to-rlp]
+  to-uint256             Convert a number to a hex-encoded uint256
+                             [aliases: --to-uint256, tu, 2u]
+  to-unit                Convert an ETH amount into another unit
+                             (ether, gwei or wei) [aliases: --to-unit, tun,
+                             2un]
+  to-wei                 Convert an ETH amount to wei [aliases:
+                             --to-wei, tw, 2w]
+  tx                     Get information about a transaction [aliases:
+                             t]
+  upload-signature       Upload the given signatures to
+                             https://openchain.xyz [aliases: ups]
+  wallet                 Wallet management utilities [aliases: w]
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+
+Find more information in the book:
+http://book.getfoundry.sh/reference/cast/cast.html
+```
+#### Private Keys
+- .env
+	- This shouldn't be done for production? testing only
+	- we can add private key and rpc url in our env file
+	- ``source .env`` will add the environment variables into our shell
+	- ``echo $VARIABLE_NAME`` will display on the console
+- For the moment a `$PRIVATE_KEY` in the `.env` is okay as long as the `.env` isn't exposed
+	- For production, use `--interactive`
+	- A keystore file with a password is a good option when it becomes available
+	- [dapptools - Ethsign](https://github.com/dapphub/dapptools/blob/master/src/ethsign/README.md)
+#### ThirdWeb Deploy
+- [nodejs install](https://nodejs.org/en/download)
+- [npm install](https://nodejs.org/en/download)
+- [thirdweb](https://thirdweb.com/)
+	- ``npx thirdweb deploy``
+	- Uploads contract data to ipfs, and it automatically gets verified
+#### Private Key Summary
+```
+Summary:
+When you look to deploy
+with real money, you should use either:
+1. A password encrypted keystore
+2. Something like thirdweb deploy
+
+The idea is you never want to have
+your private key or password
+ANYWHERE written in plain text
+(Aka, you always want it encrypted)
+```
+#### Cast Send
+```
+$ cast send --help
+Sign and publish a transaction
+
+Usage: cast.exe send [OPTIONS] [TO] [SIG] [ARGS]... [COMMAND]
+
+Commands:
+  --create  Use to deploy raw contract bytecode
+  help      Print this message or the help of the given subcommand(s)
+
+Arguments:
+  [TO]
+          The destination of the transaction.
+
+          If not provided, you must use cast send --create.
+
+  [SIG]
+          The signature of the function to call
+
+  [ARGS]...
+          The arguments of the function to call
+
+Options:
+      --async
+          Only print the transaction hash and exit immediately
+
+          [env: CAST_ASYNC=]
+
+      --confirmations <CONFIRMATIONS>
+          The number of confirmations until the receipt is fetched
+
+          [default: 1]
+
+      --resend
+          Reuse the latest nonce for the sender account
+
+      --unlocked
+          Send via `eth_sendTransaction using the `--from` argument or
+          $ETH_FROM as sender
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+Display options:
+  -j, --json
+          Print the transaction receipt as JSON
+
+Transaction options:
+      --gas-limit <GAS_LIMIT>
+          Gas limit for the transaction
+
+          [env: ETH_GAS_LIMIT=]
+
+      --gas-price <PRICE>
+          Gas price for legacy transactions, or max fee per gas for EIP1559
+          transactions
+
+          [env: ETH_GAS_PRICE=]
+
+      --priority-gas-price <PRICE>
+          Max priority fee per gas for EIP1559 transactions
+
+          [env: ETH_PRIORITY_GAS_PRICE=]
+
+      --value <VALUE>
+          Ether to send in the transaction, either specified in wei, or as
+          a string with a unit type.
+
+          Examples: 1ether, 10gwei, 0.01ether
+
+      --nonce <NONCE>
+          Nonce for the transaction
+
+      --legacy
+          Send a legacy transaction instead of an EIP1559 transaction.
+
+          This is automatically enabled for common networks without
+          EIP1559.
+
+Ethereum options:
+  -r, --rpc-url <URL>
+          The RPC endpoint
+
+          [env: ETH_RPC_URL=]
+
+      --flashbots
+          Use the Flashbots RPC URL (https://rpc.flashbots.net)
+
+      --jwt-secret <JWT_SECRET>
+          JWT Secret for the RPC endpoint.
+
+          The JWT secret will be used to create a JWT for a RPC. For
+          example, the following can be used to simulate a CL
+          `engine_forkchoiceUpdated` call:
+
+          cast rpc --jwt-secret <JWT_SECRET> engine_forkchoiceUpdatedV2
+          '["0x6bb38c26db65749ab6e472080a3d20a2f35776494e72016d1e339593f21c
+59bc",
+          "0x6bb38c26db65749ab6e472080a3d20a2f35776494e72016d1e339593f21c59
+bc",
+          "0x6bb38c26db65749ab6e472080a3d20a2f35776494e72016d1e339593f21c59
+bc"]'
+
+          [env: ETH_RPC_JWT_SECRET=]
+
+  -e, --etherscan-api-key <KEY>
+          The Etherscan (or equivalent) API key
+
+          [env: ETHERSCAN_API_KEY=]
+
+  -c, --chain <CHAIN>
+          The chain name or EIP-155 chain ID
+
+          [env: CHAIN=]
+
+Wallet options - raw:
+  -f, --from <ADDRESS>
+          The sender account
+
+          [env: ETH_FROM=]
+
+  -i, --interactive
+          Open an interactive prompt to enter your private key
+
+      --private-key <RAW_PRIVATE_KEY>
+          Use the provided private key
+
+      --mnemonic <MNEMONIC>
+          Use the mnemonic phrase of mnemonic file at the specified path
+
+      --mnemonic-passphrase <PASSPHRASE>
+          Use a BIP39 passphrase for the mnemonic
+
+      --mnemonic-derivation-path <PATH>
+          The wallet derivation path.
+
+          Works with both --mnemonic-path and hardware wallets.
+
+      --mnemonic-index <INDEX>
+          Use the private key from the given mnemonic index.
+
+          Used with --mnemonic-path.
+
+          [default: 0]
+
+Wallet options - keystore:
+      --keystore <PATH>
+          Use the keystore in the given folder or file
+
+          [env: ETH_KEYSTORE=]
+
+      --account <ACCOUNT_NAME>
+          Use a keystore from the default keystores folder
+          (~/.foundry/keystores) by its filename
+
+          [env: ETH_KEYSTORE_ACCOUNT=]
+
+      --password <PASSWORD>
+          The keystore password.
+
+          Used with --keystore.
+
+      --password-file <PASSWORD_FILE>
+          The keystore password file path.
+
+          Used with --keystore.
+
+          [env: ETH_PASSWORD=]
+
+Wallet options - hardware wallet:
+  -l, --ledger
+          Use a Ledger hardware wallet
+
+  -t, --trezor
+          Use a Trezor hardware wallet
+
+Wallet options - AWS KMS:
+      --aws
+          Use AWS Key Management Service
+```
+
+- Sending a tx cast
+	- ``$ cast send CONTRACT ADDRESS "fn(type)" arg --rpc-url $RPC_URL --private-key $PRIVATE_KEY``
+- Calling with cast
+	- ``cast call CONTRACT ADDRESS "fn()"  --rpc- url $RPC_URL --private-key $PRIVATE_KEY``
+	- values are returned in hex so we can use ``cast --to-base HEXVALUE dec``
+
+#### Deploying to a testnet or mainnet
+- update .env
+	- Add actual private key from metamask
+	- add rpc url from one of the providers below
+- [Alchemy](https://alchemy.com/?a=673c802981)
+	- ``$ forge script script/FILENAME.s.sol --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast``
+- Other node as a service:
+    - [Quicknode](https://www.quicknode.com/endpoints)
+    - [Infura](https://www.infura.io/)
+
+#### Verifying a contract the manual way
+- [Example verified contract](https://sepolia.etherscan.io/address/0xe2e9f468eb7f063aa01670bb4bce4119fb6e4b65#code)
+- Etherscan
+	- We can manually verify a contract using etherscan
+	- We fill in the blanks and paste our code
+	- We now have access to read and write functions we can interact with metamask
+
+#### Cleaning up the Project
+- `forge fmt`
+	- command that automatically formats all our solidity code
+- `README.md`
+	- Information about your project
+
+#### Alchemy and the mempool
+- [Alchemy](https://alchemy.com/?a=673c802981)
+	- Whenever we send a transaction to a blockchain, it enters a mempool
+	- The mempool is where transactions go before they get sent
+
+#### Summary
+- create a new foundry project: ``forge --init``
+- forge
+	- used for interacting with and compiling contracts
+- cast
+	- used for interacting with contracts that have already been deployed
+- anvil
+	- used to deploy a local blockchain
+- sending a transaction with metamask is sending an http post request to an rpc url
+- we can take an rpc url from somewhere like alchemy and use it in our foundry projects
+- we can compile our code in foundry and write a script in solidity to deploy our contracts
+- we can use a ``.env`` file, but we may not want to store private keys there
+- ``cast call`` to interact with deployed contracts
+- ``forge fmt`` to autoformat code
+- we can verify contracts manually
