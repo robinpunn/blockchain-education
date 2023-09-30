@@ -1,82 +1,147 @@
 # [Foundry Full Course](https://github.com/Cyfrin/foundry-full-course-f23) 
 
 ---
+
 ### Table of Contents
-1. [Lessson 1: Blockchain Basics](#lesson-1-blockchain-basics)
-    1. [What is a blockchain?](#what-is-a-blockchain)
-    2. [The Purpose of Smart Contracts](#the-purpose-of-smart-contracts)
-    3. [Other Blockchain Benefits](#other-blockchain-benefits)
-    4. [What have Smart Contracts done so far?](#what-have-smart-contracts-done-so-far)
-    5. [Gas 1: Introduction to Gas](#gas-1-introduction-to-gas)
-    6. [How do Blockchains work?](#how-do-blockchains-work)
-    7. [Signing Transactions](#signing-transactions)
-    8. [Gas II](#gas-ii)
-    9. [Gass II Summary](#gas-ii-summary)
-    10. [High Level Blockchain Fundamentals](#high-level-blockchain-fundamentals)
-2. [Lesson 2: Welcome to Remix](#lesson-2-welcome-to-remix)
-	1. [Introduction](#introduction)
-	2. [Setting Up Your First Contract](#setting-up-your-first-contract)
-	3. [Basic Solidity: Types](#basic-solidity-types)
-	4. [Basic Solidity: Functions](#basic-solidity-functions)
-	5. [Basic Solidity: Structs and Arrays](#basic-solidity-structs-and-arrays)
-	6. [Basic Solidity: Compiler Errors and Warnings](#basic-solidity-compiler-errors-and-warnings)
-	7. [Memory, Storage, Calldata](#memory-storage-calldata)
-	8. [Basic Solidity: Mappings](#basic-solidity-mappings)
-	9. [Deploying Your First Smart Contract](#deploying-your-first-smart-contract)
-	10. [The EVM and Recap](#the-evm-and-recap)
-3. [Lesson 3: Storage Factory](#lesson-3-storage-factory)
-	1. [Introduction](#introduction)
-	2. [Importing Contracts into Other Contracts](#basic-solidity-importing-contracts-into-other-contracts)
-	3. [Interacting with other Contracts](#basic-solidity-interacting-with-other-contracts)
-	4. [Inheritance and Overrides](#basic-solidity-inheritance-and-overrides)
-	5. [Summary](#summary)
-4. [Lesson 4: Remix Fund Me](#lesson-4-remix-fund-me)
-	1. [Sending Eth through a function](#sending-eth-through-a-function)
-	2. [Getting real world price data (Chainlink)](#getting-real-world-price-data-chainlink)
-	3. [Interfaces](#interfaces)
-	4. [Importing from NPM/GitHub](#importing-from-npm--github)
-	5. [Getting Prices from Chainlink](#getting-prices-from-chainlink)
-	6. [More Solidity Math](#more-solidity-math)
-	7. [msg.sender](#msgsender)
-	8. [Library](#library)
-	9. [SafeMath](#safemath)
-	10. [For Loop](#for-loop)
-	11. [Resetting an Array](#resetting-an-array)
-	12. [Transfer, Send, and Call](#transfer-send-and-call)
-	13. [Constructor](#constructor)
-	14. [Modifiers](#modifiers)
-	15. [Testnet Demo](#testnet-demo)
-	16. [Immutable and Constant](#immutable--constant)
-	17. [Custom Errors](#custom-errors)
-	18. [Receive and Fallback Function](#receive-and-fallback-function)
-5. [Lessong 5: AI Prompting and Forums](#lesson-5-ai-prompting-and-forums)
-	1. [7 Tips for this course](#7-tips-for-this-course)
-	2. [Formatting a Question](#formatting-a-question)
-	3. [Speedrun Ethereum](#speedrunethereum)
-6. [Lesson 6: Foundry Simple Storage](#lesson-6-foundry-simple-storage)
-	1. [Introduction](#introduction-2)
-	2. [Installation and Setup](#installation--setup)
-	3. [Local Development Introduction](#local-development-introduction)
-	4. [Foundry Install](#foundry-install)
-	5. [VSCode Setup II](#vscode-setup-ii)
-	6. [Foundry Setup](#foundry-setup)
-	7. [Formatting Solidity in VSCode](#formatting-solidity-in-vscode)
-	8. [Compiling in Foundry](#compiling-in-foundry)
-	9. [Compiling in Foundry](#compiling-in-foundry)
-	10. [Deploying to a local chain (Anvil or Ganache)](#deploying-to-a-local-chain-anvil-or-ganache)
-	11. [Adding Another Network on Metamask](#adding-another-network-on-metamask)
-	12. [Deploying to a local chain (Forge Create)](#deploying-to-a-local-chain-forge-create)
-	13. [Deploying to a local chain (Forge Script)](#deploying-to-a-local-chain-forge-script)
-	14. [What is a transaction?](#what-is-a-transaction)
-	15. [Private Keys](#private-keys)
-	16. [ThirdWeb Deploy](#thirdweb-deploy)
-	17. [Private Key Summary](#private-key-summary)
-	18. [Cast Send](#cast-send)
-	19. [Deploying to a testnet or mainnet](#deploying-to-a-testnet-or-mainnet)
-	20. [Verifying a contract the manual way](#verifying-a-contract-the-manual-way)
-	21. [Cleaning up the Project](#cleaning-up-the-project)
-	22. [Alchemy and the mempool](#alchemy-and-the-mempool)
-	23. [Summary](#summary)
+
+<details>
+
+<summary> Lesson 1: Blockchain Basics </summary>
+
+1. [What is a blockchain?](#what-is-a-blockchain)
+2. [The Purpose of Smart Contracts](#the-purpose-of-smart-contracts)
+3. [Other Blockchain Benefits](#other-blockchain-benefits)
+4. [What have Smart Contracts done so far?](#what-have-smart-contracts-done-so-far)
+5. [Gas 1: Introduction to Gas](#gas-1-introduction-to-gas)
+6. [How do Blockchains work?](#how-do-blockchains-work)
+7. [Signing Transactions](#signing-transactions)
+8. [Gas II](#gas-ii)
+9. [Gass II Summary](#gas-ii-summary)
+10. [High Level Blockchain Fundamentals](#high-level-blockchain-fundamentals)
+
+</details>
+
+<details>
+
+<summary> Lesson 2: Welcome to Remix </summary>
+
+1. [Introduction](#introduction)
+2. [Setting Up Your First Contract](#setting-up-your-first-contract)
+3. [Basic Solidity: Types](#basic-solidity-types)
+4. [Basic Solidity: Functions](#basic-solidity-functions)
+5. [Basic Solidity: Structs and Arrays](#basic-solidity-structs-and-arrays)
+6. [Basic Solidity: Compiler Errors and Warnings](#basic-solidity-compiler-errors-and-warnings)
+7. [Memory, Storage, Calldata](#memory-storage-calldata)
+8. [Basic Solidity: Mappings](#basic-solidity-mappings)
+9. [Deploying Your First Smart Contract](#deploying-your-first-smart-contract)
+10. [The EVM and Recap](#the-evm-and-recap)
+
+</details>
+
+<details>
+
+<summary> Lesson 3: Storage Factory </summary>
+
+1. [Introduction](#introduction)
+2. [Importing Contracts into Other Contracts](#basic-solidity-importing-contracts-into-other-contracts)
+3. [Interacting with other Contracts](#basic-solidity-interacting-with-other-contracts)
+4. [Inheritance and Overrides](#basic-solidity-inheritance-and-overrides)
+5. [Summary](#summary)
+</details>
+
+<details>
+
+<summary> Lesson 4: Remix Fund Me </summary>
+
+1. [Sending Eth through a function](#sending-eth-through-a-function)
+2. [Getting real world price data (Chainlink)](#getting-real-world-price-data-chainlink)
+3. [Interfaces](#interfaces)
+4. [Importing from NPM/GitHub](#importing-from-npm--github)
+5. [Getting Prices from Chainlink](#getting-prices-from-chainlink)
+6. [More Solidity Math](#more-solidity-math)
+7. [msg.sender](#msgsender)
+8. [Library](#library)
+9. [SafeMath](#safemath)
+10. [For Loop](#for-loop)
+11. [Resetting an Array](#resetting-an-array)
+12. [Transfer, Send, and Call](#transfer-send-and-call)
+13. [Constructor](#constructor)
+14. [Modifiers](#modifiers)
+15. [Testnet Demo](#testnet-demo)
+16. [Immutable and Constant](#immutable--constant)
+17. [Custom Errors](#custom-errors)
+18. [Receive and Fallback Function](#receive-and-fallback-function)
+
+</details>
+
+<details>
+
+<summary> Lessong 5: AI Prompting and Forums </summary>
+
+1. [7 Tips for this course](#7-tips-for-this-course)
+2. [Formatting a Question](#formatting-a-question)
+3. [Speedrun Ethereum](#speedrunethereum)
+
+</details>
+
+<details>
+
+<summary> Lesson 6: Foundry Simple Storage </summary>
+
+1. [Introduction](#introduction-2)
+2. [Installation and Setup](#installation--setup)
+3. [Local Development Introduction](#local-development-introduction)
+4. [Foundry Install](#foundry-install)
+5. [VSCode Setup II](#vscode-setup-ii)
+6. [Foundry Setup](#foundry-setup)
+7. [Formatting Solidity in VSCode](#formatting-solidity-in-vscode)
+8. [Compiling in Foundry](#compiling-in-foundry)
+9. [Compiling in Foundry](#compiling-in-foundry)
+10. [Deploying to a local chain (Anvil or Ganache)](#deploying-to-a-local-chain-anvil-or-ganache)
+11. [Adding Another Network on Metamask](#adding-another-network-on-metamask)
+12. [Deploying to a local chain (Forge Create)](#deploying-to-a-local-chain-forge-create)
+13. [Deploying to a local chain (Forge Script)](#deploying-to-a-local-chain-forge-script)
+14. [What is a transaction?](#what-is-a-transaction)
+15. [Private Keys](#private-keys)
+16. [ThirdWeb Deploy](#thirdweb-deploy)
+17. [Private Key Summary](#private-key-summary)
+18. [Cast Send](#cast-send)
+19. [Deploying to a testnet or mainnet](#deploying-to-a-testnet-or-mainnet)
+20. [Verifying a contract the manual way](#verifying-a-contract-the-manual-way)
+21. [Cleaning up the Project](#cleaning-up-the-project)
+22. [Alchemy and the mempool](#alchemy-and-the-mempool)
+23. [Summary](#summary)
+
+</details>
+
+<details>
+
+<summary> Lesson 7: Foundry Fund Me </summary>
+
+1. [Setup](#setup)
+2. [Testing Introduction](#testing-introduction)
+3. [Setup Continued](#setup-continued)
+4. [Tests](#tests)
+5. [Debugging Tests I](#debugging-tests-i)
+6. [Advanced Deploy Script I](#advanced-deploy-script-i)
+7. [Forked Test](#forked-tests)
+8. [Refactoring I Testing Deploy Scripts](#refactoring-i-testing-deploy-scripts)
+9. [Refactoring II Helper Config](#refactoring-ii-helper-config)
+10. [Refactoring III Mocks](#refactoring-iii-mocks)
+11. [Magic Numbers](#magic-numbers)
+12. [Refactoring III Mocking](#refactoring-iii-mocking)
+13. [More Cheatcodes](#more-cheatcodes)
+14. [More Coverage](#more-coverage)
+15. [Chisel](#chisel)
+16. [Cheaper Withdraw](#cheaper-withdraw)
+17. [Storage](#storage)
+18. [Cheaper Withdraw II](#cheaper-withdraw-ii)
+19. [Interactions.s.sol](#interactionsssol)
+20. [Makefile](#makefile)
+21. [Push to GitHub](#push-to-github)
+
+</details>
+
 ---
 
 ### [Lesson 1: Blockchain Basics](https://www.youtube.com/watch?v=umepbfKp5rI&t=834s)
@@ -1312,3 +1377,427 @@ Wallet options - AWS KMS:
 - ``cast call`` to interact with deployed contracts
 - ``forge fmt`` to autoformat code
 - we can verify contracts manually
+
+
+### [Lesson 7: Foundry Fund Me](https://www.youtube.com/watch?v=sas02qSFZ74&t=0s)
+#### Setup
+- ``forge init``
+	- Initiates a foundry project
+- ``forge init --no-git``
+	- I had to use this command, as forge init kept giving me an error
+
+#### Testing Introduction
+- ``forge test``
+	- If we have test files in the test directory, this will run the tests
+
+#### Setup Continued
+- [Chainlink Brownie Contracts Github Repo](https://github.com/smartcontractkit/chainlink-brownie-contracts)
+    `` forge install smartcontractkit/chainlink-brownie-contracts@0.6.1 --no-commit``
+- [Dependencies](https://book.getfoundry.sh/projects/dependencies)
+- [remappings](https://book.getfoundry.sh/reference/forge/forge-remappings)
+	- In our ``foundry.toml`` file in the root directory we add:
+		- ``remappings = ["@chainlink/contracts/=lib/chainlink-brownie-contracts/contracts/"]``
+	- That should allow us to use this import:
+		- ``import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";``
+- [Chainlink Brownie Contracts](https://github.com/smartcontractkit/chainlink-brownie-contracts)
+
+#### Tests
+- [foundry tests](https://book.getfoundry.sh/forge/writing-tests)
+	- With foundry, we can write tests in Solidity
+- ``import {Test} from "forge-std/Test.sol";``
+```js
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.6.2 <0.9.0;
+
+pragma experimental ABIEncoderV2;
+
+// 💬 ABOUT
+// Forge Std's default Test.
+// 🧩 MODULES
+import {console} from "./console.sol";
+import {console2} from "./console2.sol";
+import {safeconsole} from "./safeconsole.sol";
+import {StdAssertions} from "./StdAssertions.sol";
+import {StdChains} from "./StdChains.sol";
+import {StdCheats} from "./StdCheats.sol";
+import {stdError} from "./StdError.sol";
+import {StdInvariant} from "./StdInvariant.sol";
+import {stdJson} from "./StdJson.sol";
+import {stdMath} from "./StdMath.sol";
+import {StdStorage, stdStorage} from "./StdStorage.sol";
+import {StdStyle} from "./StdStyle.sol";
+import {StdUtils} from "./StdUtils.sol";
+import {Vm} from "./Vm.sol";
+
+// 📦 BOILERPLATE
+import {TestBase} from "./Base.sol";
+import {DSTest} from "ds-test/test.sol";
+
+// ⭐️ TEST
+abstract contract Test is TestBase, DSTest, StdAssertions, StdChains, StdCheats, StdInvariant, StdUtils {
+
+// Note: IS_TEST() must return true.
+// Note: Must have failure system, https://github.com/dapphub/ds-test/blob/cd98eff28324bfac652e63a239a60632a761790b/src/test.sol#L39-L76.
+}
+```
+- ``function setUp() external {}``
+	- The ``setUp`` function always runs first
+- [console.log](https://book.getfoundry.sh/reference/forge-std/console-log?highlight=con#console-logging)
+	- ``import {Test, console} from "forge-std/Test.sol";``
+	- ``forge test -vv``, the amount of `v` is for the amount of variables logged??
+```js
+contract FundMeTest is Test {
+    FundMe fundMe;
+
+    function setUp() external {
+        fundMe = new FundMe();
+    }
+
+    function testMinimumDollarIsFive() public {
+        console.log(fundMe.MINIMUM_USD());
+        assertEq(fundMe.MINIMUM_USD(), 6e18);
+    }
+}
+```
+
+
+#### Debugging Tests I
+- Use ``console.log`` to debug
+```js
+function testOwnerIsMsgSender() public {
+        console.log(fundMe.i_owner());
+        console.log(msg.sender);
+        assertEq(fundMe.i_owner(), address(this));
+    }
+```
+
+
+#### Advanced Deploy Script I
+- Import ``Script`` to deploy
+```js
+import {Script} from "forge-std/Script.sol";
+import {FundMe} from "../src/FundMe.sol";
+
+contract DeployFundMe is Script {
+    function run() external {
+        vm.startBroadcast();
+        new FundMe();
+        vm.stopBroadcast();
+    }
+}
+```
+
+
+#### Forked Tests
+- The test option `-m` regex is deprecated. Please use `--match-test` or `--mt` instead.
+- ``forge test -m testPriceFeedVersionIsAccurate -vvv`` is depreciated. Please use
+- ``forge test --match-test testPriceFeedVersionIsAccurate -vvv``
+- 4 types of testing:
+	1. Unit:
+		- Testing a specific part of our code
+		- Testing a single function
+	2. Integration:
+		- Testing multiple functions
+		- Testing how our code works with other parts of our code
+	3. Forked:
+		- Testing on a forked network
+		- Testing our code on a simulated real enviornment
+	1. Staging:
+		- Testing on a live network (testnet or mainnet)
+		- Testing our code in a real environment that isn't production
+
+- [forking in foundry](https://book.getfoundry.sh/forge/fork-testing?highlight=fork#forking-cheatcodes)
+	- after adding rpc url to ``.env``, run ``source env``
+	- ``forge test --match-test testPriceFeedIsAccurate -vvv --fork-url $SEPOLIA_RPC_URL``
+- [forge coverage](https://book.getfoundry.sh/reference/forge/forge-coverage?highlight=cover#description)
+	- ``forge coverage --fork-url $SEPOLIA_RPC_URL``
+	- shows how much of our code is actually tested
+
+#### Refactoring I: Testing Deploy Scripts
+- Refactoring
+	- Refactoring is when we change the architecture of our code without changing the functionality
+- Instead of having to refactor each file, look for ways to share logic
+```js
+import {FundMe} from "../src/FundMe.sol";
+import {DeployFundMe} from "../script/DeployFundMe.s.sol";
+
+function setUp() external {
+	// fundMe = new FundMe(0x694AA1769357215DE4FAC081bf1f309aDC325306);
+	DeployFundMe deployFundMe = new DeployFundMe();
+	fundMe = deployFundMe.run();
+}
+```
+
+#### Refactoring II: Helper Config
+- RPC URL
+	- Ideally, we don't want to make too many calls to our RPC URL... we want to test locally for as long as possible
+- Mock contract
+	- On our local anvil, we can deploy a "fake"/mock contract and interact with that for our tests
+- [block.chainid](https://docs.soliditylang.org/en/v0.8.19/units-and-global-variables.html)
+	- A solidity global variable
+	- refers to the chain's current id
+- [Chain ID List](https://chainlist.org/)
+    - 11155111 is ETH Sepolia
+    - 1 is ETH Mainnet
+- Anything before ``vm.StartBroadcast()`` is not sent as a real transaction
+
+#### Refactoring III: Mocks
+- [Mocking](https://stackoverflow.com/questions/2665812/what-is-mocking)
+	- We have to deploy mock contracts ourselves on anvil
+	- A mock contract is a dummy contract
+- [Chainlink Github](https://github.com/smartcontractkit/chainlink)
+- Multiple Versions of Solidity
+
+#### Magic Numbers
+- [Style Guide](https://docs.soliditylang.org/en/v0.8.17/style-guide.html)
+- [Magic Numbers](https://codeburst.io/software-anti-patterns-magic-numbers-7bc484f40544)
+	- A _magic number_ is a number in the code that seems arbitrary and has no context or meaning. This is considered an anti-pattern because it makes code difficult to understand and maintain.
+	- A solution is to turn these "magic numbers" into constant variables
+
+#### Refactoring III: Mocking
+```js
+if(activeNetworkConfig.priceFeed != address(0)) {
+	return activeNetworkConfig;
+}
+```
+- If we've already deployed a price feed, this check will prevent us from deploying a new one
+	- ``address(0)`` is the "zero address" which is what the value would be if we haven't deployed the price feed contract
+- ``getOrCreateAnvilEthConfig()``
+	- Try to be verbose when naming to make code more readable
+
+#### More Cheatcodes
+- [foundry cheatcodes](https://book.getfoundry.sh/forge/cheatcodes)
+- [forge std cheats](https://book.getfoundry.sh/reference/forge-std/)
+    - [vm.expectRevert](https://book.getfoundry.sh/cheatcodes/expect-revert?highlight=expectRevert#expectrevert)
+	    - for tests, this indicates that the next line should revert
+    - [vm.prank](https://book.getfoundry.sh/cheatcodes/prank?highlight=prank#prank)
+	    - Sometimes it can be difficult to know who is sending transactions in a test environment
+	    - sets the msg.sender for the specified address for the next call
+    - [makeAddr](https://book.getfoundry.sh/reference/forge-std/make-addr?highlight=makeAddr#makeaddr)
+	    - Creates an address derived from the provided `name`.
+	    - comes from forge/std as opposed to the vm
+	    - ``address USER = makeAddr("user");``
+    - [deal](https://book.getfoundry.sh/cheatcodes/deal?highlight=deal#deal)
+	    - allows us to set the balance of a new address
+- Storage variables
+	- a naming convention for storage variables is ``s_`` prefix
+- Private variables
+	- It's best practice to use private variables because they're more gas efficient
+	- Use external view functions to get the values of the private variables
+
+#### More Coverage
+- modifier
+	- allows use to fund an account with a modifier rather than using the code in the function every time
+```js
+modifier funded() {
+   vm.prank(USER);
+   fundMe.fund{value: SEND_VALUE}();
+   _;
+}
+```
+- [State tree testing](https://twitter.com/PaulRBerg/status/1624763320539525121?s=20)
+- Arrange, Act, Assert
+	- A pattern to have in mind when working with tests
+	- First we arrange the test
+	- Then we perform the action associated with the test
+	- Finally, we assert the test
+- [hoax](https://book.getfoundry.sh/reference/forge-std/hoax?highlight=hoax#hoax)
+	- Sets up an address with some ether
+- uint160 -> address
+	- As of solidity 0.8, you can no longer cast explicitly from ``address`` to uint256
+	- We can use uint160, because it has the same amount of bytes as an address??
+- [vm.startPrank](https://book.getfoundry.sh/cheatcodes/start-prank?highlight=startPrank#startprank)
+	- Similar to start/stop broadcast, anything in between is going to be sent with the address used for startPrank
+
+#### Chisel
+- [Chisel](https://book.getfoundry.sh/reference/chisel/?highlight=chisel#chisel)
+	- Chisel is a Solidity REPL (short for "read-eval-print loop") that allows developers to write and test Solidity code snippets. It provides an interactive environment for writing and executing Solidity code, as well as a set of built-in commands for working with and debugging your code. This makes it a useful tool for quickly testing and experimenting with Solidity code without having to spin up a sandbox foundry test suite.
+- ``chisel``... ``!help``
+```
+General
+        !help | !h - Display all commands
+        !quit | !q - Quit Chisel
+        !exec <command> [args] | !e <command> [args] - Execute a shell command and print the output
+
+Session
+        !clear | !c - Clear current session source
+        !source | !so - Display the source code of the current session
+        !save [id] | !s [id] - Save the current session to cache
+        !load <id> | !l <id> - Load a previous session ID from cache
+        !list | !ls - List all cached sessions
+        !clearcache | !cc - Clear the chisel cache of all stored sessions
+        !export | !ex - Export the current session source to a script file
+        !fetch <addr> <name> | !fe <addr> <name> - Fetch the interface of a verified contract on Etherscan
+        !edit - Open the current session in an editor
+
+Environment
+        !fork <url> | !f <url> - Fork an RPC for the current session. Supply 0 arguments to return to a local network
+        !traces | !t - Enable / disable traces for the current session
+        !calldata [data] | !cd [data] - Set calldata (`msg.data`) for the current session (appended after function selector). Clears it if no argument provided.
+
+Debug
+        !memdump | !md - Dump the raw memory of the current state
+        !stackdump | !sd - Dump the raw stack of the current state
+        !rawstack <var> | !rs <var> - Display the raw value of a variable's stack allocation. For variables that are > 32 bytes in length, this will display their
+ memory pointer.
+ ```
+#### Cheaper WIthdraw
+- Every transaction in chain requires gas
+	- The more computationally expensive a transaction, the more gas we have to spend
+- [Gas Reporter](https://book.getfoundry.sh/forge/gas-reports)
+- `forge snapshot`
+	- creates a gas snapshot file
+	- tells us how much a test we run will cost in gas
+	- ``FundMeTest:testWithdrawFromMultipleFunders() (gas: 516683)``
+- `vm.txGasPrice`
+- `gasLeft()`
+	- A built in function from Solidity
+	- Tells us how much gas is left in our transaction call
+- `tx.getprice`
+	- When working with anvil, gas price defaults to 0
+	- We have to tell our test to pretend to use a real gas price
+	- ``tx.gasprice`` sets the gas price for the rest of the transaction
+- checking gas with foundry
+```js
+uint256 gasStart = gasleft();
+vm.txGasPrice(GAS_PRICE);
+uint256 gasEnd = gasleft();
+
+uint256 gasUsed = (gasStart - gasEnd) * tx.gasprice;
+console.log(gasUsed);
+```
+
+#### Storage
+- [Storage Layout](https://docs.soliditylang.org/en/latest/internals/layout_in_storage.html)
+	- Variables persist because they get saved to storage
+	- Each storage slot is 32 bytes long, and represents the bytes version of an object
+		- For example the uint256 25 is 0x000...0019 since that's the hex representation
+		- For a "true" boolean, it would be 0x000... 001
+	- For dynamic values like mappings and dynamic arrays, the elements are stored using a hashing function
+		- For arrays, a sequential storage spots is taken up for the length of the array
+		- For mappings, a sequential storage spots is taken up but left blank
+	- Constant variables and immutable variables do not take up spots in storage
+		- They are considered part of the core of the bytecode
+	- Variables inside functions only exist for the duration of the function
+- ``forge inspect``
+	- We can run ``forge inspect ContractName storageLayout`` to see the storage layout of the contract
+- ``cast storage``
+	- Another command to check storage
+	- ``cast storage <CONTRACT ADDRESS> <storage slot>`` to check a specific storage slot
+- [Purpose of the memory keyword](https://stackoverflow.com/questions/33839154/in-ethereum-solidity-what-is-the-purpose-of-the-memory-keyword)
+- [Opcodes](https://ethereum.org/en/developers/docs/evm/opcodes/)
+	- Bytecode is converted to opcodes
+	- Low level computer assembly instructions that are actually executing
+- [Opcodes by Gas](https://github.com/crytic/evm-opcodes)
+	- reading and saving to storage ``SSLOAD`` and ``SSTORE`` cost 100 gas
+	- loading and storing from memory ``MLOAD`` and ``MSTORE`` costs 3 gas
+- [Opcodes by Gas](https://evm.codes/)
+- Append `s_` to storage variables
+- Append `i_` to immutable variables
+- Caps lock and underscore constant variables
+- [Chainlink Solidity Style Guide](https://github.com/smartcontractkit/full-blockchain-solidity-course-js/issues/13)
+- private variables
+	- They are not hidden. The blockchain is public and private variables can be accessed from storage slots
+
+#### Cheaper Withdraw II
+- Reading and writing from storage is an expensive operation
+- [evm.codes](https://www.evm.codes/)
+- [Style Guide](https://docs.soliditylang.org/en/latest/style-guide.html)
+    - [Chainlink Style Guide](https://github.com/smartcontractkit/chainlink/blob/develop/contracts/STYLE.md)
+- [NatSpec](https://docs.soliditylang.org/en/latest/natspec-format.html)
+
+#### Interactions.s.sol
+- [foundry devops](https://github.com/Cyfrin/foundry-devops)
+	- ``forge install Cyfrin/foundry-devops --no-git``
+- [Best README Template](https://github.com/othneildrew/Best-README-Template)
+- [ffi](https://book.getfoundry.sh/cheatcodes/ffi?highlight=ffi#ffi)
+	- in ``foundry.toml`` set ``ffi = true``
+	- allows us to run bash scripts from foundry
+	- more often than not, this should be off
+- ``get_most_recent_deployment``
+	- get the most recently deployed version of a contract
+	- ``DevOpsTools.get_most_recent_deployment(contractName, chainId);``
+- Integration tests
+	- Test interactions and combinations of systems
+
+#### Makefile
+- Makefiles allow us to create shortcuts for commands we use often
+	- ``-include .env``
+	- ``build:; forge build``
+		- The semicolon allows us to write the prompt on the same line
+	- run the commands with make: ``make build``
+
+```
+deploy-sepolia:
+    forge script script/DeployFundMe.s.sol:DeployFundMe --rpc-url $(SEPOLIA_RPC_URL) --private-key $(PRIVATE_KEY) --broadcast --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv
+```
+
+- [Install make](https://stackoverflow.com/questions/39892692/how-to-implement-make-install-in-a-makefile)
+- [Install make Ubuntu](https://linuxhint.com/install-use-make-ubuntu/).
+- [Etherscan API Key](https://docs.etherscan.io/getting-started/viewing-api-usage-statistics)
+
+```
+-include .env
+
+.PHONY: all test clean deploy fund help install snapshot format anvil
+
+DEFAULT_ANVIL_KEY := 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+
+help:
+	@echo "Usage:"
+	@echo "  make deploy [ARGS=...]\n    example: make deploy ARGS=\"--network sepolia\""
+	@echo ""
+	@echo "  make fund [ARGS=...]\n    example: make deploy ARGS=\"--network sepolia\""
+
+all: clean remove install update build
+
+# Clean the repo
+clean  :; forge clean
+
+# Remove modules
+remove :; rm -rf .gitmodules && rm -rf .git/modules/* && rm -rf lib && touch .gitmodules && git add . && git commit -m "modules"
+
+install :; forge install cyfrin/foundry-devops@0.0.11 --no-commit && forge install smartcontractkit/chainlink-brownie-contracts@0.6.1 --no-commit && forge install foundry-rs/forge-std@v1.5.3 --no-commit
+
+# Update Dependencies
+update:; forge update
+
+build:; forge build
+
+test :; forge test
+
+snapshot :; forge snapshot
+
+format :; forge fmt
+
+anvil :; anvil -m 'test test test test test test test test test test test junk' --steps-tracing --block-time 1
+
+NETWORK_ARGS := --rpc-url http://localhost:8545 --private-key $(DEFAULT_ANVIL_KEY) --broadcast
+
+ifeq ($(findstring --network sepolia,$(ARGS)),--network sepolia)
+	NETWORK_ARGS := --rpc-url $(SEPOLIA_RPC_URL) --private-key $(PRIVATE_KEY) --broadcast --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv
+endif
+
+deploy:
+	@forge script script/DeployFundMe.s.sol:DeployFundMe $(NETWORK_ARGS)
+
+fund:
+	@forge script script/Interactions.s.sol:FundFundMe $(NETWORK_ARGS)
+
+withdraw:
+	@forge script script/Interactions.s.sol:WithdrawFundMe $(NETWORK_ARGS)
+```
+- ``cast send``
+	- Instead of using scripts, we can also use ``cast send``
+
+#### Push to GitHub
+- Add these to your `.gitignore`
+    - `.env`
+    - `lib/`
+    - `broadcast/`
+- [Git Docs](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- [GitHub docs](https://docs.github.com/en)
+- [Github Quickstart](https://docs.github.com/en/get-started/quickstart)
+- [What is Git?](https://www.git-scm.com/book/en/v2/Getting-Started-What-is-Git%3F)
+- [The quickstart that we follow in the video](https://docs.github.com/en/get-started/importing-your-projects-to-github/importing-source-code-to-github/adding-locally-hosted-code-to-github#adding-a-local-repository-to-github-using-git)
+- [Learn about git and GitHub](https://www.youtube.com/watch?v=RGOj5yH7evk)
