@@ -142,6 +142,15 @@
 
 </details>
 
+<details>
+
+<summary> Lesson 8: HTML Fund Me </summary>
+
+1. [How Metamask works](#how-metamask-works-with-your-browser)
+2. [Introduction to function selectors](#introduction-to-function-selectors)
+
+</details>
+
 ---
 
 ### [Lesson 1: Blockchain Basics](https://www.youtube.com/watch?v=umepbfKp5rI&t=834s)
@@ -1380,6 +1389,7 @@ Wallet options - AWS KMS:
 
 
 ### [Lesson 7: Foundry Fund Me](https://www.youtube.com/watch?v=sas02qSFZ74&t=0s)
+
 #### Setup
 - ``forge init``
 	- Initiates a foundry project
@@ -1801,3 +1811,18 @@ withdraw:
 - [What is Git?](https://www.git-scm.com/book/en/v2/Getting-Started-What-is-Git%3F)
 - [The quickstart that we follow in the video](https://docs.github.com/en/get-started/importing-your-projects-to-github/importing-source-code-to-github/adding-locally-hosted-code-to-github#adding-a-local-repository-to-github-using-git)
 - [Learn about git and GitHub](https://www.youtube.com/watch?v=RGOj5yH7evk)
+
+
+### [Lesson 8 HTML Fund Me](https://www.youtube.com/watch?v=sas02qSFZ74&t=9422s)
+#### How Metamask works with your browser
+- [Metamask Docs](https://docs.metamask.io/)
+	- Metamask injects "ethereum" into the browser
+	- Metamask has an rpc-url that makes api calls
+- [Ethers Docs](https://docs.ethers.org/v5/)
+	- Metamask uses ethers
+
+#### Introduction to Function Selectors
+
+- [Function selector](https://ethereum.stackexchange.com/questions/49996/what-is-the-function-selector-of-the-fallback-function?rq=1)
+	- All the functions in a smart contract get transformed into function selectors
+- [cast sig](https://book.getfoundry.sh/reference/cast/cast-sig?highlight=sig#cast-sig)
