@@ -151,6 +151,47 @@
 
 </details>
 
+<details>
+
+<summary> Lesson 9: Foundry Smart Contract Lottery </summary>
+
+1. [Raffle.sol Setup](#rafflesol-setup)
+2. [Solidity Contract Layout](#solidity-contract-layout)
+3. [Custom Errors](#custom-errors)
+4. [Events](#events)
+5. [block.timestamp](#blocktimestamp)
+6. [Chainlink VRF](#chainlink-vrf)
+7. [Implementing Chainlink VRG](#implementing-chainlink-vrg)
+8. [Chainlink Summary](#chainlink-summary)
+9. [Modulo](#modulo)
+10. [Enum](#enum)
+11. [Resetting an Array](#resetting-an-array)
+12. [CEI (Checks, Effects, Interactions)](#cei-checks-effects-interactions)
+13. [Chainlink Automation](#chainlink-automation)
+14. [Test and Deploy Script Setup](#test-and-deploy-script-setup)
+15. [VRF Mocks](#vrf-mocks)
+16. [Tests and Deploy Scripts Continued](#tests-and-deploy-scripts-continued)
+17. [Lots of Tests](#lots-of-tests)
+18. [Testing Events in Foundry](#testing-events-in-foundry)
+19. [`vm.roll`and `vm.warp`](#vmroll-and-vmwarp)
+20. [Create Subscription Script](#create-subscription-script)
+21. [Create Subscription from the UI](#create-subscription-from-the-ui)
+22. [Fund Subscription Script](#fund-subscription-script)
+23. [Add Consumer Script](#add-consumer-script)
+24. [CheckUpkeep Tests](#checkupkeep-tests)
+25. [PerformUpkeep Tests](#performupkeep-tests)
+26. [Getting Event Data Into Foundry Scripts](#getting-event-data-into-foundry-scripts)
+27. [Intro to Fuzz Tess](#intro-to-fuzz-tests)
+28. [One Big Test](#one-big-test)
+29. [Passing the private key to vm.startBroadcast](#passing-the-private-key-to-vmstartbroadcast)
+30. [Integrations Test](#integrations-test)
+31. [Testnet Demo Makefile Setup](#testnet-demo-makefile-setup)
+32. [Testnet Demo](#testnet-demo)
+33. [`console.log` debugging](#consolelog-debugging)
+34. [`forge test --debug`](#forge-test---debug)
+
+</details>
+
 ---
 
 ### [Lesson 1: Blockchain Basics](https://www.youtube.com/watch?v=umepbfKp5rI&t=834s)
@@ -1826,3 +1867,732 @@ withdraw:
 - [Function selector](https://ethereum.stackexchange.com/questions/49996/what-is-the-function-selector-of-the-fallback-function?rq=1)
 	- All the functions in a smart contract get transformed into function selectors
 - [cast sig](https://book.getfoundry.sh/reference/cast/cast-sig?highlight=sig#cast-sig)
+
+
+### [Lesson 9 Foundry Smart Contract Lottery](https://www.youtube.com/watch?v=sas02qSFZ74&t=11049s)
+#### Raffle.sol Setup
+- Natspec
+```
+/**
+ * @title A sample raffle contract
+ * @author Robin Punnose
+ * @notice this contract is made for creating a sample raffle
+ * @dev Implements Chainlink VRFv2
+*/
+```
+
+#### Solidity Contract Layout
+- [Layout](https://docs.soliditylang.org/en/latest/layout-of-source-files.html)
+```
+// Layout of Contract:
+// version
+// imports
+// errors
+// interfaces, libraries, contracts
+// Type declarations
+// State variables
+// Events
+// Modifiers
+// Functions
+
+// Layout of Functions:
+// constructor
+// receive function (if exists)
+// fallback function (if exists)
+// external
+// public
+// internal
+// private
+// internal & private view & pure functions
+// external & public view & pure functions
+```
+
+
+#### Custom Errors
+- Custom errors
+	- solidity v0.8.4 added custom errors
+	- Instead of using require, we use an if statement with a revert
+	- custom errors are more gas efficient
+	- ``require`` is important to know because it's used a lot, but we should always use if with revert for gas efficiency
+- Naming
+	- Best practice to use the name of the contract followed by two underscores
+	- ``error Raffle___NotEnoughEthSent();``
+
+#### Events
+- As a rule of thumb whenever we make a storage update/ change state, we should emit an event
+- The EVM can emit logs
+	- When things happen on a blockchain, the EVM writes these things to a specific data structure called its log
+	- Logs and events are often used synonymously
+- Events allow us to "print" to the log structure
+	- This is more gas efficient than storing to a variable
+- Logs aren't accessible to smart contracts
+- Events are tied to the smart contract that emitted the event
+- [Graph](https://thegraph.com/) listens to and stores event data
+```js
+event StoredNumer(
+	uint256 indexed oldNumber,
+	uint256 indexed newNumber,
+	uint256 addedNumber,
+	address sender
+)
+```
+- An event can have up to three ``indexed`` parameters (known as topics)
+	- Indexed parameters are much easier to search for
+- Events need to be emitted
+```js
+emit StoredNumber(
+	favoriteNumber,
+	_favoriteNumber,
+	_favoriteNumber + favoriteNumber,
+	msg.sender
+)
+```
+- A an event found in the logs will have the following information:
+	- The address the event is emitted from
+	- The topics (indexed parameters) of the event
+	- Data includes the abi encoded non indexed parameters of the event
+		- The non indexed parameters are grouped together and placed in an encoding algorithm
+- Non indexed parameters cost less gas but they are harder to query
+
+#### block.timestamp
+- a global variable
+	- Each block contains a unix timestamp
+- [manipulation](https://solidity-by-example.org/hacks/block-timestamp-manipulation/)
+
+#### Chainlink VRF
+- Using VRF is funding a subscription
+	- An account that allows use to fund and maintain a balance for multiple contracts
+	- A bucket that all our contracts can pull from
+- [docs](https://docs.chain.link/)
+	- [random number](https://docs.chain.link/vrf/v2/subscription/examples/get-a-random-number)
+	- We create a subscription and we have to let our contract and subscription know about each other
+	- [VRFv2Consumer.sol](https://remix.ethereum.org/#url=https://docs.chain.link/samples/VRF/VRFv2Consumer.sol&lang=en&optimize=false&runs=200&evmVersion=null&version=soljson-v0.8.18+commit.87f61d96.js)
+- Gas Lanes
+	- The gas lane to use, which specifies the maximum gas price to bump to.
+	- For a list of available gas lanes on each network, see https://docs.chain.link/docs/vrf/v2/subscription/supported-networks/#configurations
+	- ``bytes32 keyHash = 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c;``
+- How it works
+	- The VRF makes a request to the oracle network
+	- The oracle network generates the random numbers
+	- If we don't do something with the random numbers right away, they are stored and the information becomes public
+	- ``callbackGasLimit`` is the maximum amount of gas that's available to be used in the callback function
+	- we can set the amount of block confirmation, the lower the number the faster, but less secure
+#### Implementing Chainlink VRG
+- [Get Sepolia Testnet LINK tokens](https://faucets.chain.link/)
+- [Chainlink docs - create a random number](https://docs.chain.link/vrf/v2/subscription/examples/get-a-random-number#create-and-fund-a-subscription)
+- [Chainlink Brownie Contracts](https://github.com/smartcontractkit/chainlink-brownie-contracts
+- ``forge install smartcontractkit/chainlink-brownie-contracts@0.6.1 --no-git``
+- ``foundry.toml``
+	- ``remappings = ["@chainlink/contracts=/lib/chainlink-brownie-contracts/contracts"]``
+- Inheritance
+	- If we inherit from a contract that has a constructor, we need to pass any necessary arguments from the inherited contract to our contract
+```js
+constructor(
+	uint256 _entranceFee,
+	uint256 _interval,
+	address _vrfCoordinator,
+	bytes32 _gasLane,
+	uint64 _subscriptionId,
+	uint32 _callbackGasLimit
+) VRFConsumerBaseV2(_vrfCoordinator) {
+	i_entranceFee = _entranceFee;
+	i_interval = _interval;
+	i_vrfCoordinator = VRFCoordinatorV2Interface(_vrfCoordinator);
+	i_gasLane = _gasLane;
+	i_subscriptionId = _subscriptionId;
+	i_callbackGasLimit = _callbackGasLimit;
+	s_lastTimestamp = block.timestamp;
+}
+```
+
+#### Chainlink Summary
+- We are making a request to the chainlink node to give us a random number
+- Chainlink will generate the random number and call the ``VRFCoordinator`` contract where only the Chainlink node can respond to it
+- That contract will call the ``rawFulfillRandomWords`` function
+
+#### Modulo
+- The modulo function performs the divide operation and returns the remainder
+
+#### Enum
+- We want to create a state where if we're in the middle of a raffle, we don't want a new raffle to occur
+- [Enum](https://solidity-by-example.org/enum/)
+	- We can use the enum type to keep track of state
+	- The enum types are converted to integers by solidity, so below ``OPEN`` would be 0 and ``CALCULATING`` would be 1
+```js
+enum RaffleState {
+	OPEN,
+	CALCULATING
+}
+```
+- We can create a variable based on the enum
+	- ``RaffleState private s_raffleState;``
+- We can adjust the state as we need
+	- ``s_raffleState = RaffleState.OPEN;``
+	- ``s_raffleState = RaffleState.CLOSED;``
+
+#### Resetting an Array
+- ``s_players = new address payable[](0);``
+
+#### CEI (Checks, Effects, Interactions)
+- A design pattern meant to help us stay secure and safe
+- Checks
+	- Things like require statements and errors
+	- This is generally how we want to start because it's more gas efficient
+- Effects
+	- Where we effect our own contract
+- Interactions
+	- Our interactions with other contracts
+	- We want to interact with other contracts last as a means to mitigate reentrancy
+- Some people emit events after interactions but it makes sense to emit events in the effects portion of our code
+
+#### Chainlink Automation
+- [Chainlink Automation](https://dev.chain.link/products/automation)
+	- Chainlink Automation was previously known as Chainlink Keepers
+- [crontab](https://crontab.guru/)
+- ``function checkUpkeep(bytes memory /*checkData*/) public {}``
+	- If a function requires an input parameter, but it's not going to be used, we can comment it out
+- Custom error arguments
+	- We can give our custom errors arguments ``error Raffle__UpkeepNotNeeded(uint256 currentBalance, uint256 numPlayers, uint256 raffleState);``
+
+#### Test and Deploy Script Setup
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Script} from "forge-std/Script.sol";
+
+contract HelperConfig is Script {
+    struct NetworkConfig {
+        uint256 entranceFee;
+        uint256 interval;
+        address vrfCoordinator;
+        bytes32 gasLane;
+        uint64 subscriptionId;
+        uint32 callbackGasLimit;
+    }
+
+    NetworkConfig public activeNetworkConfig;
+
+    constructor() {
+        if (block.chainid == 11155111) {
+            activeNetworkConfig = getSepoliaEthConfig();
+        } else {
+            activeNetworkConfig = getOrCreateAnvilEthConfig();
+        }
+    }
+
+    function getSepoliaEthConfig() public view returns(NetworkConfig memory) {
+        return NetworkConfig({
+            entranceFee: 0.01 ether,
+            interval: 30,
+            vrfCoordinator: 0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625,
+            gasLane: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c,
+            subscriptionId: 0, // update this with our subId
+            callbackGasLimit: 500000 // 500,000 gas
+        });
+    }
+
+    function getOrCreateAnvilEthConfig() public returns(NetworkConfig memory){
+        if (activeNetworkConfig.vrfCoordinator != address(0)) {
+            return activeNetworkConfig;
+        }
+    }
+}
+```
+
+#### VRF Mocks
+- ``/chainlink-brownie-contracts/contracts/src/v0.8/mocks/VRFCoordinatorV2Mock.sol``
+	- Rather than writing our own mock, we can use the one provided
+```solidity
+ function getOrCreateAnvilEthConfig() public returns(NetworkConfig memory){
+        if (activeNetworkConfig.vrfCoordinator != address(0)) {
+            return activeNetworkConfig;
+        }
+
+        uint96 baseFee = 0.25 ether; // 0.25 Link
+        uint96 gasPriceLink = 1e9; // 1 gwei Link
+
+        vm.startBroadcast();
+        VRFCoordinatorV2Mock vrfCoordinatorMock = new VRFCoordinatorV2Mock(baseFee, gasPriceLink);
+        vm.startBroadcast();
+
+        return NetworkConfig({
+            entranceFee: 0.01 ether,
+            interval: 30,
+            vrfCoordinator: address(vrfCoordinatorMock),
+            gasLane: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c,
+            subscriptionId: 0, // our script will add this
+            callbackGasLimit: 500000 // 500,000 gas
+        });
+```
+- I was running into an error because of the code I have above.
+	- The code above is using ``vm.startBroadcast();`` twice
+	- ``[FAIL. Reason: Setup failed: You have an active broadcast already.]``
+	- the second ``startBroadcast`` should be ``vm.stopBroadcase();``
+#### Tests and Deploy Scripts Continued
+- forge coverage: check your files to see how much of it is being tested
+- ``forge test --mt <testname>``
+```solidity
+// DeployRaffle.sol
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Script} from "forge-std/Script.sol";
+import {Raffle} from "../src/Raffle.sol";
+import {HelperConfig} from "./HelperConfig.s.sol";
+
+contract DeployRaffle is Script {
+    function run() external returns (Raffle) {
+        HelperConfig helperConfig = new HelperConfig();
+        (
+            uint256 entranceFee,
+            uint256 interval,
+            address vrfCoordinator,
+            bytes32 gasLane,
+            uint64 subscriptionId,
+            uint32 callbackGasLimit
+        ) = helperConfig.activeNetworkConfig();
+
+        vm.startBroadcast();
+        Raffle raffle = new Raffle(
+            entranceFee,
+            interval,
+            vrfCoordinator,
+            gasLane,
+            subscriptionId,
+            callbackGasLimit
+        );
+        vm.stopBroadcast();
+        return raffle;
+    }
+}
+```
+
+```solidity
+// RaffleTest.t.sol
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
+import {Raffle} from "../../src/Raffle.sol";
+import {Test, console} from "forge-std/Test.sol";
+import {HelperConfig} from "../../script/HelperConfig.s.sol";
+
+contract RaffleTest is Test {
+    Raffle raffle;
+    HelperConfig helperConfig;
+    uint256 entranceFee;
+    uint256 interval;
+    address vrfCoordinator;
+    bytes32 gasLane;
+    uint64 subscriptionId;
+    uint32 callbackGasLimit;
+
+    address public PLAYER = makeAddr("player");
+    uint256 public constant STARTING_USER_BALANCE = 10 ether;
+
+    function setUp() external {
+        DeployRaffle deployer = new DeployRaffle();
+        (raffle, helperConfig) = deployer.run();
+         (
+            entranceFee,
+            interval,
+            vrfCoordinator,
+            gasLane,
+            subscriptionId,
+            callbackGasLimit
+        ) = helperConfig.activeNetworkConfig();
+    }
+
+    function testRaffleInitializesInOpenState() public view{
+        assert(raffle.getRaffleState() == Raffle.RaffleState.OPEN);
+    }
+
+}
+```
+
+#### Lots of Tests
+- Name tests with "test"
+	- I was having issues getting a test to run... the test was "running" but it didn't pass or fail
+	- I has named the test ``raffleRecordsPlayerWhenTheyEnter()`` which is why it wasn't working
+	- It should have been ``testRaffleRecordsPlayerWhenTheyEnter()``
+```solidity
+function testRaffleRevertsWhenYouDontPayEnough() public {
+        // Arrange
+        vm.prank(PLAYER);
+        // Act / Assert
+        vm.expectRevert(Raffle.Raffle__NotEnoughEthSent.selector);
+        raffle.enterRaffle();
+    }
+```
+
+```solidity
+    function testRaffleRecordsPlayerWhenTheyEnter() public {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value:entranceFee}();
+        address playerRecorded = raffle.getPlayer(0);
+        assert(playerRecorded == PLAYER);
+    }
+```
+
+#### Testing Events in Foundry
+- [expectEmit](https://book.getfoundry.sh/cheatcodes/expect-emit?highlight=expectEmit#expectemit)
+```solidity
+function expectEmit(
+    bool checkTopic1,
+    bool checkTopic2,
+    bool checkTopic3,
+    bool checkData,
+    address emitter
+) external;
+```
+
+```solidity
+function testEmitsEventOnEntrance() public {
+	vm.prank(PLAYER);
+	vm.expectEmit(true, false, false, false, address(raffle));
+	emit EnteredRaffle(PLAYER);
+	raffle.enterRaffle{value: entranceFee}();
+}
+```
+#### ``vm.roll`` and ``vm.warp``
+- [``vm.warp``](https://book.getfoundry.sh/cheatcodes/warp?highlight=warp#warp)
+- [``vm.roll``](https://book.getfoundry.sh/cheatcodes/roll?highlight=roll#roll)
+- When working on a forked chain or a local chain, we can set the blocktime and blocknumber to whatever we want
+	- ``vm.warp(block.timestamp + interval + 1);``
+	- ``vm.roll(block.number + 1);``
+```solidity
+function testCantEnterWhenRaffleIsCalculating() public {
+	vm.prank(PLAYER);
+	raffle.enterRaffle{value: entranceFee}();
+	vm.warp(block.timestamp + interval + 1);
+	vm.roll(block.number + 1);
+	raffle.performUpkeep("");
+
+	vm.expectRevert(Raffle.Raffle__RaffleNotOpen.selector);
+	vm.prank(PLAYER);
+	raffle.enterRaffle{value: entranceFee}();
+}
+```
+
+#### Create Subscription Script
+- If we don't already have a subscription with Chainlink, we need to create one
+- ``cast sig "functionName()"
+	- returns the hex signature of a function
+- [openchain.xyz](https://openchain.xyz/)
+- [eth signature database](https://openchain.xyz/signatures)
+```
+contract CreateSubscription is Script {
+    function createSubscriptionUsingConfig() public returns (uint64) {
+        HelperConfig helperConfig = new HelperConfig();
+        (,, address vrfCoordinator,,,) = helperConfig.activeNetworkConfig();
+        return createSubscription(vrfCoordinator);
+    }
+
+    function createSubscription(address vrfCoordinator) public returns(uint64) {
+        console.log("Creating Subscription on chainId: ", block.chainid);
+        vm.startBroadcast();
+        uint64 subId = VRFCoordinatorV2Mock(vrfCoordinator).createSubscription();
+        vm.stopBroadcast();
+        console.log("Your subId is: ",subId);
+        console.log("Please update subscriptionId in HelperConfig.s.sol");
+        return subId;
+    }
+
+    function run() external returns(uint64) {
+        return createSubscriptionUsingConfig();
+    }
+}
+```
+
+#### Create Subscription from the UI
+https://vrf.chain.link/
+
+#### Fund Subscription Script
+- [Link Token](https://chain.link/)
+	- Sepolia: ``0x779877A7B0D9E8603169DdbD7836e478b4624789``
+- [Solmate](https://github.com/transmissions11/solmate)
+	- Gas optimized building blocks for smart contracts
+	- After installing, we updated ``foundry.toml``: ``remappings = ["@chainlink/contracts=lib/chainlink-brownie-contracts/contracts", "@solmate=lib/solmate/src"]``
+- [Openzeppelin](https://www.openzeppelin.com/)
+```solidity
+contract FundSubscription is Script {
+    uint96 public constant FUND_AMOUNT = 3 ether;
+
+    function fundSubscriptionUsingConfig() public {
+        HelperConfig helperConfig = new HelperConfig();
+        (, , address vrfCoordinator, , uint64 subId, ,address link) = helperConfig.activeNetworkConfig();
+        fundSubscription(vrfCoordinator, subId, link);
+    }
+
+    function fundSubscription(address vrfCoordinator, uint64 subId, address link) public {
+        console.log("Funding subscription: ", subId);
+        console.log("Using vrfCoordinator: ", vrfCoordinator);
+        console.log("On ChainID: ", block.chainid);
+        if (block.chainid == 31337) {
+            vm.startBroadcast();
+            VRFCoordinatorV2Mock(vrfCoordinator).fundSubscription(subId, FUND_AMOUNT);
+            vm.stopBroadcast();
+        } else {
+            vm.startBroadcast();
+            LinkToken(link).transferAndCall(vrfCoordinator, FUND_AMOUNT, abi.encode(subId));
+            vm.stopBroadcast();
+        }
+    }
+```
+
+
+#### Add Consumer Script
+- [foundry dev ops](https://github.com/Cyfrin/foundry-devops)
+	- ``forge install Cyfrin/foundry-devops --no-commit``
+- Usage
+```js
+import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
+import {MyContract} from "my-contract/MyContract.sol";
+.
+.
+.
+function interactWithPreviouslyDeployedContracts() public {
+    address contractAddress = DevOpsTools.get_most_recent_deployment("MyContract", block.chainid);
+    MyContract myContract = MyContract(contractAddress);
+    myContract.doSomething();
+}
+```
+
+```js
+contract AddConsumer is Script {
+    function addConsumer(address raffle, address vrfCoordinator, uint64 subId) public {
+        console.log("Adding consumer contract: ", raffle);
+        console.log("Using vrfCoordinator: ", vrfCoordinator);
+        console.log("On ChainId: ", block.chainid);
+
+        vm.startBroadcast();
+        VRFCoordinatorV2Mock(vrfCoordinator).addConsumer(subId, raffle);
+        vm.stopBroadcast();
+    }
+
+    function addConsumerUsingConfig(address raffle) public {
+        HelperConfig helperConfig = new HelperConfig();
+        (, , address vrfCoordinator, , uint64 subId, ,) = helperConfig.activeNetworkConfig();
+        addConsumer(raffle, vrfCoordinator, subId);
+    }
+
+
+
+    function run() external {
+        address raffle = DevOpsTools.get_most_recent_deployment("Raffle", block.chainid);
+        addConsumerUsingConfig(raffle);
+    }
+
+}
+```
+
+
+
+#### CheckUpkeep Tests
+```solidity
+  function testCheckUpkeepReturnsFalseIfItHasNoBalance() public {
+        // Arrange
+        vm.warp(block.timestamp + interval +1);
+        vm.roll(block.number + 1);
+
+        // Act
+        (bool upkeepNeeded, ) = raffle.checkUpkeep("");
+
+        // Assert
+        assert(!upkeepNeeded);
+    }
+```
+
+- ``forge coverage --report debug``
+	- Gives us an output of all the lines we haven't yet covered in our tests
+- - ``forge coverage --report debug > coverage.txt``
+	- Gives us a text file
+
+```solidity
+function testCheckUpkeepReturnFalseIfRaffleNotOpen() public {
+        //Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value:entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        raffle.performUpkeep("");
+
+        // Act
+        (bool upkeepNeeded, ) = raffle.checkUpkeep("");
+
+        // Assert
+        assert(upkeepNeeded == false);
+    }
+
+    function testCheckUpkeepReturnsFalseIfEnoughTimeHasntPassed() public {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value:entranceFee}();
+
+        // Act
+        (bool timeHasPassed, ) = raffle.checkUpkeep("");
+
+        // Assert
+        assert(timeHasPassed == false);
+    }
+
+    function testCheckUpkeepReturnsTrueWhenParametersAreGood() public {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value:entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        // Act
+        (bool upkeepNeeded, ) = raffle.checkUpkeep("");
+
+        // Assert
+        assert(upkeepNeeded == true);
+    }
+```
+
+
+#### PerformUpkeep Tests
+- There is no test for "expect not revert", so we can just run the function:
+```
+function testPerformUpkeepCanOnlyRunIfCheckUpkeepIsTrue() public {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value:entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        // Act/Asser
+        raffle.performUpkeep("");
+    }
+```
+
+- We can use[ ``vm.expectRevert();``](https://book.getfoundry.sh/cheatcodes/expect-revert) if we expect a fail
+- If a revert message doesn't have any parameters, we could do:
+	- ``vm.expectRevert(Raffle.Raffle__UpkeepNotNeeded.selector)``
+- If a revert message does have parameters:
+	- ``vm.expectRevert(abi.encodeWithSelector(Raffle.Raffle__UpkeepNotNeeded.selector, currentBalance, numPlayers, raffleState));``
+
+#### Getting Event Data Into Foundry Scripts
+- Events are not accessible by smart contracts
+	- But we can access them in our tests
+- [`vm.recordLogs`](https://book.getfoundry.sh/cheatcodes/record-logs?highlight=Vm.Log%5B%5D#examples)
+	- Tells vm to start recording all emitted events
+	- Automatically saves all log outputs into a data structure that we can view
+- ``Vm.Log[]``
+	- a special type that comes with foundry tests
+	- ``import {Vm} from "forge-std/Vm.sol";``
+	- ``Vm.Log[] memory entries = vm.getRecordedLogs();``
+- `bytes32 requestId = entries[1].topics[1];`
+	- The 0 index topic will refer to the entire event
+	- The 1 index topic will refer to the first parameter
+
+#### Intro To Fuzz Tests
+- [Fuzz Testing](https://book.getfoundry.sh/forge/fuzz-testing?highlight=fuzz#fuzz-testing)
+	- Testing general scenarios rather than isolated scenarios
+```solidity
+function fulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(uint256 randomRequestId) public raffleEnteredAndTimePassed {
+        // Arrange
+        vm.expectRevert("nonexistent request");
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(randomRequestId, address(raffle));
+    }
+```
+- Using the ``randomRequestId`` parameter, foundry will call the test many times with many random numbers
+
+#### One Big Test
+- [vm.hoax](https://book.getfoundry.sh/reference/forge-std/hoax?highlight=hoax#hoax)
+	- The equivalent of running prank/deal
+```
+ function testFulfillRandomWordsPicksARandomWinnerAndSendsMoney() public raffleEnteredAndTimePassed {
+        // Arrange
+        uint256 additionalEntrants = 5;
+        uint256 startingIndex = 1;
+
+        for (uint256 i = startingIndex; i < startingIndex + additionalEntrants; i++){
+            address player = address(uint160(i));
+            hoax(player, STARTING_USER_BALANCE);
+            raffle.enterRaffle{value: entranceFee}();
+        }
+
+        uint256 prize = entranceFee + (additionalEntrants + 1);
+
+        vm.recordLogs();
+        raffle.performUpkeep(""); //emit requestId
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 requestId = entries[1].topics[1];
+
+        uint256 previousTimestamp = raffle.getLastTimeStamp();
+
+        // pretend to be chainlink vrf to get random number and pick winner
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(uint256(requestId), address(raffle));
+
+        // vm.expectEmit(true, false, false, false, address(raffle));
+        // emit PickedWinner(address);
+
+        // Assert
+        assert(uint256(raffle.getRaffleState()) == 0);
+        assert(raffle.getRecentWinner() != address(0));
+        assert(raffle.getLengthOfPlayers() == 0);
+        assert(previousTimestamp < raffle.getLastTimeStamp());
+        assert(raffle.getRecentWinner().balance == STARTING_USER_BALANCE + prize);
+    }
+```
+- It's not great practice to have many asserts in a single test
+	- Best practice to have 1 assert per test
+
+#### Passing the private key to vm.startBroadcast
+- `addConsumer` fails when we try to run a forked url because of the wrong test key
+	- we have to pretend to be the `addConsumer`
+	- we can't use ``vm.prank`` in our deploy script
+	- instead, we can pass in a private key in ``vm.startBroadcast()``
+- [`envUint`](https://book.getfoundry.sh/cheatcodes/env-uint?highlight=envU#envuint)
+	- a cheatcode that allows us to use env variables
+	 - ``vm.envUint("PRIVATE_KEY");``
+- `forge test --fork-url $SEPOLIA_RPC_URL`
+ - Some tests may not work because of the way certain things are handled on chain vs local environment
+```js
+ modifier skipFork() {
+        if (block.chainid != 31337) {
+            return;
+        }
+        _;
+    }
+```
+- we can add a modifier to skip certain tests when running `--fork-url`
+- `forge coverage --report`
+	- to see exactly what we don't have tests for
+
+#### Integrations Test
+- Foundry is ideal for testing on chain
+	- When off chain interactions like Chainlink VRF are involved, it makes staging tests a lot more complicated
+
+#### Testnet Demo Makefile Setup
+```make
+-include .env
+
+.PHONY: all test deploy
+
+help:
+    @echo "Usage:"
+    @echo " make deploy [ARGS=...]"
+
+build:; forge build
+```
+
+- `build:; forge build` using the semicolon is the equivalent of putting `forge build` on a new line
+- View: Toggle Word Wrap (`Alt + Z`)
+
+#### Testnet Demo
+- `make deploy ARGS="--network sepolia"`
+- We can interact with the contract on etherscan
+- `cast`
+	- We can use cast to interact with the contract from the cli
+	- `$ cast call 0xD7158A68e91ad5db172843460105e3B1e0c0f3d6 "getEntraceFee()" --rpc-url $SEPOLIA_RPC_URL`
+
+#### `console.log` debugging
+- Don't forget to delete you console.log before deploying to mainnet or testnet
+- `console.log` will cost/spend gas
+
+#### `forge test --debug`
+- We can get the opcodes of our contract
