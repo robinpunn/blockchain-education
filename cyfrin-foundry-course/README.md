@@ -192,6 +192,21 @@
 
 </details>
 
+<details>
+
+<summary> Lesson 10: Foundry ERC20 </summary>
+
+1. [What is an ERC20? What is an EIP?](#what-is-an-erc20-what-is-an-eip)
+2. [What is an ERC20](#what-is-an-erc20)
+3. [Manual Token](#manual-token)
+4. [ERC20 Token OpenZeppelin](#erc20-token-openzeppelin)
+5. [Deploy Script](#deploy-script)
+6. [AI Tests](#ai-tests)
+
+</details>
+
+<details>
+
 ---
 
 ### [Lesson 1: Blockchain Basics](https://www.youtube.com/watch?v=umepbfKp5rI&t=834s)
@@ -2596,3 +2611,123 @@ build:; forge build
 
 #### `forge test --debug`
 - We can get the opcodes of our contract
+
+
+### [Lesson 10 Foundry ERC20](https://www.youtube.com/watch?v=sas02qSFZ74&t=25684s)
+#### What is an ERC20? What is an EIP?
+- [EIP](https://eips.ethereum.org/)
+	- Ethereum Improvement Proposal
+	- Ideas to improve Ethereum
+	- Improvements can be anything from a core blockchain update to some standard that is going to be a best practice for the entire community to adopt
+- Once an EIP gets enough insight, an [ERC](https://eips.ethereum.org/erc) is created
+	- Ethereum Request for Comments
+#### What is an ERC20?
+- [ERC20](https://ethereum.org/en/developers/docs/standards/tokens/erc-20/)
+	- A token standard for smart contracts
+	- ERC20s are tokens that are deployed an a chain using the ERC20 token standard
+	- A smart contract that represents a token
+- Why make an ERC20?
+	- governance token
+	- secure an underlying network
+	- create a synthetic asset
+
+#### Manual Token
+- In order to implement our own ERC20, all we have to do is follow the ERC20 standard
+- Holding tokens in an ERC20 just means you have some balance in some mapping
+	- ``mapping(address=>uint256) private s_balances;``
+
+#### ERC20 Token Openzeppelin
+- [Openzeppelin Wizard](https://wizard.openzeppelin.com/)
+- [Openzeppelin Contracts](https://docs.openzeppelin.com/contracts/5.x/)
+- [Openzeppelin Github](https://github.com/OpenZeppelin)
+	- [contracts](https://github.com/OpenZeppelin/openzeppelin-contracts)
+- Install openzeppelin contracts
+	- `forge install OpenZeppelin/openzeppelin-contracts --no-git`
+	- update toml: `remappings = ['@openzeppelin=lib/openzeppelin-contracts']`
+	 - `import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";`
+- If we inherit a contract that has a constructor, then our contract needs a constructor
+- [Solmate](https://github.com/transmissions11/solmate) (Openzeppelin alternative)
+
+#### Deploy Script
+```solidity
+//SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Script} from "forge-std/Script.sol";
+import {OurToken} from "../src/OurToken.sol";
+
+contract DeployOurToken is Script {
+    uint256 public constant INITIAL_SUPPLY = 1000 ether;
+
+    function run() external {
+        vm.startBroadcast();
+        new OurToken(INITIAL_SUPPLY);
+        vm.stopBroadcast();
+    }
+}
+```
+
+#### AI Tests
+- `transferFrom(address from, address to, uint256 amount) → bool`
+	- Moves `amount` tokens from `from` to `to` using the allowance mechanism. `amount` is then deducted from the caller’s allowance.
+	- This is usually the reason you have to "approve" when interacting with defi
+- [etherscan token approval](https://etherscan.io/tokenapprovalchecker)
+- chatgpt prompt
+
+Here is my solidity ERC20 token.
+
+```
+// contracts/OurToken.sol
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.19;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract OurToken is ERC20 {
+    constructor(uint256 initialSupply) ERC20("OurToken", "OT") {
+        _mint(msg.sender, initialSupply);
+    }
+}
+```
+
+And here our my first couple of tests written in solidity.
+
+```
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.19;
+
+import {DeployOurToken} from "../script/DeployOurToken.s.sol";
+import {OurToken} from "../src/OurToken.sol";
+import {Test, console} from "forge-std/Test.sol";
+import {StdCheats} from "forge-std/StdCheats.sol";
+
+interface MintableToken {
+    function mint(address, uint256) external;
+}
+
+contract OurTokenTest is StdCheats, Test {
+    OurToken public ourToken;
+    DeployOurToken public deployer;
+
+    function setUp() public {
+        deployer = new DeployOurToken();
+        ourToken = deployer.run();
+    }
+
+    function testInitialSupply() public {
+        assertEq(ourToken.totalSupply(), deployer.INITIAL_SUPPLY());
+    }
+
+    function testUsersCantMint() public {
+        vm.expectRevert();
+        MintableToken(address(ourToken)).mint(address(this), 1);
+    }
+}
+```
+
+Can you write the rest of the tests? Please include tests for:
+
+- Allowances
+- transfers
+- anything else that might be important
