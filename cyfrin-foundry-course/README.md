@@ -207,6 +207,30 @@
 
 <details>
 
+<summary> Lesson 11: Foundry NFTs </summary>
+
+1. [What is an NFT](#what-is-an-nft)
+2. [Foundry Setup](#foundry-setup-1)
+3. [IPFS](#ipfs)
+4. [Using IPFS](#using-ipfs)
+5. [BasicNFT Deploy Script](#basicnft-deploy-script)
+6. [BasicNFT Tests](#basicnft-tests)
+7. [BasicNFT Interactions](#basicnft-interactions)
+8. [BasicNFT Testnet Demo](#basicnft-testnet-demo)
+9. [The issue with IPFS and HTTPS TokenURI NFTs](#the-issue-with-ipfs-and-https-tokenuri-nfts)
+10. [What is an SVG](#what-is-an-svg)
+11. [SVG NFT Introduction](#svg-nft-introduction)
+12. [Encoding the NFT](#encoding-the-nft)
+13. [Flipping the Mood](#flipping-the-mood)
+14. [SVG NFT Deploy Script](#svg-nft-deploy-script)
+15. [SVG NFT Debugging practice](#svg-nft-debugging-practice)
+16. [SVG NFT Anvil Demo](#svg-nft-anvil-demo)
+17. [Filecoin and Arweave](#filecoin-and-arweave)
+18. [EVM Opcodes, Encoding, and Calling](#evm-opcodes-encoding-and-calling)
+19. [Verifying Metamask Transactions](#verifying-metamask-transactions)
+
+</details>
+
 ---
 
 ### [Lesson 1: Blockchain Basics](https://www.youtube.com/watch?v=umepbfKp5rI&t=834s)
@@ -2731,3 +2755,719 @@ Can you write the rest of the tests? Please include tests for:
 - Allowances
 - transfers
 - anything else that might be important
+
+### [Lesson 11 Foundry NFTs](https://www.youtube.com/watch?v=sas02qSFZ74&t=27656s)
+#### What is an NFT?
+- ERC721 token standard created on the Ethereum platform
+- Non fungible token
+	- A token isn't interchangeable with any other token in its class
+- [EIP 721](https://eips.ethereum.org/EIPS/eip-721)
+	- NFT standard
+- [EIP 1155]
+	- Multi token standard
+	- Semi fungible tokens
+- ERC20s have map address to amounts tracking balances
+```solidity
+contract ERC20 is Context, IERC20 {
+	mapping (address => uint256) private _balances;
+}
+```
+- ERC721s have unique token IDs
+	- each token id represents a unique asset
+```solidity
+mapping (uint256 => address) private _owners;
+```
+
+- [URI](https://www.techtarget.com/whatis/definition/URI-Uniform-Resource-Identifier): Uniform resources identifier
+	- A Uniform Resource Identifier (URI) is a character sequence that identifies a logical (abstract) or physical resource -- usually, but not always, connected to the internet. A URI distinguishes one resource from another.
+	- URL and URN aret types of URI
+	- a tokenURI is just a simple API call
+	- the image URI is a separate uri that points to an image
+```json
+{
+	"name": "Name",
+	"description": "Description",
+	"image": "URI",
+	"attributes": []
+}
+```
+- Basic process dealing with metadata/uri
+	1. Get [IPFS](https://ipfs.tech/)or some form of hosting
+	2. Add tokenURI json to IPFS
+	3. Add IPFS URI to your NFT URI
+
+#### Foundry Setup
+- `forge init --no-commit`
+- [OpenZeppelin contracts](https://github.com/OpenZeppelin/openzeppelin-contracts)
+	- `forge install OpenZeppelin/openzeppelin-contracts`
+	- Add `@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/` in `remappings.txt.`
+	- `forge remappings > remappings.txt`
+- Start of contract:
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+
+contract BasicNft is ERC721 {
+    constructor() ERC721("DoggieNft", "DOG") {}
+}
+```
+
+- Metadata
+```solidity
+/// @title ERC-721 Non-Fungible Token Standard, optional metadata extension
+/// @dev See https://eips.ethereum.org/EIPS/eip-721
+///  Note: the ERC-165 identifier for this interface is 0x5b5e139f.
+interface ERC721Metadata /* is ERC721 */ {
+    /// @notice A descriptive name for a collection of NFTs in this contract
+    function name() external view returns (string _name);
+
+    /// @notice An abbreviated name for NFTs in this contract
+    function symbol() external view returns (string _symbol);
+
+    /// @notice A distinct Uniform Resource Identifier (URI) for a given asset.
+    /// @dev Throws if `_tokenId` is not a valid NFT. URIs are defined in RFC
+    ///  3986. The URI may point to a JSON file that conforms to the "ERC721
+    ///  Metadata JSON Schema".
+    function tokenURI(uint256 _tokenId) external view returns (string);
+}
+```
+
+- URL vs URI
+	- A URL provides the location of a resource
+	- A URI identifies the resource by the name of the specified location or URL
+- `function tokenURI(uint256 _tokenId) external view returns (string);`
+	- Basically an api that points to where the NFT metadata is hosted
+```solidity
+function tokenURI(uint256 tokenId) public view virtual returns (string memory) {
+        _requireOwned(tokenId);
+        string memory baseURI = _baseURI();
+        return bytes(baseURI).length > 0 ? string.concat(baseURI, tokenId.toString()) : "";
+    }
+```
+
+#### IPFS
+- [Docs](https://docs.ipfs.tech/)
+	- The InterPlanetary File System (IPFS) is a set of composable, peer-to-peer protocols for addressing, routing, and transferring [content-addressed](https://docs.ipfs.tech/concepts/glossary/#content-addressing) data in a decentralized file system.
+- IPFS hashes our data 
+	- The IPFS node performs the hashing, and all nodes have the same hashing function
+	- That hash is then hosted, and there are many nodes running
+- IPFS is decentralized storage
+	- It cannot execute smart contracts
+- [Install desktop app](https://docs.ipfs.tech/install/ipfs-desktop/)
+- [Browser Extenson](https://docs.ipfs.tech/install/ipfs-companion/)
+
+#### Using IPFS
+- ipfs.io
+	- `https://ipfs.io/ipfs/...`
+	- Points to the website, so if site goes down, the token uri won't be hosted
+- ipfs/hash
+	- `ipfs://....`
+	- If the syntax doesn't have io, its pointing to the ipfs network
+
+```solidity
+    function mintNft(string memory tokenUri) public {
+        s_tokenIdToUri[s_tokenCounter] = tokenUri;
+        _safeMint(msg.sender, s_tokenCounter);
+        s_tokenCounter++;
+    }
+
+    function tokenURI(
+        uint256 tokenId
+    ) public view override returns (string memory) {
+        return s_tokenIdToUri[tokenId];
+    }
+```
+
+#### BasicNFT Deploy Script
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Script} from "forge-std/Script.sol";
+import {BasicNft} from "../src/BasicNft.sol";
+
+contract DeployBasicNft is Script {
+    function run() external returns (BasicNft) {
+        vm.startBroadcast();
+        BasicNft basicNft = new BasicNft();
+        vm.stopBroadcast();
+        return basicNft;
+    }
+}
+```
+
+#### BasicNFT Tests
+- Strings are a special type
+	- Strings are an array of bytes
+	- We can't compare arrays to arrays
+	- We can only compare primitive types like uint256, bool, address, bytes32
+- Rather than loop through the array to compare, we can compare hashes
+	- `bytes memory encodedDog = abi.encodePacked(dog)`;
+		- encodedDog  //Type: dynamic bytes
+	- `bytes32 dogHash = keccak256(encodedDog)`
+		- dogHas  //Type: bytes32
+
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Test} from "forge-std/Test.sol";
+import {DeployBasicNft} from "../script/DeployBasicNft.s.sol";
+import {BasicNft} from "../src/BasicNft.sol";
+
+contract BasicNftTest is Test {
+    DeployBasicNft public deployer;
+    BasicNft public basicNft;
+    string public constant MAYHEM =
+        "https://ipfs.io/ipfs/QmNuiupUrGodFC5bvW5c5rRY2SBfEbDBhe52vdXr7UKcFa?filename=goodBoy.json";
+    address public USER = makeAddr("user");
+
+    function setUp() public {
+        deployer = new DeployBasicNft();
+        basicNft = deployer.run();
+    }
+
+    function testNameIsCorrect() public view {
+        string memory expectedName = "Pooch";
+        string memory actualName = basicNft.name();
+        assert(
+            keccak256(abi.encodePacked(expectedName)) ==
+                keccak256(abi.encodePacked(actualName))
+        );
+    }
+
+    function testCanMintAndHaveABalance() public {
+        vm.prank(USER);
+        basicNft.mintNft(MAYHEM);
+  
+        assert(basicNft.balanceOf(USER) == 1);
+        assert(
+            keccak256(abi.encodePacked(MAYHEM)) ==
+                keccak256(abi.encodePacked(basicNft.tokenURI(0)))
+        );
+    }
+}
+```
+- We can use `chisel` to get more information about variables through the console.
+```
+➜ string memory dog = "dog"
+➜ string memory cat = "cat";
+➜ cat
+Type: string
+├ UTF-8: cat
+├ Hex (Memory):
+├─ Length ([0x00:0x20]): 0x0000000000000000000000000000000000000000000000000000000000000003
+├─ Contents ([0x20:..]): 0x6361740000000000000000000000000000000000000000000000000000000000
+├ Hex (Tuple Encoded):
+├─ Pointer ([0x00:0x20]): 0x0000000000000000000000000000000000000000000000000000000000000020
+├─ Length ([0x20:0x40]): 0x0000000000000000000000000000000000000000000000000000000000000003
+└─ Contents ([0x40:..]): 0x6361740000000000000000000000000000000000000000000000000000000000
+```
+
+#### BasicNFT Interactions
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Script} from "forge-std/Script.sol";
+import {DevOpsTools} from "@foundry-devops/src/DevOpsTools.sol";
+import {BasicNft} from "../src/BasicNft.sol";
+
+contract MintBasicNft is Script {
+    string public constant MAYHEM =
+        "https://ipfs.io/ipfs/QmNuiupUrGodFC5bvW5c5rRY2SBfEbDBhe52vdXr7UKcFa?filename=goodBoy.json";
+    address public USER = makeAddr("user");
+
+    function run() external {
+        address mostRecentlyDeployed = DevOpsTools.get_most_recent_deployment(
+            "BasicNft",
+            block.chainid
+        );
+        mintNftOnContract(mostRecentlyDeployed);
+    }
+
+    function mintNftOnContract(address contractAddress) public {
+        vm.startBroadcast();
+        BasicNft(contractAddress).mintNft(MAYHEM);
+        vm.stopBroadcast();
+    }
+}
+```
+- `forge install Cyfrin/foundry-devops --no-commit`
+
+#### BasicNFT Testnet Demo
+```make
+-include .env
+
+.PHONY: all test clean deploy fund help install snapshot format anvil
+
+DEFAULT_ANVIL_KEY := 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 
+
+help:
+    @echo "Usage:"
+    @echo "  make deploy [ARGS=...]\n    example: make deploy ARGS=\"--network sepolia\""
+    @echo ""
+    @echo "  make fund [ARGS=...]\n    example: make deploy ARGS=\"--network sepolia\""
+
+all: clean remove install update build
+
+# Clean the repo
+clean  :; forge clean
+
+# Remove modules
+remove :; rm -rf .gitmodules && rm -rf .git/modules/* && rm -rf lib && touch .gitmodules && git add . && git commit -m "modules"
+
+install :; forge install Cyfrin/foundry-devops@0.0.11 --no-commit && forge install foundry-rs/forge-std@v1.5.3 --no-commit && forge install openzeppelin/openzeppelin-contracts@v4.8.3 --no-commit
+
+# Update Dependencies
+update:; forge update
+
+build:; forge build
+
+test :; forge test
+
+snapshot :; forge snapshot
+
+format :; forge fmt
+
+anvil :; anvil -m 'test test test test test test test test test test test junk' --steps-tracing --block-time 1
+
+NETWORK_ARGS := --rpc-url http://localhost:8545 --private-key $(DEFAULT_ANVIL_KEY) --broadcast
+
+ifeq ($(findstring --network sepolia,$(ARGS)),--network sepolia)
+    NETWORK_ARGS := --rpc-url $(SEPOLIA_RPC_URL) --private-key $(PRIVATE_KEY) --broadcast --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv
+endif
+
+deploy:
+    @forge script script/DeployBasicNft.s.sol:DeployBasicNft $(NETWORK_ARGS)
+
+mint:
+    @forge script script/Interactions.s.sol:MintBasicNFT ${NETWORK_ARGS}
+```
+
+- `make deploy ARGS="--network sepolia"`
+
+```
+address mostRecentlyDeployed = DevOpsTools.get_most_recent_deployment(
+            "BasicNft",
+            block.chainid
+        );
+```
+- This didn't work for me. I need to install [jq???](https://github.com/Cyfrin/foundry-full-course-f23/discussions/712)... so I just hard coded the address
+
+#### The issue with IPFS and HTTPS TokenURI NFTs
+- If a website goes down, the link to the image is gone
+- When using IPFS, we can pin our data to our node
+- [pinata](https://pinata.cloud/)
+	- A pinning service that we can allow someone node other than our node to pin
+
+#### What is an SVG
+- [svg](https://www.w3schools.com/graphics/svg_intro.asp)
+	- scalable vector graphics
+- [vscode extension](https://marketplace.visualstudio.com/items?itemName=vitaliymaz.vscode-svg-previewer)
+- [base64 encoding](https://www.base64encode.org/)
+```bash
+base64 -i example.svg
+PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MDAiIGhlaWdo
+dD0iNTAwIj4NCjx0ZXh0IHg9IjAiIHk9IjE1IiBmaWxsPSJibGFjayI+VW5ndXMgQnVuZ3VzPC90
+ZXh0Pg0KPC9zdmc+
+```
+```
+// svg.txt
+data:image/svg+xml;base64,
+PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MDAiIGhlaWdo
+dD0iNTAwIj4NCjx0ZXh0IHg9IjAiIHk9IjE1IiBmaWxsPSJibGFjayI+VW5ndXMgQnVuZ3VzPC90
+ZXh0Pg0KPC9zdmc+
+```
+
+```svg
+<svg viewBox="0 0 200 200" width="400"  height="400" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" fill="purple" r="78" stroke="black" stroke-width="3"/>
+  <g class="eyes">
+    <circle cx="61" cy="82" r="15" stroke="black" stroke-width="6" fill="blue"/>
+    <circle cx="127" cy="82" r="15" stroke="black" stroke-width="6" fill="blue"/>
+  </g>
+  <path d="m136.71 115.53c.69 26.17-64.11 52-91.01.73" style="fill:black; stroke: black; stroke-width: 6;"/>
+</svg>
+```
+
+```bash
+base64 -i happy.svg
+PHN2ZyB2aWV3Qm94PSIwIDAgMjAwIDIwMCIgd2lkdGg9IjQwMCIgIGhlaWdodD0iNDAwIiB4bWxu
+cz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPg0KICA8Y2lyY2xlIGN4PSIxMDAiIGN5PSIx
+MDAiIGZpbGw9InB1cnBsZSIgcj0iNzgiIHN0cm9rZT0iYmxhY2siIHN0cm9rZS13aWR0aD0iMyIv
+Pg0KICA8ZyBjbGFzcz0iZXllcyI+DQogICAgPGNpcmNsZSBjeD0iNjEiIGN5PSI4MiIgcj0iMTUi
+IHN0cm9rZT0iYmxhY2siIHN0cm9rZS13aWR0aD0iNiIgZmlsbD0iYmx1ZSIvPg0KICAgIDxjaXJj
+bGUgY3g9IjEyNyIgY3k9IjgyIiByPSIxNSIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLXdpZHRoPSI2
+IiBmaWxsPSJibHVlIi8+DQogIDwvZz4NCiAgPHBhdGggZD0ibTEzNi43MSAxMTUuNTNjLjY5IDI2
+LjE3LTY0LjExIDUyLTkxLjAxLjczIiBzdHlsZT0iZmlsbDpibGFjazsgc3Ryb2tlOiBibGFjazsg
+c3Ryb2tlLXdpZHRoOiA2OyIvPg0KPC9zdmc+
+```
+
+- We can use svg on chain by using the base64 encoding as tokenUri
+
+#### SVG NFT Introduction
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+  
+contract BasicNft is ERC721 {
+    uint256 private s_tokenCounter;
+    string private s_happySvg;
+    string private s_sadSvg;
+
+    constructor(
+        string memory happySvg,
+        string memory sadSvg
+    ) ERC721("Mood NFT", "MN") {
+        s_tokenCounter = 0;
+        s_happySvg = happySvg;
+        s_sadSvg = sadSvg;
+    }
+
+    function mintNft() public {
+        _safeMint(msg.sender,s_tokenCounter);
+        s_tokenCounter++;
+    }
+
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {}
+}
+```
+
+#### Encoding the NFT
+- [base64 openzeppelin](https://docs.openzeppelin.com/contracts/4.x/utilities)
+- `base64 -i <filename>`
+	- this command will give an output like below
+```
+PHN2ZyB2aWV3Qm94PSIwIDAgMjAwIDIwMCIgd2lkdGg9IjQwMCIgIGhlaWdodD0iNDAwIiB4bWxu
+cz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPg0KICA8Y2lyY2xlIGN4PSIxMDAiIGN5PSIx
+MDAiIGZpbGw9InB1cnBsZSIgcj0iNzgiIHN0cm9rZT0iYmxhY2siIHN0cm9rZS13aWR0aD0iMyIv
+Pg0KICA8ZyBjbGFzcz0iZXllcyI+DQogICAgPGNpcmNsZSBjeD0iNjEiIGN5PSI4MiIgcj0iMTUi
+IHN0cm9rZT0iYmxhY2siIHN0cm9rZS13aWR0aD0iNiIgZmlsbD0iYmx1ZSIvPg0KICAgIDxjaXJj
+bGUgY3g9IjEyNyIgY3k9IjgyIiByPSIxNSIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLXdpZHRoPSI2
+IiBmaWxsPSJibHVlIi8+DQogIDwvZz4NCiAgPHBhdGggZD0ibTE0Ni4wMSAxMTUuNTNjLjY5IDI2
+LjE3LTU0LjExIDkwLTEwMC4wMS4wIiBzdHlsZT0iZmlsbDpibGFjazsgc3Ryb2tlOiBibGFjazsg
+c3Ryb2tlLXdpZHRoOiA2OyIvPg0KPC9zdmc+
+```
+- prepend the above with `data:image/svg+xml;base64,`
+- OpenZeppelin Base64 allows us to encode on chain
+```
+function _baseURI() internal pure override returns (string memory) {
+        return "data:application/json;base64,";
+    }
+
+    function tokenURI(
+        uint256 tokenId
+    ) public view override returns (string memory) {
+        string memory imageUri;
+
+        if (s_tokenIdToMood[tokenId] == Mood.HAPPY) {
+            imageUri = s_happySvgImageUri;
+        } else {
+            imageUri = s_sadSvgImageUri;
+        }
+
+        return
+            string(
+                abi.encodePacked(
+                    _baseURI(),
+                    Base64.encode(
+                        bytes(
+                            abi.encodePacked(
+                                '{"name": "',
+                                name(),
+                                '", "description":"An nft that reflects mood", "attributes":[{"trait_type": "moodiness", "value": 100}],"image": "',
+                                imageUri,
+                                '"}'
+                            )
+                        )
+                    )
+                )
+            );
+    }
+```
+
+9:01:35
+
+#### Flipping the Mood
+```solidity
+ function flipMood(uint256 tokenId) public {
+        address from = _ownerOf(tokenId);
+        _checkAuthorized(from, msg.sender, tokenId);
+
+        if (s_tokenIdToMood[tokenId] == Mood.HAPPY) {
+            s_tokenIdToMood[tokenId] = Mood.SAD;
+        } else {
+            s_tokenIdToMood[tokenId] = Mood.HAPPY;
+        }
+    }
+```
+
+This seems to be deprecated, replaced it with `_ownerOf` and `_checkAuthorized`
+```solidity
+if (!_isApprovedOrOwner(msg.sender, tokenId))
+```
+
+#### SVG NFT Deploy Script
+- [readfile github issue](https://github.com/foundry-rs/foundry/issues/2153)
+- [foundry book file cheat codes](https://book.getfoundry.sh/cheatcodes/fs?highlight=readFile#signature)
+```solidity
+// Reads the entire content of file to string, (path) => (data)
+function readFile(string calldata) external returns (string memory);
+```
+- add to `foundry.toml`:
+	- `fs_permissions = [{ access = "read", path = "./images/" }]`
+
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Script, console} from "forge-std/Script.sol";
+import {MoodNft} from "../src/MoodNft.sol";
+import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
+
+contract DeployMoodNft is Script {
+    function run() external returns (MoodNft) {
+        string memory sadSvg = vm.readFile("./image/sad.svg");
+        string memory happySvg = vm.readFile("./image/happy.svg");
+        
+        vm.startBroadcast();
+        MoodNft moodNft = new MoodNft(svgToUri(happySvg), svgToUri(sadSvg));
+        vm.stopBroadcast();
+
+        return moodNft;
+    }
+
+    function svgToUri(string memory svg) public pure returns (string memory) {
+        string memory baseURL = "data:image/svg+xml;base64,";
+        string memory svgBase64Encoded = Base64.encode(
+            bytes(string(abi.encodePacked(svg)))
+        );
+
+        return string(abi.encodePacked(baseURL, svgBase64Encoded));
+    }
+}
+```
+
+- Unit vs Integration test
+	- Unit test is more for a single idea whereas an integration test can involve multiple aspects of a contract
+
+#### SVG NFT Debugging practice
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Test, console} from "forge-std/Test.sol";
+import {MoodNft} from "../../src/MoodNft.sol";
+import {DeployMoodNft} from "../../script/DeployMoodNft.s.sol";
+
+contract MoodNftIntegrationTest is Test {
+    MoodNft moodNft;
+
+    string public constant HAPPY_SVG_IMAGE_URI =
+        "data:image/svg+xml;base64, PHN2ZyB2aWV3Qm94PSIwIDAgMjAwIDIwMCIgd2lkdGg9IjQwMCIgIGhlaWdodD0iNDAwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPg0KICA8Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIGZpbGw9InB1cnBsZSIgcj0iNzgiIHN0cm9rZT0iYmxhY2siIHN0cm9rZS13aWR0aD0iMyIvPg0KICA8ZyBjbGFzcz0iZXllcyI+DQogICAgPGNpcmNsZSBjeD0iNjEiIGN5PSI4MiIgcj0iMTUiIHN0cm9rZT0iYmxhY2siIHN0cm9rZS13aWR0aD0iNiIgZmlsbD0iYmx1ZSIvPg0KICAgIDxjaXJjbGUgY3g9IjEyNyIgY3k9IjgyIiByPSIxNSIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLXdpZHRoPSI2IiBmaWxsPSJibHVlIi8+DQogIDwvZz4NCiAgPHBhdGggZD0ibTE0Ni4wMSAxMTUuNTNjLjY5IDI2LjE3LTU0LjExIDkwLTEwMC4wMS4wIiBzdHlsZT0iZmlsbDpibGFjazsgc3Ryb2tlOiBibGFjazsgc3Ryb2tlLXdpZHRoOiA2OyIvPg0KPC9zdmc+";
+
+    string public constant SAD_SVG_IMAGE_URI =
+"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAyNHB4IiBoZWlnaHQ9IjEwMjRweCIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4NCiAgPHBhdGggZmlsbD0iIzMzMyIgZD0iTTUxMiA2NEMyNjQuNiA2NCA2NCAyNjQuNiA2NCA1MTJzMjAwLjYgNDQ4IDQ0OCA0NDggNDQ4LTIwMC42IDQ0OC00NDhTNzU5LjQgNjQgNTEyIDY0em0wIDgyMGMtMjA1LjQgMC0zNzItMTY2LjYtMzcyLTM3MnMxNjYuNi0zNzIgMzcyLTM3MiAzNzIgMTY2LjYgMzcyIDM3Mi0xNjYuNiAzNzItMzcyIDM3MnoiLz4NCiAgPHBhdGggZmlsbD0iI0U2RTZFNiIgZD0iTTUxMiAxNDBjLTIwNS40IDAtMzcyIDE2Ni42LTM3MiAzNzJzMTY2LjYgMzcyIDM3MiAzNzIgMzcyLTE2Ni42IDM3Mi0zNzItMTY2LjYtMzcyLTM3Mi0zNzJ6TTI4OCA0MjFhNDguMDEgNDguMDEgMCAwIDEgOTYgMCA0OC4wMSA0OC4wMSAwIDAgMS05NiAwem0zNzYgMjcyaC00OC4xYy00LjIgMC03LjgtMy4yLTguMS03LjRDNjA0IDYzNi4xIDU2Mi41IDU5NyA1MTIgNTk3cy05Mi4xIDM5LjEtOTUuOCA4OC42Yy0uMyA0LjItMy45IDcuNC04LjEgNy40SDM2MGE4IDggMCAwIDEtOC04LjRjNC40LTg0LjMgNzQuNS0xNTEuNiAxNjAtMTUxLjZzMTU1LjYgNjcuMyAxNjAgMTUxLjZhOCA4IDAgMCAxLTggOC40em0yNC0yMjRhNDguMDEgNDguMDEgMCAwIDEgMC05NiA0OC4wMSA0OC4wMSAwIDAgMSAwIDk2eiIvPg0KICA8cGF0aCBmaWxsPSIjMzMzIiBkPSJNMjg4IDQyMWE0OCA0OCAwIDEgMCA5NiAwIDQ4IDQ4IDAgMSAwLTk2IDB6bTIyNCAxMTJjLTg1LjUgMC0xNTUuNiA2Ny4zLTE2MCAxNTEuNmE4IDggMCAwIDAgOCA4LjRoNDguMWM0LjIgMCA3LjgtMy4yIDguMS03LjQgMy43LTQ5LjUgNDUuMy04OC42IDk1LjgtODguNnM5MiAzOS4xIDk1LjggODguNmMuMyA0LjIgMy45IDcuNCA4LjEgNy40SDY2NGE4IDggMCAwIDAgOC04LjRDNjY3LjYgNjAwLjMgNTk3LjUgNTMzIDUxMiA1MzN6bTEyOC0xMTJhNDggNDggMCAxIDAgOTYgMCA0OCA0OCAwIDEgMC05NiAweiIvPg0KPC9zdmc+";
+
+    string public constant SAD_SVG_URI =        "data:application/json;base64,eyJuYW1lIjogIk1vb2QgTkZUIiwgImRlc2NyaXB0aW9uIjoiQW4gbmZ0IHRoYXQgcmVmbGVjdHMgbW9vZCIsICJhdHRyaWJ1dGVzIjpbeyJ0cmFpdF90eXBlIjogIm1vb2RpbmVzcyIsICJ2YWx1ZSI6IDEwMH1dLCJpbWFnZSI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUIzYVdSMGFEMGlNVEF5TkhCNElpQm9aV2xuYUhROUlqRXdNalJ3ZUNJZ2RtbGxkMEp2ZUQwaU1DQXdJREV3TWpRZ01UQXlOQ0lnZUcxc2JuTTlJbWgwZEhBNkx5OTNkM2N1ZHpNdWIzSm5Mekl3TURBdmMzWm5JajROQ2lBZ1BIQmhkR2dnWm1sc2JEMGlJek16TXlJZ1pEMGlUVFV4TWlBMk5FTXlOalF1TmlBMk5DQTJOQ0F5TmpRdU5pQTJOQ0ExTVRKek1qQXdMallnTkRRNElEUTBPQ0EwTkRnZ05EUTRMVEl3TUM0MklEUTBPQzAwTkRoVE56VTVMalFnTmpRZ05URXlJRFkwZW0wd0lEZ3lNR010TWpBMUxqUWdNQzB6TnpJdE1UWTJMall0TXpjeUxUTTNNbk14TmpZdU5pMHpOeklnTXpjeUxUTTNNaUF6TnpJZ01UWTJMallnTXpjeUlETTNNaTB4TmpZdU5pQXpOekl0TXpjeUlETTNNbm9pTHo0TkNpQWdQSEJoZEdnZ1ptbHNiRDBpSTBVMlJUWkZOaUlnWkQwaVRUVXhNaUF4TkRCakxUSXdOUzQwSURBdE16Y3lJREUyTmk0MkxUTTNNaUF6TnpKek1UWTJMallnTXpjeUlETTNNaUF6TnpJZ016Y3lMVEUyTmk0MklETTNNaTB6TnpJdE1UWTJMall0TXpjeUxUTTNNaTB6TnpKNlRUSTRPQ0EwTWpGaE5EZ3VNREVnTkRndU1ERWdNQ0F3SURFZ09UWWdNQ0EwT0M0d01TQTBPQzR3TVNBd0lEQWdNUzA1TmlBd2VtMHpOellnTWpjeWFDMDBPQzR4WXkwMExqSWdNQzAzTGpndE15NHlMVGd1TVMwM0xqUkROakEwSURZek5pNHhJRFUyTWk0MUlEVTVOeUExTVRJZ05UazNjeTA1TWk0eElETTVMakV0T1RVdU9DQTRPQzQyWXkwdU15QTBMakl0TXk0NUlEY3VOQzA0TGpFZ055NDBTRE0yTUdFNElEZ2dNQ0F3SURFdE9DMDRMalJqTkM0MExUZzBMak1nTnpRdU5TMHhOVEV1TmlBeE5qQXRNVFV4TGpaek1UVTFMallnTmpjdU15QXhOakFnTVRVeExqWmhPQ0E0SURBZ01DQXhMVGdnT0M0MGVtMHlOQzB5TWpSaE5EZ3VNREVnTkRndU1ERWdNQ0F3SURFZ01DMDVOaUEwT0M0d01TQTBPQzR3TVNBd0lEQWdNU0F3SURrMmVpSXZQZzBLSUNBOGNHRjBhQ0JtYVd4c1BTSWpNek16SWlCa1BTSk5Namc0SURReU1XRTBPQ0EwT0NBd0lERWdNQ0E1TmlBd0lEUTRJRFE0SURBZ01TQXdMVGsySURCNmJUSXlOQ0F4TVRKakxUZzFMalVnTUMweE5UVXVOaUEyTnk0ekxURTJNQ0F4TlRFdU5tRTRJRGdnTUNBd0lEQWdPQ0E0TGpSb05EZ3VNV00wTGpJZ01DQTNMamd0TXk0eUlEZ3VNUzAzTGpRZ015NDNMVFE1TGpVZ05EVXVNeTA0T0M0MklEazFMamd0T0RndU5uTTVNaUF6T1M0eElEazFMamdnT0RndU5tTXVNeUEwTGpJZ015NDVJRGN1TkNBNExqRWdOeTQwU0RZMk5HRTRJRGdnTUNBd0lEQWdPQzA0TGpSRE5qWTNMallnTmpBd0xqTWdOVGszTGpVZ05UTXpJRFV4TWlBMU16TjZiVEV5T0MweE1USmhORGdnTkRnZ01DQXhJREFnT1RZZ01DQTBPQ0EwT0NBd0lERWdNQzA1TmlBd2VpSXZQZzBLUEM5emRtYysifQ==";
+    
+    DeployMoodNft deployer;
+    address USER = makeAddr("user");
+
+    function setUp() public {
+        deployer = new DeployMoodNft();
+        moodNft = deployer.run();
+    }
+
+    function testViewTokenUriIntegration() public {
+        vm.prank(USER);
+        moodNft.mintNft();
+        console.log(moodNft.tokenURI(0));
+    }
+
+    function testFlipTokenToSad() public {
+        vm.prank(USER);
+        moodNft.mintNft();
+
+		vm.prank(USER);
+        moodNft.flipMood(0);
+
+        console.log(moodNft.tokenURI(0));
+
+        assertEq(
+            keccak256(abi.encodePacked(moodNft.tokenURI(0))),
+            keccak256(abi.encodePacked(SAD_SVG_URI))
+        );
+    }
+}
+```
+- When running `source .env`, make sure it's in a bash terminal, not powershell
+
+#### SVG NFT Anvil Demo
+- make command:
+```make
+deployMood:
+    @forge script script/DeployMoodNft.s.sol:DeployMoodNft ${NETWORK_ARGS}
+```
+
+- cast to mint nft
+	- `cast send 0x5FbDB2315678afecb367f032d93F642f64180aa3 "mintNft()" --private-key ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --rpc-url http://localhost:8545`
+
+#### Filecoin and Arweave
+- [nft.storage](https://nft.storage/)
+
+#### EVM Opcodes, Encoding, and Calling
+- [cheatsheet](https://docs.soliditylang.org/en/latest/cheatsheet.html#abi-encoding-and-decoding-functions)
+- abi.encodePacked
+	- globally available method
+	- we can concatenate it convert it to a string since it's considered type bytes
+	- `return string(abi.encodePacked("hi mom", "miss you"));`
+	- as of `0.8.12`, we can :`string.concat(stringA, stringB)`
+- When we compile a contract, we get a `.abi` and a `.bin` file
+- Transactions have many fields: `nonce`, `gas price`, `gas limit`, `to`, `value`, `data`, `v,r,s`
+	- `data` has the contract init code and contract bytecode
+	- `bytecode` represents the low level computer instructions that allows the contract to exist
+- [opcodes](https://www.evm.codes/?fork=shanghai)
+	- The EVM represents all the instructions a computer must be able to read in order for it to interact with Ethereum or Ethereum like applications
+	- Solidity compiles down to the bytecode that are these opcodes
+- abi.encodePacked allows us to encode basically anything we want into binary format
+- The contract abi that we look at when we compile a contract isn't the actual binary version of the contract
+- `abi.encode(...) returns (bytes memory)`: [ABI](https://docs.soliditylang.org/en/latest/abi-spec.html#abi)-encodes the given arguments
+- `abi.encodePacked(...) returns (bytes memory)`: Performs [packed encoding](https://docs.soliditylang.org/en/latest/abi-spec.html#abi-packed-mode) of the given arguments. Note that this encoding can be ambiguous!
+- [openzeppelin difference between abi.encodepacked](https://forum.openzeppelin.com/t/difference-between-abi-encodepacked-string-and-bytes-string/11837)
+
+- You'd use this to make calls to contracts:
+```solidity
+ function encodeString() public pure returns (bytes memory) {
+	bytes memory someString = abi.encode("some string");
+	return someString;
+}
+```
+- returns:
+```
+bytes: 0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b736f6d6520737472696e67000000000000000000000000000000000000000000
+```
+
+- This is great if you want to save space, not good for calling functions.
+- You can sort of think of it as a compressor for the massive bytes object above.
+```solidity
+  function encodeStringPacked() public pure returns (bytes memory) {
+	bytes memory someString = abi.encodePacked("some string");
+	return someString;
+  }
+```
+- returns
+```
+bytes: 0x736f6d6520737472696e67
+```
+
+- `abi.encodePacked` is similar to type casting
+```solidity
+function encodeStringBytes() public pure returns (bytes memory) {
+	bytes memory someString = bytes("some string");
+	return someString;
+}
+```
+- returns
+```
+bytes: 0x736f6d6520737472696e67
+```
+
+- We can also `decode`
+- `abi.decode(bytes memory encodedData, (...)) returns (...)`: [ABI](https://docs.soliditylang.org/en/latest/abi-spec.html#abi)-decodes the provided data. The types are given in parentheses as second argument. Example: `(uint a, uint[2]`
+
+- `multiEncodePacked`
+```
+function multiEncodePacked() public pure returns (bytes memory) {
+	bytes memory someString = abi.encode("some string", "it's bigger");
+	return someString;
+}
+```
+- returns
+```
+bytes: 0x736f6d6520737472696e672069747320626967676572
+```
+
+- This function wouldn't work because solidity can't deal with things that are packed?
+- `multidecodePacked`
+```
+function multiDecodePacked() public pure returns (string memory) {
+	string memory someString = abi.decode(multiEncodePacked(), (string));
+	return someString;
+}
+```
+
+- but we can work with encoded data by type casting?
+```
+function multiStringCastPacked() public pure returns(string memory) {
+	string memory someString = string(multiEncodePacked());
+	return someString;
+}
+```
+
+#### Encoding Function Calls Directly
+- Transactions - Contract Deployment: 
+	- `nonce`: tx count for the account
+	- `gas price`: price per unit of gas (in wei)
+	- `gas limit`: max gas that this tx can use
+	- `to`: empty
+	- `value`: amount of wei to send
+	- `data`: contract init code and contract bytecode
+	- `v,r,s`: components of tx signature
+- Transactions - Function call: 
+	- `nonce`: tx count for the account
+	- `gas price`: price per unit of gas (in wei)
+	- `gas limit`: max gas that this tx can use
+	- `to`: address that the tx is sent to
+	- `value`: amount of wei to send
+	- `data`: what to send the to address
+	- `v,r,s`: components of tx signature
+- We know that transactions are going to be compiled down to binary/hex, so we can populate the data value of transactions ourselves
+
+- To send a function we always need the ABI and the contract address
+
+- `call`: How we call functions to change the state of the blockchain.
+- `staticcall`: This is how (at a low level) we do our "view" or "pure" function calls, and potentially don't change the blockchain state.
+	- When you call a function, you are secretly calling "call" behind the scenes, with everything compiled down to the binary stuff for you.
+
+- example:
+```
+function withdraw(address recentWinner) public {
+	(bool success, ) = recentWinner.call{value: address(this).balance}("");
+	require(success, "Transfer Failed");
+}
+```
+- In our `{} we were able to pass specific fields of a transaction, like value.
+- In our `()` we were able to pass data in order to call a specific function - but there was no function we wanted to call!
+
+- In order to call a function using only the data field of call, we need to encode:
+	- The function name
+	- The parameters we want to add
+	- Down to the binary level
+
+- To encode the function name, we need:
+	- The "function selector": the first 4 bytes of the function signature
+	- The "function signature": a string that defines the function name and parameters
+
+- Example function signature:
+	- `transfer(address,uint256)`
+- Example function selector:
+	- `0xa9059cbb`
+- If we encode a function and take the first 4 bytes, we get the function selector
+
+- `abi.encodeWithSelector`
+	- Encodes the given arguments starting from the second and prepends the given four-bytes selector
+- `abi.encodeWithSignature`
+	- Equivalent to `abi.encodeWithSelector(bytes4(keccak256(bytes(signature)), ...)`
+
+#### Verifying Metamask Transactions
+- `cast --help`
+	- `--calldata-decode`: Decode ABI-encoded input data
+		- `<sig>`,`<calldata>`
+- `cast sig "transferFrom(address,address,uint26)"` ---> `0x345dac5d`
+- `https://openchain.xyz/signatures`
