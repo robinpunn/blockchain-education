@@ -1,0 +1,19 @@
+{
+    "name": "Mayhem the Undying",
+    "description": "Herder of sheep",
+    "image": "https://ipfs.io/ipfs/QmW3JGEiLCc4YfoGrSLzFAjVwo5XPCxAqnJNSKh7aef8oM?filename=mayhemTheWight.png",
+    "attributes": [
+        {
+            "trait_type": "Breed",
+            "value": "Border Collie"
+        },
+        {
+            "trait_type": "Style",
+            "value": "Scout"
+        },
+        {
+            "trait_type": "Power",
+            "value": "Undead"
+        }
+    ]
+}
