@@ -11,7 +11,7 @@ describe("Faucet", function () {
 
     const [owner, notOwner] = await ethers.getSigners();
 
-    let withdrawAmount = ethers.utils.parseUnits("2", "ether");
+    let withdrawAmount = ethers.utils.parseUnits("2", 18);
 
     console.log("Signer 1 address: ", owner.address);
     return { faucet, owner, withdrawAmount, notOwner };
@@ -27,7 +27,7 @@ describe("Faucet", function () {
       deployContractAndSetVariables
     );
 
-    await expect(faucet.withdraw(withdrawAmount)).to.be.reverted;
+    await expect(faucet.withdraw(withdrawAmount, { value: withdrawAmount })).to.be.reverted;
   });
   it("should only allow the owner to call withdrawAll()", async function () {
     const { faucet, owner, notOwner } = await loadFixture(
