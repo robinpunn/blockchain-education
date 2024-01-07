@@ -14,8 +14,8 @@ one can use metamorphic contracts to deploy different bytecodes to the same addr
 </p>
 </details> 
 
-![Q2 Image](https://lh7-us.googleusercontent.com/wDfW_ro_LPh1_Yn0fYZtuHuNKxbZ1cVQzLNnbmG0EIG2rhTHht1pK4C8jKxDbsqaCJ7l-KXgDFl9E7fzRI_-LnCxA5rK3RlLXlTsfkUH0iHnlFMsWLXyvNnRxppKBlHTsdJ0QnOUYYNQI_c-OSTPU6w "Q2 Image")
 #### Q2
+![Q2 Image](https://lh7-us.googleusercontent.com/wDfW_ro_LPh1_Yn0fYZtuHuNKxbZ1cVQzLNnbmG0EIG2rhTHht1pK4C8jKxDbsqaCJ7l-KXgDFl9E7fzRI_-LnCxA5rK3RlLXlTsfkUH0iHnlFMsWLXyvNnRxppKBlHTsdJ0QnOUYYNQI_c-OSTPU6w "Q2 Image")
 > The code shows an example of a vulnerable implementation of the ERC20 permit() function. What are the possible high/critical severity bugs in the code?
 - [ ]  A. The digest calculation cannot stop some of the replay attack vectors.
 - [ ]  B.  Due to insufficient checks in the code, it allows anyone to drain zero (0x0000000000000000000000000000000000000000) address balance, e.g. in case the ERC20 token’s burn function actually sends the tokens to zero address.
@@ -30,8 +30,8 @@ the code has all of the bugs mentioned, as per ecrecover() return value was not 
 </p>
 </details>
 
-![Q3 Image](https://lh7-us.googleusercontent.com/b_n14NzFnZvo8n8XTfBMTl2KRUNpTSWcgy4GDMbwjFY5KydBZ4Il7jYwt3ygrL_ztce6xwOKvXRPeXlAJJI2l8NZlQqllBvds-SolAx_PIAre0TV9t6JE2u0-v6n-wKnGSGdNm6qnsskMChN715BXVU "Q3 Image")
 #### Q3
+![Q3 Image](https://lh7-us.googleusercontent.com/b_n14NzFnZvo8n8XTfBMTl2KRUNpTSWcgy4GDMbwjFY5KydBZ4Il7jYwt3ygrL_ztce6xwOKvXRPeXlAJJI2l8NZlQqllBvds-SolAx_PIAre0TV9t6JE2u0-v6n-wKnGSGdNm6qnsskMChN715BXVU "Q3 Image")
 > The code shows a snippet of a Liquidity Provider (LP) token staking functionality. The protocol is designed to stake Uniswap V2 Liquidity Provider tokens (LP tokens). The rest of the code should be treated as black-box and without any bugs or other issues. Which of these are correct observations about the code?
 - [ ]  A. Given the scope of only the stakeLP function, reentrancy is possible which has a critical impact.
 - [ ]  B. Given the scope of only the stakeLP function, reentrancy is technically possible, although with no real impact.
