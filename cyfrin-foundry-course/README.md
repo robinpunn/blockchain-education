@@ -240,6 +240,7 @@
 5. [Layout of Contract](#layout-of-contract)
 6. [Project setup - DSCEngine](#project-setup---dscengine)
 7. [Create the deposit collateral function](#create-the-deposit-collateral-function)
+8. [Creating the mint function](#creating-the-mint-function)
 
 </details>
 
@@ -3770,3 +3771,75 @@ contract DSCEngine is ReentrancyGuard
 
 - CEI Patterns
 	- checks, effects, interactions
+
+#### Creating the mint function
+- [Aave Borrowing FAQs](https://docs.aave.com/faq/borrowing)
+- [Health Factor](https://docs.aave.com/faq/borrowing#what-is-the-health-factor)
+- [Aave Risk Parameters](https://docs.aave.com/risk/asset-risk/risk-parameters)
+- `mintDsc`
+	1.  check if collateral value > dsc amount (using a modifier)
+```
+/**
+ *
+ * @param amountDscToMint Amount of decentralized stable coin to be minted
+ * @notice Must have more collateral value than the minimum threshold
+ */
+
+function mindDsc(uint256 amountDscToMint) external moreThanZero(amountDscToMint) nonReentrant {
+	s_DSCMinted[msg.sender] += amountDscToMint;
+	_revertIfHealthFactorIsBroken(msg.sender);
+}
+```
+
+- `_revertIfHealthFactorIsBroken`
+	1.  check health factor (do they have enough collateral)
+	2. revert if they dont 
+
+- `_healthFactor`
+	1. need total dsc minted
+	2. need collateral value
+```solidity
+function _healthFactor(address user) private view returns (uint256) {
+	(uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
+}
+```
+
+- `_getAccountInformation`
+```solidity
+function _getAccountInformation(address user)
+	private
+	view
+	returns (uint256 totalDscMinted, uint256 collateralValueInUsd)
+{
+	totalDscMinted = s_DSCMinted[user];
+	collateralValueInUsd = getAccountCollateralValue(user);
+}
+```
+
+- `getAccountCollateralValue`
+```solidity
+function getAccountCollateralValue(address user) public view returns (uint256 totalCollateralValueInUsd) {
+	for (uint256 i = 0; i < s_collateralTokens.length; i++) {
+		address token = s_collateralTokens[i];
+		uint256 amount = s_collateralDeposited[user][token];
+		totalCollateralValueInUsd += getUsdValue(token, amount);
+	}
+
+	return totalCollateralValueInUsd;
+}
+```
+
+- `getUsdValue`
+```solidity
+function getUsdValue(address token, uint256 amount) public view returns (uint256) {
+	AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
+	(, int256 price,,,) = priceFeed.latestRoundData();
+
+	return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
+}
+```
+
+- `forge install smartcontractkit/chainlink-brownie-contracts@0.6.1 --no-git`
+```
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Aggregatorv3Interface.sol";
+```
