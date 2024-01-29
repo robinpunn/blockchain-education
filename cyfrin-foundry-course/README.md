@@ -231,6 +231,18 @@
 
 </details>
 
+<summary> Lesson 12: Defi Stablecoin </summary>
+
+1. [What is defi](#what-is-defi)
+2. [Code walkthrough](#code-walkthrough)
+3. [Introduction to stablecoins](#introduction-to-stablecoins)
+4. [Details for Project](#details-for-project)
+5. [Layout of Contract](#layout-of-contract)
+6. [Project setup - DSCEngine](#project-setup---dscengine)
+7. [Create the deposit collateral function](#create-the-deposit-collateral-function)
+
+</details>
+
 ---
 
 ### [Lesson 1: Blockchain Basics](https://www.youtube.com/watch?v=umepbfKp5rI&t=834s)
@@ -3471,3 +3483,290 @@ function withdraw(address recentWinner) public {
 		- `<sig>`,`<calldata>`
 - `cast sig "transferFrom(address,address,uint26)"` ---> `0x345dac5d`
 - `https://openchain.xyz/signatures`
+
+
+
+### [Lesson 12](https://www.youtube.com/watch?v=wUjYK5gwNZs&t=0s)
+#### What is DeFi?
+- [What is DeFi?](https://chain.link/education/defi)
+- [DefiLlama](https://defillama.com/)
+	- Gives a snapshot of the defi ecosystem on various chains
+- [Bankless](https://www.bankless.com/)
+- [MEV](https://www.flashbots.net/)
+- [Aave](https://aave.com/)
+- [My Previous Aave Video on Shorting Assets](https://www.youtube.com/watch?v=TmNGAvI-RUA)
+- [DAI](https://makerdao.com/en/)
+- [Uniswap](https://app.uniswap.org/)
+- [Maximal Extractable Value (MEV)](https://ethereum.org/en/developers/docs/mev/)
+
+#### Code Walkthrough
+- There are two main contract files
+	- `DSCEngine.sol`
+	- `DecentralizedStablecoin.sol`
+- `DSCEngine.sol` controls `DecentralizedStablecoin.sol`
+
+#### Introduction to stablecoins
+- A stable coin is a non volatile crypto asset
+- [Video](https://www.youtube.com/watch?v=pciVQVocTYc)
+- [MakerDAO Forums](https://start.makerdao.com/)
+
+#### Details for Project
+1. Relative Stability: Anchored or Pegged -> $1.00
+    1. Chainlink price feed
+    2. Set a function to exchange ETH and BTC
+2. Stability Mechanism (Minting): Algorithmic (Decentralized)
+    1. People can only  mint the stablecoin with enough collateral (coded)
+3. Collateral: Exogenous (Crypto)
+    1. wETH
+    2. wBTC
+
+#### Layout of Contract
+```solidity
+// Layout of Contract:
+// version
+// imports
+// errors
+// interfaces, libraries, contracts
+// Type declarations
+// State variables
+// Events
+// Modifiers
+// Functions
+
+// Layout of Functions:
+// constructor
+// receive function (if exists)
+// fallback function (if exists)
+// external
+// public
+// internal
+// private
+// view & pure functions
+```
+
+- Make code verbose to make it easier for auditors
+- Install OpenZeppelin
+```
+forge install openzeppelin/openzeppelin-contracts --no-git
+```
+- Update remappings in `foundry.toml`
+```
+remappings = ["@openzeppelin/contracts=lib/openzeppelin-contracts/contracts"]
+```
+- and again for vscode
+```
+forge remappings > remappings.txt
+```
+
+- `ERC20Burnable` give us the `burn` function that helps maintain the peg price
+```solidity
+import {ERC20Burnable, ERC20} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+
+function burnFrom(address account, uint256 value) public virtual {
+	_spendAllowance(account, _msgSender(), value);
+	_burn(account, value);
+}
+```
+- `ERC20Burnable` is `ERC20` so we have to add it to the constructor
+```
+contract DecentralizedStableCoin is ERC20Burnable {
+    constructor()ERC20("DecentralizedStableCoin", "DSC") {}
+}
+```
+
+- Indicates to use `burn` from parent class (`ERC20Burnable`)
+```solidity
+super.burn(_amount);
+```
+
+- Final code from this section... I had to add `Ownable(msg.sender)` to constructor to get rid compiler error:
+```solidity
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.4;
+
+import {ERC20Burnable, ERC20} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+/**
+ * @title DecentralizedStableCoin
+ * @author Robin Punnoose
+ * Collateral: Exogenous (ETH/BTC)
+ * Minting: Algorithmic
+ * Relative Stability: Pegged to USD
+ *
+ * This is the contract meant to be governed by DSCEngine. This contract is just the ERC20 implementation of our stablecoin system.
+ *
+ */
+
+contract DecentralizedStableCoin is ERC20Burnable, Ownable {
+    error DecentralizedStableCoin__MustBeMoreThanZero();
+    error DecentralizedStableCoin__BurnAmountExceedBalance();
+    error DecentralizedStableCoin__NotZeroAddress();
+
+    constructor() ERC20("DecentralizedStableCoin", "DSC") Ownable(msg.sender) {}
+
+    function burn(uint256 _amount) public override onlyOwner {
+        uint256 balance = balanceOf(msg.sender);
+        if (_amount <= 0) {
+            revert DecentralizedStableCoin__MustBeMoreThanZero();
+        }
+
+        if (balance < _amount) {
+            revert DecentralizedStableCoin__MustBeMoreThanZero();
+        }
+        super.burn(_amount);
+    }
+
+    function mint(
+        address _to,
+        uint256 _amount
+    ) external onlyOwner returns (bool) {
+        if (_to == address(0)) {
+            revert DecentralizedStableCoin__BurnAmountExceedBalance();
+        }
+
+        if (_amount <= 0) {
+            revert DecentralizedStableCoin__MustBeMoreThanZero();
+        }
+        
+        _mint(_to, _amount);
+        return true;
+    }
+}
+```
+
+#### Project setup - DSCEngine
+- The `DSCEngine.sol` contract hold the main logic of the system
+- We are going to set up a system where other users can liquidate users that are not over-collateralized
+	- Users can pay back the debt to get the collateral
+
+- Final code from this section `DSCEngine.sol`:
+```solidity
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.4;
+
+/**
+ * @title DSCEngine
+ * @author Robin Punnoose
+ *
+ * This system is designed to be as minimal as possible and have the tokens maintain a 1 token == $1 peg.
+ * This stablecoin has the properties:
+ * - Exogenous collateral
+ * - Dollar pegged
+ * - Algorithmically stable
+ *
+ * It is similar to DIA without the governance, does not require fees, and is collateralized only by wETH and wBTC
+ *
+ * Our DSC system should always be "overcollateralized". At no point should the value of all the collateral <= the $ backed value of all the DSC.
+ *
+ * @notice This contract is the core of the DSC System. It handles all the logic for minting and redeeming DSC, as well as depositing and withdrawing collateral.
+ * @notice This contract is based on the MakerDAO DSS (DAI) system.
+ */
+
+contract DSCEngine {
+    function depositCollateralAndMintDsc() external {}
+  
+    function depositCollateral() external {}
+
+    function redeemCollateralForDsc() external {}
+
+    function redeemCollateral() external {}
+
+    function mindDsc() external {}
+
+    function burnDsc() external {}
+
+    function liquidate() external {}
+
+    function getHealthFactor() external view {}
+}
+```
+
+#### Create the deposit collateral function
+- Other DeFi Examples:
+    - [Aave V2 Docs](https://docs.aave.com/developers/v/2.0/)
+    - [Aave NPM](https://www.npmjs.com/package/@aave/protocol-v2)
+
+- updated constructor
+```solidity
+constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress) {
+	if (tokenAddresses.length != priceFeedAddresses.length) {
+		revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+	}
+
+	for (uint256 i = 0; i < tokenAddresses.length; i++) {
+		s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
+	}
+
+	i_dsc = DecentralizedStableCoin(dscAddress);
+}
+```
+
+- updated `depositCollateral` Function
+```solidity
+/**
+ * @notice follows CEI pattern
+ * @param tokenCollateralAddress The address of the token to deposit as collateral
+ * @param amountCollateral The amount of collateral to deposit
+ */
+
+function depositCollateral(address tokenCollateralAddress, uint256 amountCollateral)
+	external
+	moreThanZero(amountCollateral)
+	isAllowedToken(tokenCollateralAddress)
+	nonReentrant
+{
+	s_collateralDeposited[msg.sender][tokenCollateralAddress] += amountCollateral;
+	emit CollateralDeposited(msg.sender, tokenCollateralAddress, amountCollateral);
+	bool success = IERC20(tokenCollateralAddress).transferFrom(msg.sender, address(this), amountCollateral);
+
+	if (!success) {
+		revert DSCEngine__TransferFailed();
+	}
+}
+```
+
+- added modifiers for input sanitation
+```
+    modifier moreThanZero(uint256 amount) {
+        if (amount == 0) {
+            revert DSCEngine__NeedsMoreThanZero();
+        }
+        _;
+    }
+
+    modifier isAllowedToken(address token) {
+        if (s_priceFeeds[token] == address(0)) {
+            revert DSCEngine__TokenNotAllowed();
+        }
+        _;
+    }
+```
+
+- mapping to track tokens and price feeds
+```
+mapping(address token => address priceFeed) private s_priceFeeds;
+```
+
+- nested mapping to track collateral deposited by users:
+```
+mapping(address user => mapping(address token => uint256 amount)) private s_collateralDeposited;
+```
+
+- Reentrancies are one of the most common attacks in web3
+	- adding nonReentrant from openzeppelin is more gas intensive, but it is safer
+```solidity
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+```
+
+```solidity
+contract DSCEngine is ReentrancyGuard
+```
+
+- allows us to use this modifier:
+``nonReentrant``
+
+- CEI Patterns
+	- checks, effects, interactions
