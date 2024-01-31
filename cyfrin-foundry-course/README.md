@@ -241,6 +241,8 @@
 6. [Project setup - DSCEngine](#project-setup---dscengine)
 7. [Create the deposit collateral function](#create-the-deposit-collateral-function)
 8. [Creating the mint function](#creating-the-mint-function)
+9. [Creating and retrieving the health factor](#creating-and-retrieving-the-health-factor)
+10. [Finishing the mint function](#finishing-the-mint-function)
 
 </details>
 
@@ -3843,3 +3845,55 @@ function getUsdValue(address token, uint256 amount) public view returns (uint256
 ```
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Aggregatorv3Interface.sol";
 ```
+
+#### Creating and retrieving the health factor
+- we updated the `_healthfactor` function
+```solidity
+function _healthFactor(address user) private view returns (uint256) {
+	(uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
+
+	return (collateralValueInUsd/totalDscMinted);
+}
+```
+- but we still need a liquidation threshold
+```solidity
+uint256 private constant LIQUIDATION_THRESHOLD = 50;
+```
+
+- updated `_healthfactor`
+	- the health factor needs to be greater than 1
+	- overcollateralized by at least 200%
+```
+function _healthFactor(address user) private view returns (uint256) {
+	(uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
+
+	uint256 collateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+
+	return (collateralAdjustedForThreshold * PRECISION) / totalDscMinted;
+}
+```
+
+- `_revertIfHealthFactorIsBroken`
+```solidity
+function _revertIfHealthFactorIsBroken(address user) internal view {
+	uint256 userHealthFactor = _healthFactor(user);
+
+	if (userHealthFactor < MIN_HEALTH_FACTOR) {
+		revert DSCEngine__BreaksHealthFactor(userHealthFactor);
+	}
+}
+```
+
+#### Finishing the mint Function
+```solidity
+function mindDsc(uint256 amountDscToMint) external moreThanZero(amountDscToMint) nonReentrant {
+	s_DSCMinted[msg.sender] += amountDscToMint;
+	_revertIfHealthFactorIsBroken(msg.sender);
+	
+	bool minted = i_dsc.mint(msg.sender, amountDscToMint);
+	if (!minted) {
+		revert DSCEngine__MintFailed();
+	}
+}
+```
+
