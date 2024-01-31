@@ -243,7 +243,7 @@
 8. [Creating the mint function](#creating-the-mint-function)
 9. [Creating and retrieving the health factor](#creating-and-retrieving-the-health-factor)
 10. [Finishing the mint function](#finishing-the-mint-function)
-
+11. [Creating the deployment script](#creating-the-deployment-script)
 </details>
 
 ---
@@ -3894,6 +3894,235 @@ function mindDsc(uint256 amountDscToMint) external moreThanZero(amountDscToMint)
 	if (!minted) {
 		revert DSCEngine__MintFailed();
 	}
+}
+```
+
+#### Creating the deployment script
+- [chainlink pricefeeds](https://docs.chain.link/data-feeds/price-feeds/addresses)
+- initial deploy script:
+```solidity
+//SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Script} from "forge-std/Script.sol";
+import {DecentralizedStableCoin} from "../src/DecentralizedStableCoin.sol";
+import {DSCEngine} from "../src/DSCEngine.sol";
+
+contract DeployDSC is Script {
+    function run() external returns (DecentralizedStableCoin, DSCEngine) {
+        vm.startBroadcast();
+        DecentralizedStableCoin dsc = new DecentralizedStableCoin();
+        // DSCEngine engine = new DSCEngine(dsc);
+        vm.stopBroadcast();
+    }
+}
+```
+
+- `DSCEngine engine = new DSCEngine(dsc);` takes more arguments than just `dsc`
+```solidity
+constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress) {...}
+```
+
+- So we have to create a helper config for the other arguments
+```solidity
+//SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Script} from "../forge-std/Script.sol";
+
+contract HelperConfig is Script {
+
+}
+```
+
+- We add a struct for the network config
+```solidity
+struct NetworkConfig {
+	address wethUsdPriceFeed;
+	address wbtcUsdPriceFeed;
+	address weth;
+	address wbtc;
+	uint256 deployerKey;
+}
+```
+
+- Add the `NetworkConfig`
+```solidity
+NetworkConfig public activeNetworkConfig;
+
+constructor() {}
+
+function getSepoliaEthConfig() public view returns(NetworkConfig memory ) {
+	return NetworkConfig({
+		wethUsdPriceFeed: 0x694AA1769357215DE4FAC081bf1f309aDC325306,
+		wbtcUsdPriceFeed: 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43,
+		weth: 0xdd13E55209Fd76AfE204dBda4007C227904f0a81,
+		wbtc: 0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063,
+		deployerKey: vm.envUint("PRIVATE_KEY")
+	});
+}
+```
+
+- Add the `getOrCreateAnvilEthConfig` function which is going to require the Mock V3 aggregator... `MockV3Aggregator.sol`:
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+/**
+ * @title MockV3Aggregator
+ * @notice Based on the FluxAggregator contract
+ * @notice Use this contract when you need to test
+ * other contract's ability to read data from an
+ * aggregator contract, but how the aggregator got
+ * its answer is unimportant
+ */
+
+contract MockV3Aggregator {
+    uint256 public constant version = 0;
+    uint8 public decimals;
+    int256 public latestAnswer;
+    uint256 public latestTimestamp;
+    uint256 public latestRound;
+
+    mapping(uint256 => int256) public getAnswer;
+    mapping(uint256 => uint256) public getTimestamp;
+    mapping(uint256 => uint256) private getStartedAt;
+
+    constructor(uint8 _decimals, int256 _initialAnswer) {
+        decimals = _decimals;
+        updateAnswer(_initialAnswer);
+    }
+
+    function updateAnswer(int256 _answer) public {
+        latestAnswer = _answer;
+        latestTimestamp = block.timestamp;
+        latestRound++;
+        getAnswer[latestRound] = _answer;
+        getTimestamp[latestRound] = block.timestamp;
+        getStartedAt[latestRound] = block.timestamp;
+    }
+
+    function updateRoundData(uint80 _roundId, int256 _answer, uint256 _timestamp, uint256 _startedAt) public {
+        latestRound = _roundId;
+        latestAnswer = _answer;
+        latestTimestamp = _timestamp;
+        getAnswer[latestRound] = _answer;
+        getTimestamp[latestRound] = _timestamp;
+        getStartedAt[latestRound] = _startedAt;
+    }
+
+    function getRoundData(uint80 _roundId)
+        external
+        view
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
+    {
+        return (_roundId, getAnswer[_roundId], getStartedAt[_roundId], getTimestamp[_roundId], _roundId);
+    }
+
+    function latestRoundData()
+        external
+        view
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
+    {
+        return (
+            uint80(latestRound),
+            getAnswer[latestRound],
+            getStartedAt[latestRound],
+            getTimestamp[latestRound],
+            uint80(latestRound)
+        );
+    }
+
+    function description() external pure returns (string memory) {
+        return "v0.6/tests/MockV3Aggregator.sol";
+    }
+}
+```
+- And import it
+```solidity
+import {MockV3Aggregator} from "../test/mocks/MockV3Aggregator.sol";
+```
+
+
+- We can import `ERC20Mock from openzeppelin`:
+```solidity
+import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
+```
+
+- `getOrCreateAnvilEthConfig` function
+```solidity
+function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory) {
+	if (activeNetworkConfig.wbtcUsdPriceFeed != address(0)) {
+		return activeNetworkConfig;
+	}
+
+	vm.startBroadcast();
+	MockV3Aggregator ethUsdPriceFeed = new MockV3Aggregator(
+		DECIMALS,
+		ETH_USD_PRICE
+
+	);
+	ERC20Mock wethMock = new ERC20Mock("WETH", "WETH", msg.sender, 1000e8);
+
+	MockV3Aggregator btcUsdPriceFeed = new MockV3Aggregator(
+		DECIMALS,
+		BTC_USD_PRICE
+	);
+	ERC20Mock wbtcMock = new ERC20Mock("WBTC", "WBTC", msg.sender, 1000e8);
+	vm.stopBroadcast();
+
+	return NetworkConfig({
+		wethUsdPriceFeed: address(ethUsdPriceFeed),
+		wbtcUsdPriceFeed: address(btcUsdPriceFeed),
+		weth: address(wethMock),
+		wbtc: address(wbtcMock),
+		deployerKey: DEFAULT_ANVIL_KEY
+	});
+}
+```
+
+- update the constructor to use active network conditionally based on whether or not sepolia is being used:
+```solidity
+constructor() {
+	if (block.chainid == 11155111) {
+		activeNetworkConfig = getSepoliaEthConfig();
+	} else {
+		activeNetworkConfig = getOrCreateAnvilEthConfig();
+	}
+}
+```
+
+- we can complete the `DeployDSC.s.sol` script
+```solidity
+//SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Script} from "forge-std/Script.sol";
+import {DecentralizedStableCoin} from "../src/DecentralizedStableCoin.sol";
+import {DSCEngine} from "../src/DSCEngine.sol";
+import {HelperConfig} from "./HelperConfig.s.sol";
+
+contract DeployDSC is Script {
+    address[] public tokenAddresses;
+    address[] public priceFeedAddresses;
+
+    function run() external returns (DecentralizedStableCoin, DSCEngine) {
+        HelperConfig config = new HelperConfig();
+
+        (address wethUsdPriceFeed, address wbtcUsdPriceFeed, address weth, address wbtc, uint256 deployerKey) =
+            config.activeNetworkConfig();
+
+        tokenAddresses = [weth, wbtc];
+        priceFeedAddresses = [wethUsdPriceFeed, wbtcUsdPriceFeed];
+
+        vm.startBroadcast(deployerKey);
+        DecentralizedStableCoin dsc = new DecentralizedStableCoin();
+        DSCEngine engine = new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
+        dsc.transferOwnership(address(engine));
+        vm.stopBroadcast();
+
+        return (dsc, engine);
+    }
 }
 ```
 
