@@ -246,6 +246,7 @@
 11. [Creating the deployment script](#creating-the-deployment-script)
 12. [Test the DSCEngine smart contract](#test-the-dscengine-smart-contract)
 13. [Create the `depostAndMint` function](#create-the-depostandmint-function)
+14. [Create the `redeemCollateral` function](#create-the-redeemcollateral-function)
 
 </details>
 
@@ -4202,5 +4203,60 @@ function depositCollateralAndMintDsc(
 ) external {
 	depositCollateral(tokenCollateralAddress, amountCollateral);
 	mintDsc(amountDscToMint);
+}
+```
+
+#### Create the `redeemCollateral` function
+- We have a way to get money in, and now this function will be a way for users to get their money out
+- In order to redeem collateral:
+	- Health factor must still be 1 AFTER collateral is pulled
+- DRY: Don't repeat yourself
+	- In it's current form, the function isn't modular, but we will refactor it
+- In this case, we may have to violate the CEI pattern because we need to make sure health factor is still 1 after collateral is pulled
+	- We could create a `_calculateHealthFactorAfter()` function, but that would be gas intensive
+	- So it's usually okay to transfer the token and then revert if health factor is bad
+```solidity
+function redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral)
+	public
+	moreThanZero(amountCollateral)
+	nonReentrant
+{
+	s_collateralDeposited[msg.sender][tokenCollateralAddress] -= amountCollateral;
+	emit CollateralRedeemed(msg.sender, tokenCollateralAddress, amountCollateral);
+
+	bool success = IERC20(tokenCollateralAddress).transfer(msg.sender, amountCollateral);
+
+	if (!success) {
+		revert DSCEngine__TransferFailed();
+	}
+
+	_revertIfHealthFactorIsBroken(msg.sender);
+}
+```
+
+- First, we need to burn the DSC, then redeem the ETH in order to avoid breaking the health factor... so we need to combine redeeming collateral with burning DSC
+```solidity
+function burnDsc(uint256 amount) public moreThanZero(amount) {
+	s_DSCMinted[msg.sender] -= amount;
+	
+	bool success = i_dsc.transferFrom(msg.sender, address(this), amount);
+	if (!success) {
+		revert DSCEngine__TransferFailed();
+	}
+
+	i_dsc.burn(amount);
+	_revertIfHealthFactorIsBroken(msg.sender);
+}
+```
+- We should not have to check if health factor is damaged, because the burn function is removing debt which will increase the health factor
+
+- Now we can combine the two functions into one transaction:
+```solidity
+function redeemCollateralForDsc(address tokenCollateralAddress, uint256 amountCollateral, uint256 amountDscToBurn)
+	external
+{
+	burnDsc(amountDscToBurn);
+	redeemCollateral(tokenCollateralAddress, amountCollateral);
+	// redeem collateral alrady checks health factor so _revertIfHealthFactorIsBroken not needed
 }
 ```
