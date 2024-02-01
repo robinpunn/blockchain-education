@@ -244,6 +244,7 @@
 9. [Creating and retrieving the health factor](#creating-and-retrieving-the-health-factor)
 10. [Finishing the mint function](#finishing-the-mint-function)
 11. [Creating the deployment script](#creating-the-deployment-script)
+12. [Test the DSCEngine smart contract](#test-the-dscengine-smart-contract)
 </details>
 
 ---
@@ -4126,3 +4127,57 @@ contract DeployDSC is Script {
 }
 ```
 
+#### Test the DSCEngine smart contract
+- Setup `DSCEngine.test.t.sol`:
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Test} from "forge-std/Test.sol";
+import {DeployDSC} from "../../script/DeployDSC.s.sol";
+import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
+import {DSCEngine} from "../../src/DSCEngine.sol";
+
+contract DSCEngineTest is Test {
+    DeployDSC deployer;
+    DecentralizedStableCoin dsc;
+    DSCEngine dsce;
+    HelperConfig config;
+    address ethUsdPriceFeed;
+    address weth;
+
+    function setUp() public {
+        deployer = new DeployDSC();
+        (dsc, dsce, config) = deployer.run();
+        (ethUsdPriceFeed,, weth,,) = config.activeNetworkConfig();
+    }
+}
+```
+
+- test `testGetUsdValue`
+```solidity
+function testGetUsdValue() public {
+	uint256 ethAmount = 15e18;
+	uint256 expectedUsd = 30000e18;
+	uint256 actualUsd = dsce.getUsdValue(weth, ethAmount);
+	assertEq(expectedUsd, actualUsd);
+}
+```
+- `forge test --mt testGetUsdValue`
+- this test will fail as is when running on sepolia because we're hard coding the value
+
+- test `testRevertsIfCollateralZero`
+```solidity
+function testRevertsIfCollateralZero() public {
+	vm.startPrank(USER);
+	ERC20Mock(weth).approve(address(dsce), AMOUNT_COLLATERAL);
+
+	vm.expectRevert(DSCEngine.DSCEngine__NeedsMoreThanZero.selector);
+	dsce.depositCollateral(weth, 0);
+	vm.stopPrank();
+}
+```
+- `forge test --mt testRevertsIfCollateralZero`
+
+- add sepolia rpc url to `.env` file and run `source .env` in order to run:
+	- `forge test --fork-url $SEPOLIA_RPC_URL`
