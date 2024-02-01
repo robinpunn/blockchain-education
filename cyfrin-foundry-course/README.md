@@ -245,6 +245,8 @@
 10. [Finishing the mint function](#finishing-the-mint-function)
 11. [Creating the deployment script](#creating-the-deployment-script)
 12. [Test the DSCEngine smart contract](#test-the-dscengine-smart-contract)
+13. [Create the `depostAndMint` function](#create-the-depostandmint-function)
+
 </details>
 
 ---
@@ -4181,3 +4183,24 @@ function testRevertsIfCollateralZero() public {
 
 - add sepolia rpc url to `.env` file and run `source .env` in order to run:
 	- `forge test --fork-url $SEPOLIA_RPC_URL`
+
+#### Create the `depostAndMint` function
+- The purpose of this protocol is to deposit collateral and mint the stablecoin
+- This function will call the deposit and mint functions combining them in one transaction
+```solidity
+/**
+ * @param tokenCollateralAddress The address of the token to deposit as collateral
+ * @param amountCollateral The amount of collateral to deposit
+ * @param amountDscToMint The amount of stablecoin to mint
+ * @notice This function will deposit your collateral and mint DSC in one transaction
+ */
+
+function depositCollateralAndMintDsc(
+	address tokenCollateralAddress,
+	uint256 amountCollateral,
+	uint256 amountDscToMint
+) external {
+	depositCollateral(tokenCollateralAddress, amountCollateral);
+	mintDsc(amountDscToMint);
+}
+```
