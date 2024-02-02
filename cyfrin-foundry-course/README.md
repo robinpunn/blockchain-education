@@ -249,6 +249,7 @@
 14. [Create the `redeemCollateral` function](#create-the-redeemcollateral-function)
 15. [Setup Liquidations](#setup-liquidations)
 16. [Refactor Liquidations](#refactor-liquidations)
+17. [`DSCEngine` advanced testing](#dscengine-advanced-testing)
 
 </details>
 
@@ -4449,3 +4450,63 @@ function liquidate(address collateral, address user, uint256 debtToCover)
 ```
 
 - The value of our collateral always needs to be more than the minted DSC
+
+#### `DSCEngine` advanced testing
+- Formal verification: the act of proving or disproving a given property of a system using a mathematical model
+- Symbolic execution is one technique used for formal verification
+	- Explores different paths in a program creating a mathematical representation for each path
+
+- Layer 1: unit test
+	- The bare minimum, (testing individual functions???)
+	- Tools: Foundry, Hardhat, Apeworks?, Truffle, Brownie
+- Layer 2: fuzz test
+	- Take random inputs and run them through your program
+	- The NEW bare minimum
+	- Define a property (invariant) and throw random data at the system in order to break the property
+	- Tools: Foundry, Echidna, Consensys Dillegince Fuzzer
+- Layer 3: static analysis
+	- unit and fuzz testing are dynamic (we run or execute our code)
+	- With static analysis, we just look at our code or have some tool look at our code
+	- Tools: slither, solidity compiler
+- Layer 4: formal verification
+	- The act of proving or disproving a given property of the system
+	- Fuzz testing tries to break you system by throwing random data at your system
+	- Formal verification tries to break properties using mathematical proofs
+
+- Many different ways to accomplish formal verfication, including:
+	- Symbolic Execution
+	- Abstract Interpretation
+	- Model Checking
+
+- Symbolic Execution
+	- We try to explore the different paths of the program
+	- For every execution path, we create a mathematical representation
+	- So we create a mathematical formula for a certain function and we do this for our entire program and we push it into a "solver" that will return true or false
+- There are many different types of solvers
+	- SMT or SAT solver 
+- SMT-LIB
+	- A language made specifically to work with solvers
+- Tools:
+	- Manticore, HEVM, Solidity SMT Checker 
+	- Gives us SMT output which we can run through a solver, but these tools already do that for us
+
+- Steps
+	1. We create solidity code and understand the invariants
+	2. Covert our code to math using some symbolic execution tool
+		- We create a set of boolean expressions that represent every execution path of our code
+	3. Dump this Math into a solver (like z3???) to see if our property can be broken
+
+- Solidity command:
+```bash
+solc --model-checker-engine chc --model-checker-targets overflow FileName.sol
+```
+
+- These are not a one size fits all approach
+- Symbolic execution can run into the "path explosion problem"
+	- There are too many paths for a computer to explore in a reasonable amount of time... a solver would not be able to finish
+	- An infinite loop would require significant effort
+
+- [secure contracts](https://secure-contracts.com)
+
+- This isn't a guarantee that code is bug free... it just mathematically proves the code does the one specific thing you're testing correctly
+- Key takeaway is to become proficient at stateful fuzzing
