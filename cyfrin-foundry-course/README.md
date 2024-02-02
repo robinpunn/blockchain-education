@@ -247,6 +247,7 @@
 12. [Test the DSCEngine smart contract](#test-the-dscengine-smart-contract)
 13. [Create the `depostAndMint` function](#create-the-depostandmint-function)
 14. [Create the `redeemCollateral` function](#create-the-redeemcollateral-function)
+15. [Setup Liquidations](#setup-liquidations)
 
 </details>
 
@@ -4260,3 +4261,57 @@ function redeemCollateralForDsc(address tokenCollateralAddress, uint256 amountCo
 	// redeem collateral alrady checks health factor so _revertIfHealthFactorIsBroken not needed
 }
 ```
+
+#### Setup Liquidations
+- The `liquidate` function is the key that holds the system together... it allows for a way to remove undercollateralized positions
+- If someone is almost under collateralized, users need to be incentivized to liquidate the position
+	- Other users would pay off the loan and keep remaining collateral at a discount
+- This system only works, if it is always overcollateralized... if it isn't then users don't have an incentive to liquidate
+- Things we need to do
+	- Check the healthfactor of the user
+	- Burn the DSC debt and take collateral
+	- Give a 10% bonus for liquidators
+
+- We will need a function that can get the price in usd of the collateral
+```solidity
+function getTokenAmountFromUsd(address token, uint256 usdAmountInWei) public view returns (uint256) {
+	AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
+	(, int256 price,,,) = priceFeed.latestRoundData();
+	return (usdAmountInWei * PRECISION) / (uint256(price) * ADDITIONAL_FEED_PRECISION);
+}
+```
+
+- The liquidate function so far:
+```solidity
+/**
+ * @param collateral The ERC20 colleteral address to liquidate from the user
+ * @param user The user being liquidated
+ * @param debtToCover The amount of DSC to burn to improve health factor
+ * @notice You can partially liquidate a user
+ * @notice You will get a liquidation bonus for taking user's funds
+ * @notice This function working assumes the protocol will be roughly 200% overcollateralized
+ * @notice A known bug would be if the protocol was 100% or less collateralized
+ * Bonus wouldn't be possible if undercollateralized, so a steep price decline without any liquidations could cause this issue
+ */
+
+function liquidate(address collateral, address user, uint256 debtToCover)
+	external
+	moreThanZero(debtToCover)
+	nonReentrant
+{
+	uint256 startingUserHealthFactor = _healthFactor(user);
+	if (startingUserHealthFactor >= MIN_HEALTH_FACTOR) {
+		revert DSCEngine__HealthFactorOk();
+	}
+
+	uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateral, debtToCover);
+
+	// 10% bonus
+	uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
+
+	uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
+}
+```
+- From here, we need to: 
+	- transfer the `totalCollateralToRedeem` to whoever is calling the liquidate function
+	- burn the dsc from the user being liquidated
