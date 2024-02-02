@@ -250,6 +250,7 @@
 15. [Setup Liquidations](#setup-liquidations)
 16. [Refactor Liquidations](#refactor-liquidations)
 17. [`DSCEngine` advanced testing](#dscengine-advanced-testing)
+18. [Fuzz and Invariant Tests](#fuzz-and-invariant-tests)
 
 </details>
 
@@ -4510,3 +4511,51 @@ solc --model-checker-engine chc --model-checker-targets overflow FileName.sol
 
 - This isn't a guarantee that code is bug free... it just mathematically proves the code does the one specific thing you're testing correctly
 - Key takeaway is to become proficient at stateful fuzzing
+
+#### [Fuzz and Invariant Tests]( https://www.youtube.com/watch?v=juyY-CTolac)
+- Invariant: Property of our system that should always hold
+
+- Using foundry, this would be an example of a unit test:
+```solidity
+function testIAlwaysGetZero() public {
+	uint256 data =  0;
+	exampleContract.doStuff(data);
+	assert(exampleContract.shouldAlwaysBeZero()==0);
+}
+```
+- We are hard coding the data
+
+- A fuzz test would look like this
+```solidity
+function testIAlwaysGetZeroFuzz() public {
+	exampleContract.doStuff(data);
+	assert(exampleContract.shouldAlwaysBeZero()==0);
+}
+```
+- Foundry will automatically randomize data
+
+- Steps we need to take
+	1. Understand our invariants
+	2. Write a fuzz test for the invariant
+
+- Stateless Fuzzing: The state of the previous run is discarded for every new run
+- Stateful Fuzzing: Fuzzing where the final state of your previous run is the starting state of your next run
+
+- To write a stateful fuzz test in foundry, we use the `invariant_` keyword and it requires a bit of setup
+- We need to import `StdInvatiant` from foundry and inherit it in our test contract
+```solidity
+function invariant_testAlwaysIsZero() public {
+	assert(exampleContract.shouldAlwaysBeZero() == 0);
+}
+```
+
+- In foundry:
+	- Fuzz test = random data to one function
+	- Invariant tests = random data and random function calls to many functions
+	- Foundry Fuzzing = Stateless Fuzzing
+	- Foundry Invariant = Stateful Fuzzing
+
+- Invariant examples:
+	- New tokens minted < inflation rate
+	- Only possible to have 1 winner in a lottery
+	- Only withdraw what they deposit
