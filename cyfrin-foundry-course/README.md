@@ -248,6 +248,7 @@
 13. [Create the `depostAndMint` function](#create-the-depostandmint-function)
 14. [Create the `redeemCollateral` function](#create-the-redeemcollateral-function)
 15. [Setup Liquidations](#setup-liquidations)
+16. [Refactor Liquidations](#refactor-liquidations)
 
 </details>
 
@@ -4315,3 +4316,136 @@ function liquidate(address collateral, address user, uint256 debtToCover)
 - From here, we need to: 
 	- transfer the `totalCollateralToRedeem` to whoever is calling the liquidate function
 	- burn the dsc from the user being liquidated
+
+#### Refactor Liquidations
+- Currently, our `redeemCollateral` function is hardcoded to use `msg.sender` to adjust collateral:
+```solidity
+s_collateralDeposited[msg.sender][tokenCollateralAddress] -= amountCollateral;
+```
+- This is incorrect as we need to update the collateral of the user being liquidated, not the user calling the function
+- The first step to take to fix the mistake is to create an internal function:
+```solidity
+function _redeemCollateral(address from, address to, address tokenCollateralAddress, uint256 amountCollateral)
+        private
+    {
+        s_collateralDeposited[from][tokenCollateralAddress] -= amountCollateral;
+        emit CollateralRedeemed(from, to, tokenCollateralAddress, amountCollateral);
+
+        bool success = IERC20(tokenCollateralAddress).transfer(to, amountCollateral);
+        if (!success) {
+            revert DSCEngine__TransferFailed();
+        }
+    }
+```
+
+- Then we can updated the redeem function
+```solidity
+function redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral)
+        public
+        moreThanZero(amountCollateral)
+        nonReentrant
+    {
+        _redeemCollateral(msg.sender, msg.sender, tokenCollateralAddress, amountCollateral);
+        _revertIfHealthFactorIsBroken(msg.sender);
+    }
+```
+- This function is called by the user, so `msg.sender` is used as the `from` and `to` address
+
+- Then we update the liquidate function
+```solidity
+function liquidate(address collateral, address user, uint256 debtToCover)
+        external
+        moreThanZero(debtToCover)
+        nonReentrant
+    {
+        uint256 startingUserHealthFactor = _healthFactor(user);
+        if (startingUserHealthFactor >= MIN_HEALTH_FACTOR) {
+            revert DSCEngine__HealthFactorOk();
+        }
+
+        uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateral, debtToCover);
+        uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION; // 10% bonus
+        uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
+
+        _redeemCollateral(user, msg.sender, collateral, totalCollateralToRedeem);
+    }
+```
+- Here the `to` and `from` parameters in the `_redeemCollateral` function are different
+
+- We still need to account for the `burnDsc` function, and the first step is to create an internal burn function
+```solidity
+/**
+ * @dev Low level internal function
+ * do not call unless the function calling it is checking for health factors being broken
+ */
+
+function _burnDsc(address onBehalfOf, address dscFrom, uint256 amountDscToBurn) private {
+	s_DSCMinted[onBehalfOf] -= amountDscToBurn;
+	
+	bool success = i_dsc.transferFrom(dscFrom, address(this), amountDscToBurn);
+	if (!success) {
+		revert DSCEngine__TransferFailed();
+
+	}
+
+	i_dsc.burn(amountDscToBurn);
+}
+```
+
+- Then we can update the burn function using `msg.sender` for both address parameters
+```solidity
+function burnDsc(uint256 amount) public moreThanZero(amount) {
+	_burnDsc(msg.sender, msg.sender, amount);
+	_revertIfHealthFactorIsBroken(msg.sender);
+}
+```
+
+- We can then add the `_burnDsc` function to `liquidate`
+```solidity
+function liquidate(address collateral, address user, uint256 debtToCover)
+        external
+        moreThanZero(debtToCover)
+        nonReentrant
+    {
+        uint256 startingUserHealthFactor = _healthFactor(user);
+        if (startingUserHealthFactor >= MIN_HEALTH_FACTOR) {
+            revert DSCEngine__HealthFactorOk();
+        }
+
+        uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateral, debtToCover);
+        uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION; // 10% bonus
+        uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
+
+        _redeemCollateral(user, msg.sender, collateral, totalCollateralToRedeem);
+        _burnDsc(user, msg.sender, debtToCover);
+    }
+```
+
+- We also need to check the health factor now
+```solidity
+function liquidate(address collateral, address user, uint256 debtToCover)
+        external
+        moreThanZero(debtToCover)
+        nonReentrant
+    {
+	...
+	uint256 endingUserHealthFactor = _healthFactor(user);
+	if (endingUserHealthFactor <= startingUserHealthFactor) {
+		revert DSCEngine__HealthFactorNotImproved();
+	}
+}
+```
+
+- We also need to make sure the health factor for the liquidator is ok
+```solidity
+function liquidate(address collateral, address user, uint256 debtToCover)
+        external
+        moreThanZero(debtToCover)
+        nonReentrant
+    {
+	...
+	_revertIfHealthFactorIsBroken(msg.sender);
+}
+```
+
+- The value of our collateral always needs to be more than the minted DSC
