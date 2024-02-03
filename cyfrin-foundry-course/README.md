@@ -251,6 +251,7 @@
 16. [Refactor Liquidations](#refactor-liquidations)
 17. [`DSCEngine` advanced testing](#dscengine-advanced-testing)
 18. [Fuzz and Invariant Tests](#fuzz-and-invariant-tests)
+19. [Write Fuzz Tests](#write-fuzz-tests)
 
 </details>
 
@@ -4559,3 +4560,72 @@ function invariant_testAlwaysIsZero() public {
 	- New tokens minted < inflation rate
 	- Only possible to have 1 winner in a lottery
 	- Only withdraw what they deposit
+
+#### Write Fuzz Tests
+- `forge coverage` to check test coverage
+- Add a test for the constructor to test the revert
+```solidity
+address[] public tokenAddresses;
+address[] public priceFeedAddresses;
+
+function testRevertsIfTokenLengthDoesntMatchPriceFeed() public {
+	tokenAddresses.push(weth);
+	priceFeedAddresses.push(ethUsdPriceFeed);
+	priceFeedAddresses.push(btcUsdPriceFeed);           
+	 vm.expectRevert(DSCEngine.DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength.selector);
+
+	new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
+}
+```
+
+- Add a test for the `getTokenAmountFromUsd` function:
+```solidity
+function testGetTokenAmountFromUsd() public {
+	uint256 usdAmount = 100 ether;
+	uint256 expectedWeth = 0.05 ether; // assuming $2000 eth
+	uint256 actualWeth = dsce.getTokenAmountFromUsd(weth, usdAmount);
+	assertEq(expectedWeth, actualWeth);
+}
+```
+
+- Add a test for the `depositCollateral` function to make sure we can't use unapproved tokens as collateral
+```solidity
+function testRevertsIfUnapprovedCollateral() public {
+	ERC20Mock ranToken = new ERC20Mock("RAN", "RAN", USER, AMOUNT_COLLATERAL);
+
+	vm.startPrank(USER);
+	vm.expectRevert(DSCEngine.DSCEngine__TokenNotAllowed.selector);
+	dsce.depositCollateral(address(ranToken), AMOUNT_COLLATERAL);
+	vm.stopPrank();
+}
+```
+
+- We already have a private version, but we need an external version of `getAccountInformation`:
+```solidity
+function getAccountInformation(address user) external view returns (uint256 totalDscMinted, uint256 collateralValueInUsd) {
+	(totalDscMinted, collateralValueInUsd) = _getAccountInformation(user);
+}
+```
+
+- We can create a `depositCollateral` modifier for testing
+```solidity
+modifier  depositedCollateral() {
+	vm.startPrank(USER);
+	ERC20Mock(weth).approve(address(dsce), AMOUNT_COLLATERAL);
+	dsce.depositCollateral(weth, AMOUNT_COLLATERAL);
+	vm.stopPrank();
+	_;
+}
+```
+
+- Then apply it to the test:
+```solidity
+function testCanDepositCollateralAndGetAccountInfo() public depositedCollateral {
+	(uint256 totalDscMinted, uint256 collateralValueInUsd) = dsce.getAccountInformation(USER);
+	uint256 expectedTotalDscMinted = 0;
+	uint256 expectedDepositAmount = dsce.getTokenAmountFromUsd(weth, collateralValueInUsd);
+
+	assertEq(totalDscMinted, expectedTotalDscMinted);
+	assertEq(AMOUNT_COLLATERAL, expectedDepositAmount);
+}
+```
