@@ -21,6 +21,8 @@ contract DSCEngineTest is Test {
     uint256 public constant AMOUNT_COLLATERAL = 10 ether;
     uint256 public constant AMOUNT_TO_MINT = 100 ether;
     uint256 public constant STARTING_ERC20_BALANCE = 10 ether;
+    uint256 public constant MIN_HEALTH_FACTOR = 1e18;
+    uint256 public constant LIQUIDATION_THRESHOLD = 50;
 
     function setUp() public {
         deployer = new DeployDSC();
@@ -177,7 +179,7 @@ contract DSCEngineTest is Test {
 
     ////////////////////////////
     // redeemCollateral Tests //
-    ///////////////////////////
+    ////////////////////////////
     function testRevertZeroCollateralRedeem() public depositedCollateral {
         vm.startPrank(USER);
         vm.expectRevert(DSCEngine.DSCEngine__NeedsMoreThanZero.selector);
@@ -191,5 +193,107 @@ contract DSCEngineTest is Test {
         vm.stopPrank();
         (, uint256 collateralValueInUsd) = dsce.getAccountInformation(USER);
         assertEq(0, collateralValueInUsd);
+    }
+
+    ///////////////////////////////////
+    // Public and External Functions //
+    ///////////////////////////////////
+    function testGetPrecision() public {
+        uint256 expectedPrecision = 1e18;
+        uint256 actualPrecision = dsce.getPrecision();
+        assertEq(expectedPrecision, actualPrecision);
+    }
+
+    function testGetAdditionalFeedPrecision() public {
+        uint256 expectedPrecision = 1e10;
+        uint256 actualAdditionalPrecision = dsce.getAdditionalFeedPrecision();
+        assertEq(expectedPrecision, actualAdditionalPrecision);
+    }
+
+    function testGetLiquidationThreshold() public {
+        uint256 actualThreshold = dsce.getLiquidationThreshold();
+        assertEq(LIQUIDATION_THRESHOLD, actualThreshold);
+    }
+
+    function testGetLiquidationBonus() public {
+        uint256 expectedLiquidationBonus = 10;
+        uint256 actualLiquidationBonus = dsce.getLiquidationBonus();
+        assertEq(expectedLiquidationBonus, actualLiquidationBonus);
+    }
+
+    function testGetLiquidationPrecision() public {
+        uint256 expectedLiquidationPrecision = 100;
+        uint256 actualLiquidationPrecision = dsce.getLiquidationPrecision();
+        assertEq(expectedLiquidationPrecision, actualLiquidationPrecision);
+    }
+
+    function testGetMinHealthFactor() public {
+        uint256 actualMinHealthFactor = dsce.getMinHealthFactor();
+        assertEq(actualMinHealthFactor, MIN_HEALTH_FACTOR);
+    }
+
+    function testGetCollateralTokens() public {
+        address[] memory collateralTokens = dsce.getCollateralTokens();
+        assertEq(collateralTokens[0], weth);
+    }
+
+    function testGetDsc() public {
+        address dscAddress = dsce.getDsc();
+        assertEq(address(dsc), dscAddress);
+    }
+
+    function testGetCollateralTokenPriceFeed() public {
+        address wethPriceFeed = dsce.getCollateralTokenPriceFeed(weth);
+        assertEq(wethPriceFeed, ethUsdPriceFeed);
+    }
+
+    function testGetHealthFactor() public {
+        uint256 expectedHealthFactor = type(uint256).max;
+        uint256 actualHealthFactor = dsce.getHealthFactor(USER);
+        assertEq(expectedHealthFactor, actualHealthFactor);
+    }
+
+    function testGetAccountInformation() public {
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = dsce.getAccountInformation(USER);
+        assertEq(totalDscMinted, 0);
+        assertEq(collateralValueInUsd, 0);
+    }
+
+    function testGetAccountInformationAfterDepositAndMint() public depositedCollateralAndMintDsc {
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = dsce.getAccountInformation(USER);
+        uint256 ethUsdValue = dsce.getUsdValue(weth, AMOUNT_COLLATERAL);
+        assertEq(totalDscMinted, AMOUNT_TO_MINT);
+        assertEq(collateralValueInUsd, ethUsdValue);
+    }
+
+    function testCalculateHealthFactorAfterDepositAndMint() public depositedCollateralAndMintDsc {
+        uint256 liquidationPrecision = dsce.getLiquidationPrecision();
+        uint256 precision = dsce.getPrecision();
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = dsce.getAccountInformation(USER);
+        uint256 collateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / liquidationPrecision;
+        uint256 expectedHealthFactor = (collateralAdjustedForThreshold * precision) / totalDscMinted;
+        uint256 actualHealthFactor = dsce.getHealthFactor(USER);
+        assertEq(expectedHealthFactor, actualHealthFactor);
+    }
+
+    function testGetCollateralBalanceOfUser() public {
+        uint256 collateralBalance = dsce.getCollateralBalanceOfUser(USER, weth);
+        assertEq(collateralBalance, 0);
+    }
+
+    function testGetCollateralBalanceOfUserAfterDeposit() public depositedCollateral {
+        uint256 collateralBalance = dsce.getCollateralBalanceOfUser(USER, weth);
+        assertEq(collateralBalance, AMOUNT_COLLATERAL);
+    }
+
+    function testGetAccountCollateralValue() public {
+        uint256 collateralValue = dsce.getAccountCollateralValue(USER);
+        assertEq(collateralValue, 0);
+    }
+
+    function testGetAccountCollateralValueAfterDeposit() public depositedCollateral {
+        uint256 collateralValue = dsce.getAccountCollateralValue(USER);
+        uint256 ethUsdValue = dsce.getUsdValue(weth, AMOUNT_COLLATERAL);
+        assertEq(collateralValue, ethUsdValue);
     }
 }
