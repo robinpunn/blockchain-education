@@ -252,6 +252,7 @@
 17. [`DSCEngine` advanced testing](#dscengine-advanced-testing)
 18. [Fuzz and Invariant Tests](#fuzz-and-invariant-tests)
 19. [Write Fuzz Tests](#write-fuzz-tests)
+20. [Setting up Invariant Tests](#setting-up-invariant-tests)
 
 </details>
 
@@ -4629,3 +4630,84 @@ function testCanDepositCollateralAndGetAccountInfo() public depositedCollateral 
 	assertEq(AMOUNT_COLLATERAL, expectedDepositAmount);
 }
 ```
+
+#### Setting up Invariant Tests
+- When working with a codebase, we should always ask:
+	1. What are our invariants/properties?
+
+- [Foundry: Fuzz Testing](https://book.getfoundry.sh/forge/fuzz-testing)
+	- In foundry, fuzz testing is STATELESS fuzz testing
+- [Foundry: Invariant Testing](https://book.getfoundry.sh/forge/invariant-testing)
+	- In Foundry, invariant testing is STATEFUL fuzz testing
+
+ - Open Testing:
+	 - Calls all the functions on a contract to try to break an invariant
+	 - Good for initial run of code
+
+- Handler-Based Testing:
+	- For more complex programs
+	- Narrows down the random calls to increase the likelihood of catching actual errors
+
+- First, we add to `foundry.toml` to setup [invariant testing](https://book.getfoundry.sh/reference/config/testing#invariant)
+```toml
+[invariant]
+runs = 128
+depth = 128
+fail_on_revert = true
+```
+- setting `fail_on_revert` to false lets us run quick open tests
+
+- We create two files for fuzz testing
+	- `InvariantsTest.t.sol`
+		- This file has the invariants/properties of our system that should always hold
+	- `Handler.t.sol`
+		- This file narrows down the way we call functions
+
+- Invariants for this project:
+	1.  Total supply of dsc should be less than the total value of collateral
+	2. Getter/View functions should never revert (evergreen invariant)
+	- There are more that can be added here, but this project just focuses on these two
+
+- If were to do open testing then `OpenInvariantsTest.t.sol` would use `targetContract(address(dsce));` in the `setUp` function
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Test} from "forge-std/Test.sol";
+import {StdInvariant} from "forge-std/StdInvariant.sol";
+import {DeployDSC} from "../../script/DeployDSC.s.sol";
+import {DSCEngine} from "../../src/DSCEngine.sol";
+import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
+import {HelperConfig} from "../../script/HelperConfig.s.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+contract OpenInvariantsTest is StdInvariant, Test {
+    DeployDSC deployer;
+    DSCEngine dsce;
+    DecentralizedStableCoin dsc;
+    HelperConfig config;
+    address weth;
+    address wbtc;
+
+    function setUp() external {
+        deployer = new DeployDSC();
+        (dsc,dsce,config) = deployer.run();
+        (,,weth,wbtc,) = config.activeNetworkConfig();
+        targetContract(address(dsce));
+    }
+
+    function invariant_protocolMustHaveMoreValueThanTotalSupply() public view {
+        // get the value of all the collateral in the protocol
+        // compare it to all the debt (dsc)
+        uint256 totalSupply = dsc.totalSupply();
+        uint256 totalWethDeposited = IERC20(weth).balanceOf(address(dsce));
+        uint256 totalWbtcDeposited = IERC20(wbtc).balanceOf(address(dsce));
+
+        uint256 wethValue = dsce.getUsdValue(weth, totalWethDeposited);
+        uint256 wbtcValue = dsce.getUsdValue(wbtc, totalWbtcDeposited);
+
+        assert(wethValue + wbtcValue >= totalSupply);
+    }
+}
+```
+- With this test as is and without handlers, nothing meaningful is happening as it randomly calls functions
