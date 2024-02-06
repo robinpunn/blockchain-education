@@ -253,6 +253,8 @@
 18. [Fuzz and Invariant Tests](#fuzz-and-invariant-tests)
 19. [Write Fuzz Tests](#write-fuzz-tests)
 20. [Setting up Invariant Tests](#setting-up-invariant-tests)
+21. [Create the `depositCollateral` handler](#create-the-depositcollateral-handler)
+22. [Create the `redeemCollateral` handler](#create-the-redeemcollateral-handler)
 
 </details>
 
@@ -4711,3 +4713,164 @@ contract OpenInvariantsTest is StdInvariant, Test {
 }
 ```
 - With this test as is and without handlers, nothing meaningful is happening as it randomly calls functions
+
+#### Create the `depositCollateral` handler
+- For `InvariantTest.t.sol`, we will have to change `targetContract(address(dsce));` to instead target the handler that we will create
+- We want to create a way to only call the `redeemCollateral` function only when there is collateral to redeem
+
+- First we setup `Handler.t.sol`
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Test} from "forge-std/Test.sol";
+import {DSCEngine} from "../../src/DSCEngine.sol";
+import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
+
+contract Handler is Test {
+    DSCEngine dsce;
+    DecentralizedStableCoin dsc;
+
+    constructor(DSCEngine _dscEngine, DecentralizedStableCoin _dsc) {
+        dsce = _dscEngine;
+        dsc = _dsc;
+    }
+}
+```
+- Initially, we have the constructor that will set the addresses for the `DSCEngine` and the `DecentralizedStableCoin`
+
+- We need to import the Handler to our `InvariantTest.t.sol` file:
+```solidity
+...
+import {Handler} from "./Handler.t.sol";
+
+contract InvariantsTest is StdInvariant, Test {
+	...
+	Handler handler;
+
+	function setUp() external {
+        deployer = new DeployDSC();
+        (dsc, dsce, config) = deployer.run();
+        (,, weth, wbtc,) = config.activeNetworkConfig();
+        handler = new Handler(dsce,dsc);
+        targetContract(address(handler));
+    }
+    ...
+}
+```
+
+- Next we add the `depositCollateral` function which will deposit random collaterals that are valid collaterals
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Test} from "forge-std/Test.sol";
+import {DSCEngine} from "../../src/DSCEngine.sol";
+import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
+
+contract Handler is Test {
+    DSCEngine dsce;
+    DecentralizedStableCoin dsc;
+
+    constructor(DSCEngine _dscEngine, DecentralizedStableCoin _dsc) {
+        dsce = _dscEngine;
+        dsc = _dsc;
+    }
+
+    function despositCollateral(address collateral, uint256 amountCollateral) public {
+        dsce.depositCollateral(collateral, amountCollateral);
+    }
+}
+```
+- In this state, the Handler will only call the `depositCollateral` function... but it's using any random address for the collateral since we have `address collateral` as one of the parameters
+
+- We can fix this by first creating a helper function that will only let us choose valid collateral
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+...
+import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
+
+contract Handler is Test {
+	...
+    ERC20Mock weth;
+    ERC20Mock wbtc;
+
+    constructor(DSCEngine _dscEngine, DecentralizedStableCoin _dsc) {
+		...
+        address[] memory collateralTokens = dsce.getCollateralTokens();
+        weth = ERC20Mock(collateralTokens[0]);
+        wbtc = ERC20Mock(collateralTokens[1]);
+    }
+	...
+	
+    // helper functions
+    function _getCollateralFromSeed(uint256 collateralSeed) private view returns (ERC20Mock) {
+        if (collateralSeed % 2 == 0) {
+            return weth;
+        }
+        return wbtc;
+    }
+}
+```
+
+- If we make our Handler too specific so we can roll with `fail_on_revert = true`, we run the risk of ignoring edge cases... so there is a trade off in trying to accomplish runs that do not revert
+- We want to add a `depositCollateral` function
+```solidity
+function despositCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
+        ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
+        dsce.depositCollateral(address(collateral), amountCollateral);
+    }
+```
+- In this state, we will get many reverts as 0 will sometimes be used for `amountCollateral`
+- We can use `bound` that comes with `StdUtils`
+```solidity
+function bound(int256 x, int256 min, int256 max) internal pure virtual returns (int256 result) {
+        result = _bound(x, min, max);
+        console2_log_StdUtils("Bound result", vm.toString(result));
+    }
+```
+
+```solidity
+function despositCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
+        ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
+        amountCollateral = bound(amountCollateral,1,MAX_DEPOSIT_SIZE);
+
+        vm.startPrank(msg.sender);
+        collateral.mint(msg.sender,amountCollateral);
+        collateral.approve(address(dsce),amountCollateral);
+        dsce.depositCollateral(address(collateral), amountCollateral);
+        vm.stopPrank();
+    }
+```
+
+#### Create the `redeemCollateral` handler
+- We can also add the `redeemCollateral` function
+```solidity
+function redeemCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
+        ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
+        uint256 maxCollateralToRedeem = dsce.getCollateralBalanceOfUser(address(collateral),msg.sender);
+        amountCollateral = bound(amountCollateral,1,maxCollateralToRedeem);
+        dsce.redeemCollateral(address(collateral),amountCollateral);
+    }
+```
+- In this state, if `maxCollateralToRedeem` is zero, the test will fail
+
+- We can use the [`assume`](https://book.getfoundry.sh/cheatcodes/assume) cheatcode
+	- If the boolean expression evaluates to false, the fuzzer will discard the current fuzz inputs and start a new fuzz run.
+- Or we can just return if the input is 0
+```solidity
+ function redeemCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
+        ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
+        uint256 maxCollateralToRedeem = dsce.getCollateralBalanceOfUser(address(collateral), msg.sender);
+
+        amountCollateral = bound(amountCollateral, 0, maxCollateralToRedeem);
+        if (amountCollateral == 0) {
+            return;
+        }
+
+        dsce.redeemCollateral(address(collateral), amountCollateral);
+    }
+```
+- with `fail_on_revert = true`, this fuzz test would not catch a bug that would allow users to redeem more than that have
