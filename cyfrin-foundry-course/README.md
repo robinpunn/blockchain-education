@@ -255,6 +255,8 @@
 20. [Setting up Invariant Tests](#setting-up-invariant-tests)
 21. [Create the `depositCollateral` handler](#create-the-depositcollateral-handler)
 22. [Create the `redeemCollateral` handler](#create-the-redeemcollateral-handler)
+23. [Create the `mintDsc` handler](#create-the-mintdsc-handler)
+24. [Debugging the fuzz tests handler](#debugging-the-fuzz-tests-handler)
 
 </details>
 
@@ -4874,3 +4876,116 @@ function redeemCollateral(uint256 collateralSeed, uint256 amountCollateral) publ
     }
 ```
 - with `fail_on_revert = true`, this fuzz test would not catch a bug that would allow users to redeem more than that have
+
+#### Create the `mintDsc` handler
+- We set `fail_on_revert = false` initially when we run the test just to see the amount of successful runs... if we aim to start with true, we may overlook certain edge cases
+- Some will have a `continueOnRevert` folder and a `failOnRevert` folder
+	- `continueOnRevert` will contain quicker, looser tests
+	- `failOnRevert` will focus on making every test pass with `fail_on_revert = true`
+
+- `continueOnRevert` test:
+```solidity
+function mintDsc(uint256 amount) public {
+	amount = bound(amount, 1, MAX_DEPOSIT_SIZE);
+	vm.startPrank(msg.sender);
+	dsce.mintDsc(amount);
+	vm.stopPrank();
+}
+```
+
+- `failOnRever` test:
+```solidity
+function mintDsc(uint256 amount) public {
+	(uint256 totalDscMinted, uint256 collateralValueInUsd) = dsce.getAccountInformation(msg.sender);
+	
+	int256 maxDscToMint = int256(collateralValueInUsd) / 2 - int256(totalDscMinted);
+	if (maxDscToMint < 0) {
+		return;
+	}
+
+	amount = bound(amount, 0, uint256(maxDscToMint));
+	if (amount == 0) {
+		return;
+	}
+
+	vm.startPrank(msg.sender);
+	dsce.mintDsc(amount);
+	vm.stopPrank();
+}
+```
+#### Debugging the fuzz tests handler
+- Currently, our `totalSupply` is always 0 in all the tests that we run
+- We can use [`ghost variables`](https://book.getfoundry.sh/forge/invariant-testing#handler-ghost-variables) to see if a certain function is actually being called
+
+- debugging:
+	- In our `Handler` we can add `uint256 public timesMintIsCalled;` and increment in the the `mintDsc` function
+	- Then we can `console.log("Times mint called: ", handler.timesMintIsCalled());` in `InvariantsTest.t.sol`
+	- We see that the variable isn't incrementing, so that means `mintDsc` isn't being called
+	- The zero check seems to always return
+- The bug is related to using `msg.sender`... this allows for random addresses to be used, we need to use the same address that mints
+	- If we fix it, we need to be aware that we may be overlooking cases where someone without collateral is able to mint
+
+- To fix:
+	- we can create an array in `Handlers`: `address[] public usersWithCollateralDeposited;`
+	- in the `depositCollateral` function, we can push an address `usersWithCollateralDeposited.push(msg.sender);`
+	- in `redeemCollateral` we can use an address from that array to start the prank: `address sender = usersWithCollateralDeposited[addressSeed % usersWithCollateralDeposited.length];`
+```solidity
+function mintDsc(uint256 amount, uint256 addressSeed) public {
+	if (usersWithCollateralDeposited.length == 0) {
+		return;
+	}
+	address sender = usersWithCollateralDeposited[addressSeed % usersWithCollateralDeposited.length];
+
+	(uint256 totalDscMinted, uint256 collateralValueInUsd) = dsce.getAccountInformation(sender);
+	int256 maxDscToMint = int256(collateralValueInUsd) / 2 - int256(totalDscMinted);
+	if (maxDscToMint < 0) {
+		return;
+	}
+
+	amount = bound(amount, 0, uint256(maxDscToMint));
+	if (amount == 0) {
+		return;
+	}
+
+	vm.startPrank(sender);
+	dsce.mintDsc(amount);
+	vm.stopPrank();
+	timesMintIsCalledPost++;
+}
+```
+
+- We should also have "given invariant" function
+```solidity
+function invariant_gettersShouldNotRevert() public {
+	// all getter functions
+}
+```
+
+- `forge inspect DSCEngine methods`
+```bash
+{
+  "burnDsc(uint256)": "f6876608",
+  "calculateHealthFactor(uint256,uint256)": "01f72884",
+  "depositCollateral(address,uint256)": "a5d5db0c",
+  "depositCollateralAndMintDsc(address,uint256,uint256)": "e90db8a3",
+  "getAccountCollateralValue(address)": "7d1a4450",
+  "getAccountInformation(address)": "7be564fc",
+  "getAdditionalFeedPrecision()": "8f63d667",
+  "getCollateralBalanceOfUser(address,address)": "31e92b83",
+  "getCollateralTokenPriceFeed(address)": "1c08adda",
+  "getCollateralTokens()": "b58eb63f",
+  "getDsc()": "deb8e018",
+  "getHealthFactor(address)": "fe6bcd7c",
+  "getLiquidationBonus()": "59aa9e72",
+  "getLiquidationPrecision()": "6c8102c0",
+  "getLiquidationThreshold()": "4ae9b8bc",
+  "getMinHealthFactor()": "8c1ae6c8",
+  "getPrecision()": "9670c0bc",
+  "getTokenAmountFromUsd(address,uint256)": "afea2e48",
+  "getUsdValue(address,uint256)": "c660d112",
+  "liquidate(address,address,uint256)": "26c01303",
+  "mintDsc(uint256)": "c9b7c327",
+  "redeemCollateral(address,uint256)": "9acd81b3",
+  "redeemCollateralForDsc(address,uint256,uint256)": "f419ea9c"
+}
+```
