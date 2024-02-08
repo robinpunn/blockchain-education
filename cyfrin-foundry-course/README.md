@@ -257,6 +257,7 @@
 22. [Create the `redeemCollateral` handler](#create-the-redeemcollateral-handler)
 23. [Create the `mintDsc` handler](#create-the-mintdsc-handler)
 24. [Debugging the fuzz tests handler](#debugging-the-fuzz-tests-handler)
+25. [Create the price feed handler](#create-the-price-feed-handler)
 
 </details>
 
@@ -4989,3 +4990,49 @@ function invariant_gettersShouldNotRevert() public {
   "redeemCollateralForDsc(address,uint256,uint256)": "f419ea9c"
 }
 ```
+
+#### Create the price feed handler
+- Handlers can allow us to handle our `DSCEngine` contract and any other contract... other contracts in our case would be:
+	- Price feed contract
+	- WETH token
+	- WBTC token
+
+- The `MockV3Aggregator` has a function that easily allows us to update an answer:
+```solidity
+function updateAnswer(int256 _answer) public {
+	latestAnswer = _answer;
+	latestTimestamp = block.timestamp;
+	latestRound++;
+	getAnswer[latestRound] = _answer;
+	getTimestamp[latestRound] = block.timestamp;
+	getStartedAt[latestRound] = block.timestamp;
+}
+```
+
+- So we'll use the `MockV3Aggregator`:
+```solidity
+...
+import {MockV3Aggregator} from "../mocks/MockV3Aggregator.sol";
+
+contract Handler is Test {
+	...
+    MockV3Aggregator public ethUsdPriceFeed;
+	...
+    constructor(DSCEngine _dscEngine, DecentralizedStableCoin _dsc) {
+        ethUsdPriceFeed = MockV3Aggregator(dsce.getCollateralTokenPriceFeed(address(weth)));
+
+    }
+	...
+}
+```
+
+- And now we can create and `updateCollateral` function
+```solidity
+function updateCollateralPrice(uint96 newPrice) public {
+	int256 newPriceInt = int256(uint256(newPrice));
+	ethUsdPriceFeed.updateAnswer(newPriceInt);
+}
+```
+- We see that tests fail, and this is because this function changes the price of eth to something much smaller than it is
+	- This is actually a bug in our system as a price decrease within the same block would lead to this behavior
+- We can either try to solve this problem, or state that this is a known bug
