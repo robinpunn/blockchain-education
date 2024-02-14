@@ -258,6 +258,8 @@
 23. [Create the `mintDsc` handler](#create-the-mintdsc-handler)
 24. [Debugging the fuzz tests handler](#debugging-the-fuzz-tests-handler)
 25. [Create the price feed handler](#create-the-price-feed-handler)
+26. [Manage your oracles connection](#manage-your-oracles-connection)
+27. [Preparing your protocol for an audit](#preparing-your-protocol-for-an-audit)
 
 </details>
 
@@ -5036,3 +5038,61 @@ function updateCollateralPrice(uint96 newPrice) public {
 - We see that tests fail, and this is because this function changes the price of eth to something much smaller than it is
 	- This is actually a bug in our system as a price decrease within the same block would lead to this behavior
 - We can either try to solve this problem, or state that this is a known bug
+
+#### Manage your oracles connection
+- In our `DSCEngine`, we're using an oracle
+- We can create an `OracleLib.sol` file to make sure that prices aren't stale
+- [chainlink price feed](https://docs.chain.link/data-feeds/price-feeds/addresses?network=ethereum&page=1)
+	- `ETH/USD` on Sepolia has a deviation of 1% and it is updated every 3600 seconds
+- We want to write checks to make sure the price is actually updating every 3600s
+	- If not, we should pause our contract
+- We are going to utilize `import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";`
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+
+/**
+ * @title OracleLib
+ * @author Robin Punnoose
+ * @notice This library is used to check the ChainLink Oracle for stale data
+ * If a price is stale, the function will revert and render the DSCEngine unusable
+ * We want the DSCEngine to freeze if prices become stale
+ */
+
+library OracleLib {
+    error OracleLib__StalePrice();
+
+    uint256 private constant TIMEOUT = 3 hours;
+
+    function staleCheckLatestRoundData(AggregatorV3Interface priceFeed)
+        public
+        view
+        returns (uint80, int256, uint256, uint256, uint80)
+    {
+        (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound) =
+            priceFeed.latestRoundData();
+
+        uint256 secondsSince = block.timestamp - updatedAt;
+
+        if (secondsSince > TIMEOUT) revert OracleLib__StalePrice();
+        return (roundId, answer, startedAt, updatedAt, answeredInRound);
+    }
+}
+```
+- We can use this in our `DSCEngine` to check for stale prices
+
+- To use the library in our `DSCEngine`, we import the file. Then:
+```solidity
+using OracleLib for AggregatorV3Interface;
+```
+- Where we were initially calling `priceFeed.latestRoundData();` we can now call `priceFeed.staleCheckLatestRoundData();`
+
+#### Preparing your protocol for an audit
+- [checklist](https://github.com/nascentxyz/simple-security-toolkit)
+- There is a security section later in the course, for now, we have this checklist
+	1. [Development Process](https://github.com/nascentxyz/simple-security-toolkit/blob/main/development-process.md)
+	2. [Audit Readiness Checklist](https://github.com/nascentxyz/simple-security-toolkit/blob/main/audit-readiness-checklist.md)
+	3. [Pre-Launch Security Checklist](https://github.com/nascentxyz/simple-security-toolkit/blob/main/pre-launch-security-checklist.md)
+	4. **[Incident Response Plan Template](https://github.com/nascentxyz/simple-security-toolkit/blob/main/incident-response-plan-template.md)**
