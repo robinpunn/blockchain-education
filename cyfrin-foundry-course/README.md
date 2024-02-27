@@ -263,6 +263,14 @@
 
 </details>
 
+<details>
+
+<summary> Lessong 13: Foundry Upgrades </summary>
+
+1. [Upgradable Smart Contracts Overview](#upgradable-smart-contracts-overview)
+
+</details>
+
 ---
 
 ### [Lesson 1: Blockchain Basics](https://www.youtube.com/watch?v=umepbfKp5rI&t=834s)
@@ -3506,7 +3514,7 @@ function withdraw(address recentWinner) public {
 
 
 
-### [Lesson 12](https://www.youtube.com/watch?v=wUjYK5gwNZs&t=0s)
+### [Lesson 12 Defi Stablecoin](https://www.youtube.com/watch?v=wUjYK5gwNZs&t=0s)
 #### What is DeFi?
 - [What is DeFi?](https://chain.link/education/defi)
 - [DefiLlama](https://defillama.com/)
@@ -5096,3 +5104,83 @@ using OracleLib for AggregatorV3Interface;
 	2. [Audit Readiness Checklist](https://github.com/nascentxyz/simple-security-toolkit/blob/main/audit-readiness-checklist.md)
 	3. [Pre-Launch Security Checklist](https://github.com/nascentxyz/simple-security-toolkit/blob/main/pre-launch-security-checklist.md)
 	4. **[Incident Response Plan Template](https://github.com/nascentxyz/simple-security-toolkit/blob/main/incident-response-plan-template.md)**
+
+### [Lesson 13 Foundry Upgrades](https://www.youtube.com/watch?v=wUjYK5gwNZs&t=17220s)
+
+#### Upgradable Smart Contracts Overview
+- We should deploy upgradable smart contracts as little as possible
+- It seems like a good idea in theory, but there are many issues when a protocol has centralized control over contracts in this way
+- Technically, smart contracts are immutable
+	- The immutability refers to the logic of the contract, the state of the contract can still change
+- A disadvantage of smart contracts is a negative effect on decentrality
+- There are three main ways to upgrade contracts
+	- Parameterize
+	- Social Migration
+	- Proxy
+
+**1. Not really an upgrade/ Parameterize**
+- Can't add new logic
+- Can't add new storage
+- Basically, we have a setter function that changes some variable
+- A simple but inflexible approach
+
+**More recently, we as a community have more or less decided upgradable contracts are bad**
+- One argument is that if devs know that their contract isn't upgradable, they take more care in creating a bug free contract
+
+**2. Social Migration**
+- Deploy a new contract not connected to the old contract and have users migrate to the new contract
+- Pros:
+	- Trues to blockchain values
+	- Easiest to audit
+- Cons:
+	- Lot of work to convince users to move
+	- Different address
+- This method would involve transferring the old state to the new contract: [trail of bits](https://blog.trailofbits.com/2018/10/29/how-contract-migration-works/)
+
+**3. Proxies**
+- Truest form of programmatic upgrades (some argue social migration)
+- Proxies use a lot of low level functionality, the main one being [`delegatecall`](https://solidity-by-example.org/delegatecall/)
+	- The code in the target contract is executed in the context of the calling contract
+	- `msg.sender` and `msg.value` don't change
+- We use a proxy contract address to `delegatcall` to some other contract address
+	- We can have one proxy contract that will have the same address forever
+	- This proxy contract can point to the correct implementation contract that has the logic
+- When we want to upgrade, we create a new implementation contract and point the proxy to that contract
+
+**Proxy Terminology**
+1. Implementation contract:
+	- Has all the logic for the protocol. 
+	- When upgrading, launch a new implementation contract
+1. Proxy contract:
+	- Points to the correct implementation contract
+	- Routes function calls to the correct implementation contract
+1. User:
+	- Makes calls to proxy contract
+2. Admin:
+	- The user or group of users who upgrade to a new implementation contract
+
+**Issues with Proxies**
+1. Storage clashes
+2. Function selector clashes
+- When using `delegatecall`, we're using the logic of `Contract B` inside `Contract A`
+	- If `Contract B` is changing some value, it changes the value of whatever is in the same storage location as itself in `Contract A`
+	- We can only append new storage variables in new implementation contracts... we can't reorder or change old ones
+- `delegatecall` uses a function selector to find a function
+	- function selector: a 4 byte hash of a function name and function signature that define a function
+	- It could be possible that a function in the implementation contract has the same function selector as an admin function in the proxy contract
+
+**Transparent Proxy Pattern**
+- Admins can't call implementation contract functions
+- Admins are only allowed to call admin functions
+- User's can only call functions in the implementation contract
+- This is a way to avoid certain function selector clashes
+
+**Universal Upgradable Proxies (UUPS)**
+- All the logic of upgrading is in the implementation contract
+- The solidity compiler will be able to find functions with the same selector
+- Save gas by not having to check for admin
+
+**Diamond Pattern**
+- Allows for multiple implementation contracts
+- If you have a very large contract that doesn't fit in the allotted size for a single contract, this pattern would help
+- This allows for granular upgrades
