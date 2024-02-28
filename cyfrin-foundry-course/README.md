@@ -268,6 +268,7 @@
 <summary> Lessong 13: Foundry Upgrades </summary>
 
 1. [Upgradable Smart Contracts Overview](#upgradable-smart-contracts-overview)
+2. [Using Delegatecall](#using-delegatecall)
 
 </details>
 
@@ -5184,3 +5185,45 @@ using OracleLib for AggregatorV3Interface;
 - Allows for multiple implementation contracts
 - If you have a very large contract that doesn't fit in the allotted size for a single contract, this pattern would help
 - This allows for granular upgrades
+
+#### Using Delegatecall
+- [solidity by example: delegatecall](https://solidity-by-example.org/delegatecall/)
+	- `delegatecall` is a low level function similar to `call`.
+	- When contract `A` executes `delegatecall` to contract `B`, `B`'s code is executed
+	- with contract `A`'s storage, `msg.sender` and `msg.value`.
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+// NOTE: Deploy this contract first
+contract B {
+    // NOTE: storage layout must be the same as contract A
+    uint public num;
+    address public sender;
+    uint public value;
+
+    function setVars(uint _num) public payable {
+        num = _num;
+        sender = msg.sender;
+        value = msg.value;
+    }
+}
+
+contract A {
+    uint public num;
+    address public sender;
+    uint public value;
+
+    function setVars(address _contract, uint _num) public payable {
+        // A's storage is set, B is not modified.
+        (bool success, bytes memory data) = _contract.delegatecall(
+            abi.encodeWithSignature("setVars(uint256)", _num)
+        );
+    }
+}
+```
+- `Contract A` has a `setVars` function just like `Contract B`, but the function for `Contract A` makes a `delegatecall` to `Contract B` for the same function. So `Contract A` is using the function from `Contract B` while utilizing its own state
+- Storage location is important, the names of the variables are irrelevant
+- `Contract A` will be modified based on the storage locations that correspond with `Contract B`
+- In `Contract A`, if we were to change `uint public num;` to something like `bool public num;`, `Contract B` would still be able to manipulate the storage slot on `Contact A`
+- If we were to change the order of variables in `Contract B` and leave `Contract A` the way it is, we would not be changing the variables we expect to change
