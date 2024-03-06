@@ -269,7 +269,7 @@
 
 1. [Upgradable Smart Contracts Overview](#upgradable-smart-contracts-overview)
 2. [Using Delegatecall](#using-delegatecall)
-
+3. [Overview of the EIP-1967](#overview-of-the-eip-1967)
 </details>
 
 ---
@@ -5227,3 +5227,158 @@ contract A {
 - `Contract A` will be modified based on the storage locations that correspond with `Contract B`
 - In `Contract A`, if we were to change `uint public num;` to something like `bool public num;`, `Contract B` would still be able to manipulate the storage slot on `Contact A`
 - If we were to change the order of variables in `Contract B` and leave `Contract A` the way it is, we would not be changing the variables we expect to change
+
+#### Overview of the EIP-1967
+- [EIP 1967 - Proxy storage slots](https://eips.ethereum.org/EIPS/eip-1967)
+- The basic concept is that we use the same address for a contract but the underlying code changes
+- OpenZeppelin has a minimialistic proxy contract that we can use to start working with `delegatecall`: `import "@openzeppelin/contracts/proxy/Proxy.sol";`
+- This contract uses a lot of "assembly" code in the form of [`Yul`](https://docs.soliditylang.org/en/latest/yul.html)
+	- `Yul` allows us to write low level code that is close to the evm opcodes
+	- Ideally, we want to limit our use `Yul` because it makes it easier to "screw things up"
+```solidity
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v5.0.0) (proxy/Proxy.sol)
+
+pragma solidity ^0.8.20;
+
+/**
+ * @dev This abstract contract provides a fallback function that delegates all calls to another contract using the EVM
+ * instruction `delegatecall`. We refer to the second contract as the _implementation_ behind the proxy, and it has to
+ * be specified by overriding the virtual {_implementation} function.
+ *
+ * Additionally, delegation to the implementation can be triggered manually through the {_fallback} function, or to a
+ * different contract through the {_delegate} function.
+ *
+ * The success and return data of the delegated call will be returned back to the caller of the proxy.
+ */
+abstract contract Proxy {
+    /**
+     * @dev Delegates the current call to `implementation`.
+     *
+     * This function does not return to its internal call site, it will return directly to the external caller.
+     */
+    function _delegate(address implementation) internal virtual {
+        assembly {
+            // Copy msg.data. We take full control of memory in this inline assembly
+            // block because it will not return to Solidity code. We overwrite the
+            // Solidity scratch pad at memory position 0.
+            calldatacopy(0, 0, calldatasize())
+
+            // Call the implementation.
+            // out and outsize are 0 because we don't know the size yet.
+            let result := delegatecall(gas(), implementation, 0, calldatasize(), 0, 0)
+
+            // Copy the returned data.
+            returndatacopy(0, 0, returndatasize())
+
+            switch result
+            // delegatecall returns 0 on error.
+            case 0 {
+                revert(0, returndatasize())
+            }
+            default {
+                return(0, returndatasize())
+            }
+        }
+    }
+
+    /**
+     * @dev This is a virtual function that should be overridden so it returns the address to which the fallback
+     * function and {_fallback} should delegate.
+     */
+    function _implementation() internal view virtual returns (address);
+
+    /**
+     * @dev Delegates the current call to the address returned by `_implementation()`.
+     *
+     * This function does not return to its internal call site, it will return directly to the external caller.
+     */
+    function _fallback() internal virtual {
+        _delegate(_implementation());
+    }
+
+    /**
+     * @dev Fallback function that delegates calls to the address returned by `_implementation()`. Will run if no other
+     * function in the contract matches the call data.
+     */
+    fallback() external payable virtual {
+        _fallback();
+    }
+}
+```
+- This contract utilizes `fallback` which points to the `_delegate` function
+- Any time a proxy contract receive data for a function it doesn't recognize, it sends it over to some implementation contract where it will call it with `delegatecall`
+
+
+- Our `SmallProxy` contract
+```solidity
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.19;
+
+import "@openzeppelin/contracts/proxy/Proxy.sol";
+
+contract SmallProxy is Proxy {
+    // This is the keccak-256 hash of "eip1967.proxy.implementation" subtracted by 1
+    bytes32 private constant _IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+
+    function setImplementation(address newImplementation) public {
+        assembly {
+            sstore(_IMPLEMENTATION_SLOT, newImplementation)
+        }
+    }
+
+    function _implementation() internal view override returns (address implementationAddress) {
+        assembly {
+            implementationAddress := sload(_IMPLEMENTATION_SLOT)
+        }
+    }
+}
+```
+- `setImplementation` will change the address to the new implementation contract
+- `_implementation` will return the address of the implementation contract
+- To work with proxies, we don't really want to have anything in storage... but we do have to store the address of the implementation contract
+	- EIP-1967 standardizes where proxies store the logic contract they delegate to
+
+```solidity
+contract ImplementationA {
+    uint256 public value;
+
+    function setValue(uint256 newValue) public {
+        value = newValue;
+    }
+}
+
+contract ImplementationB {
+    uint256 public value;
+
+    function setValue(uint256 newValue) public {
+        value = newValue + 2;
+    }
+}
+```
+- Two different implementation contracts that can be used with the Proxy contract
+- The Proxy contract will make `delegatecall` to the implementation contracts
+
+
+```solidity
+// helper function
+
+function getDataToTransact(uint256 numberToUpdate) public pure returns (bytes memory) {
+	return abi.encodeWithSignature("setValue(uint256)", numberToUpdate);
+}
+
+function readStorage() public view returns (uint256 valueAtStorageSlotZero) {
+	assembly {
+		valueAtStorageSlotZero := sload(0)
+	}
+}
+```
+- `getDataToTransact()` gets use the raw bytes of what we need to use  to call the `setValue()` function
+- `readStorage()` is a way to read our storage in the `SmallProxy` contract
+
+- The big picture of how this will work is that our `SmallProxy` contract will end up using the `fallback()` function since the function signature won't be found in the `SmallProxy` contract
+- The `fallback()` will end up making a `delegatecall` to the implementation contract
+- Using proxies, the developers can change the code at any point... so it's important to know who has the keys
+
+- Function selector clashing is something to keep in mind. If we have functions that share same names in the `Proxy` and the `Implementation`, the function will never be called on the `Implementation` 
