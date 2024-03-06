@@ -270,6 +270,8 @@
 1. [Upgradable Smart Contracts Overview](#upgradable-smart-contracts-overview)
 2. [Using Delegatecall](#using-delegatecall)
 3. [Overview of the EIP-1967](#overview-of-the-eip-1967)
+4. [Universal Upgradable Smart Contract](#universal-upgradable-smart-contract)
+
 </details>
 
 ---
@@ -5382,3 +5384,99 @@ function readStorage() public view returns (uint256 valueAtStorageSlotZero) {
 - Using proxies, the developers can change the code at any point... so it's important to know who has the keys
 
 - Function selector clashing is something to keep in mind. If we have functions that share same names in the `Proxy` and the `Implementation`, the function will never be called on the `Implementation` 
+
+#### Universal Upgradable Smart Contract
+- [UUPS vs Transparent](https://docs.openzeppelin.com/contracts/4.x/api/proxy#transparent-vs-uups)
+	- [Transparent](https://blog.openzeppelin.com/the-transparent-proxy-pattern)
+	- [EIP-1822 UUPS](https://eips.ethereum.org/EIPS/eip-1822)
+- In UUPS proxies the upgrade is handled by the implementation and can eventually be removed
+- [OpenZeppelin upgradeable](https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable)
+- `abstract` contracts have some function defined and some functions undefined
+	- They expect their child classes to implement those functions
+- For example `function _authorizeUpgrade(address newImplementation) internal virtual;`, the parent contract expects the child to define that function
+
+```toml
+remapping = [
+    "@openzeppelin/contracts-upgradeable=lib/openzeppelin-contracts-upgradeable/contracts",
+]
+```
+- ``forge remappings > remappings.txt``
+- `import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";`
+
+```solidity
+// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+pragma solidity ^0.8.4;
+
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+
+contract BoxV1 is UUPSUpgradeable {
+    uint256 internal number;
+
+    function getNumber() external view returns (uint256) {
+        return number;
+    }
+
+    function version() external pure returns (uint256) {
+        return 1;
+    }
+
+    function _authorizeUpgrade(address newImplementation) internal override {}
+}
+```
+
+- [storage gaps](https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable#storage-gaps)
+	- Proxies point to storage slots, not variable names. So the ordering of variable names matters. The old UUPS repo had `uint256[50] private _gap`
+	- The private gap above saves 50 storage slots for adding new variables in the future
+	- This would help collision of storage for different variables when upgrading
+
+- [OpenZeppelin Initializable](https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/58fa0f81c4036f1a3b616fdffad2fd27e5d5ce21/contracts/proxy/utils/Initializable.sol)
+	- This is a base contract to aid in writing upgradeable contracts, or any kind of contract that will be deployedcbehind a proxy. 
+	- Since proxied contracts do not make use of a constructor, it's common to move constructor logic to an external initializer function, usually called `initialize`. 
+	- It then becomes necessary to protect this initializer function so it can only be called once. 
+	- The {initializer} modifier provided by this contract will have this effect.
+
+ * An uninitialized contract can be taken over by an attacker. 
+	 * This applies to both a proxy and its implementation contract, which may impact the proxy. 
+	 * To prevent the implementation contract from being used, you should invoke the `{_disableInitializers}` function in the constructor to automatically lock it when it is deployed:
+```solidity
+/// @custom:oz-upgrades-unsafe-allow constructor
+constructor() {
+	_disableInitializers();
+}
+```
+
+```solidity
+// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+pragma solidity ^0.8.4;
+
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
+contract BoxV1 is  Initializable, UUPSUpgradeable, OwnableUpgradeable {
+    uint256 internal number;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize() public initializer{
+        __Ownable_init(msg.sender);
+        __UUPSUpgradeable_init();
+    }
+
+    function getNumber() external view returns (uint256) {
+        return number;
+    }
+
+    function version() external pure returns (uint256) {
+        return 1;
+    }
+
+    function _authorizeUpgrade(address newImplementation) internal override {}
+}
+```
+- A Proxy contract won't have a constructor
+	- The proxy contact utilizes its own storage and "borrows" functions from the implementation contract
+	- The initializer serves as a constructor
