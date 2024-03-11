@@ -272,6 +272,7 @@
 3. [Overview of the EIP-1967](#overview-of-the-eip-1967)
 4. [Universal Upgradable Smart Contract](#universal-upgradable-smart-contract)
 5. [Deploy upgradeable smart contracts](#deploy-upgradeable-smart-contracts)
+6. [Upgrade UUPS proxy smart contracts](#upgrade-uups-proxy-smart-contracts)
 
 </details>
 
@@ -5558,3 +5559,47 @@ contract DeployBox is Script {
     }
 }
 ```
+
+#### Upgrade UUPS proxy smart contracts
+```
+forge install chainaccelorg/foundry-devops --no-commit
+```
+
+- `upgradeTo` used in tutorial is deprecated, had to use 
+```
+function upgradeToAndCall(address newImplementation, bytes memory data) public payable virtual onlyProxy {
+	_authorizeUpgrade(newImplementation);
+	_upgradeToAndCallUUPS(newImplementation, data);
+}
+```
+- used `""` for second argument
+
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Script} from "forge-std/Script.sol";
+import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
+import {BoxV2} from "../src/BoxV2.sol";
+import {BoxV1} from "../src/BoxV1.sol";
+
+contract UpgradeBox is Script {
+    function run() external returns (address) {
+        address mostRecentlyDeployed = DevOpsTools.get_most_recent_deployment("ERC1967proxy", block.chainid);
+        vm.startBroadcast();
+        BoxV2 newBox = new BoxV2();
+        vm.stopBroadcast();
+        address proxy = upgradeBox(mostRecentlyDeployed, address(newBox));
+        return proxy;
+    }
+
+    function upgradeBox(address proxyAddress, address newBox) public returns (address) {
+        vm.startBroadcast();
+        BoxV1 proxy = BoxV1(proxyAddress);
+        proxy.upgradeToAndCall(address(newBox), "");
+        vm.startBroadcast();
+        return address(proxy);
+    }
+}
+```
+- We point `BoxV1` to `BoxV2` as we gave `BoxV1` the `UUPSUpgradeable` library
