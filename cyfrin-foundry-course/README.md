@@ -273,6 +273,7 @@
 4. [Universal Upgradable Smart Contract](#universal-upgradable-smart-contract)
 5. [Deploy upgradeable smart contracts](#deploy-upgradeable-smart-contracts)
 6. [Upgrade UUPS proxy smart contracts](#upgrade-uups-proxy-smart-contracts)
+7. [Testing UUPS proxies](#testing-uups-proxies)
 
 </details>
 
@@ -5603,3 +5604,55 @@ contract UpgradeBox is Script {
 }
 ```
 - We point `BoxV1` to `BoxV2` as we gave `BoxV1` the `UUPSUpgradeable` library
+
+#### Testing UUPS proxies
+- We setup for testing
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Test} from "forge-std/Test.sol";
+import {DeployBox} from "../script/DeployBox.s.sol";
+import {UpgradeBox} from "../script/UpgradeBox.s.sol";
+import {BoxV1} from "../src/BoxV1.sol";
+import {BoxV2} from "../src/BoxV2.sol";
+
+contract DeployAndUpgradeTest is Test {
+    DeployBox public deployer;
+    UpgradeBox public upgrader;
+    address public OWNER = makeAddr("owner");
+
+    address public proxy;
+
+    function setUp() public {
+        deployer = new DeployBox();
+        upgrader = new UpgradeBox();
+        proxy = deployer.run();
+    }
+}
+```
+
+- We run a test to make sure we can't yet interact with contract 2
+```solidity
+ function testProxyStartsAsBox1() public {
+	vm.expectRevert();
+	BoxV2(proxy).setNumber(3);
+}
+```
+
+- We upgrade the contract
+```solidity
+function testUpgrades() public {
+	BoxV2 box2 = new BoxV2();
+	
+	upgrader.upgradeBox(proxy, address(box2));
+	
+	uint256 expectedValue = 2;
+	assertEq(expectedValue, BoxV2(proxy).version());
+
+	BoxV2(proxy).setNumber(7);
+	assertEq(7, BoxV2(proxy).getNumber());
+}
+```
+- We check the version, it should change from 1 to 2
+- Then we check if we can set the number on the `BoxV2` contract
