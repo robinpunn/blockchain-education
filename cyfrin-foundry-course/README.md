@@ -265,7 +265,7 @@
 
 <details>
 
-<summary> Lessong 13: Foundry Upgrades </summary>
+<summary> Lesson 13: Foundry Upgrades </summary>
 
 1. [Upgradable Smart Contracts Overview](#upgradable-smart-contracts-overview)
 2. [Using Delegatecall](#using-delegatecall)
@@ -275,6 +275,14 @@
 6. [Upgrade UUPS proxy smart contracts](#upgrade-uups-proxy-smart-contracts)
 7. [Testing UUPS proxies](#testing-uups-proxies)
 8. [Deploying the stablecoin on the testnet](#deploying-the-stablecoin-on-the-testnet)
+
+</details>
+
+<details>
+
+<summary> Lesson 14: DAOs and Governance </summary>
+
+1. [Introduction to DAOs](#introduction-to-daos)
 
 </details>
 
@@ -5710,3 +5718,62 @@ upgrade:
 - `cast call <Contract Address> "functionName()" --rpc-url $SEPOLIA_RPC_URL` (call to a contract) 
 - `cast send <Contract Address> "functionName(type)" argument --rpc-url $SEPOLIA_RPC_URL` (send message to contract)
 - `cast --to-base <hex number> dec` (convert to decimal)
+
+### [Lesson 14 Foundry Upgrades](https://www.youtube.com/watch?v=wUjYK5gwNZs&t=21945s)
+#### Introduction to DAOs
+- [Plutocracy is bad](https://vitalik.eth.limo/general/2018/03/28/plutocracy.html)
+- [DAOs are not corporations](https://vitalik.eth.limo/general/2022/09/20/daos.html)
+
+- Decentralized Autonomous Organization
+	- Any group that is governed by a transparent set of rules found on a blockchain or a smart contract
+	- DeGov: A company/organization operated exclusively through code
+
+- [Compound governance](https://compound.finance/governance)
+
+- Usual process
+	 - A proposal is created in a `propose` transaction
+	 - After a short delay, a proposal becomes active (can be voted on)
+	 - If it passes, it reaches succeeded
+	 - If a vote passes, it enters the queued stage (a wait period before proposal goes into effect)
+	 - Finally, the proposal is executed
+	- [Snapshot](https://snapshot.org/#/)
+	- An offchain app that can be used to create proposals to gather sentiment
+
+**Voting Mechanism**
+A DAO needs a way for participants to engage
+- Token Based Voting
+	- An easy approach is to use an erc20 token or an nft as voting power
+	- Runs into the issue of people that can purchase the most have the bigger vote
+- Skin in the game
+	- This system penalizes users for votes with bad outcomes
+	- Who decides what on an outcome being bad?
+- Proof of personhood or participation
+	- One vote per user regardless of amount owned
+	- The issue is sybil resistance... a user can create multiple accounts
+
+**Voting Implementation**
+- On chain
+	- Smart contract... a user calls a function on the contract
+	- This costs gas...
+	- [Governer C](https://github.com/D3LAB-DAO/Governor-C/blob/main/contracts/example/Funding.sol)
+- Off chain
+	- Off chain voting can still be decentralized
+	- The idea is to sign a transaction off chain as a means to vote which would circumvent the gas fees... the transactions is sent to a decentralized database... which is tallied and sent to the blockchain (using an oracle)
+	- Alternatively, all signed transactions can be replayed in a single transaction to the blockchain in order to save gas
+
+**No code solutions**
+- [DaoStack](https://www.alchemy.com/dapps/daostack)
+- [Aragon](https://aragon.org/)
+- [Colony](https://colony.io/)
+- [DAOHaus](https://daohaus.club/)
+If you don't want to pay any fees and you want more granular control, it may be a better idea to build from scratch
+
+**Coding/Other solutions**
+- [OpenZeppeling](https://docs.openzeppelin.com/contracts/4.x/governance)
+- [Snapshot](https://snapshot.org/#/): get a sentiment of a dao and perform the execution
+- [Zodiac](https://zodiac.wiki/index.php?title=Introduction:_Zodiac_Standard) : a suite of dao based tools
+- [tally](https://www.tally.xyz/): a ui that allows users to see and interact with smart contracts
+- [gnosis safe multisig wallet](https://safe.global/wallet): most daos are going to start with some type of centrality where voting happens through a few key members
+
+**Legality**
+- The state of wyoming legally recognized daos
