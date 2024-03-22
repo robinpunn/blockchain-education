@@ -283,6 +283,7 @@
 <summary> Lesson 14: DAOs and Governance </summary>
 
 1. [Introduction to DAOs](#introduction-to-daos)
+2. [Project Setup](#project-setup)
 
 </details>
 
@@ -5777,3 +5778,55 @@ If you don't want to pay any fees and you want more granular control, it may be 
 
 **Legality**
 - The state of wyoming legally recognized daos
+
+#### Project Setup
+We will be building a plutocracy dao based on ERC20 tokens, however, this type of governance can run into issues in the future due to speculators/investing.
+
+**Project summary**
+1. We are going to have a contract controlled by a DAO
+2. Every transaction that the DAO wants to send has to be voted on
+3. We will use ERC20 tokens for voting (bad model, research better models)
+
+**Project start**
+```
+forge init --no-git
+```
+
+```
+forge install openzeppelin/openzeppelin-contracts --no-git
+```
+
+`foundry.toml`
+```
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+remappings = ["@openzeppelin/contracts=lib/openzeppelin-contracts/contracts/"]
+```
+- `forge remappings > remappings.txt`
+
+`Box.sol`
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+contract Box is Ownable {
+    uint256 private s_number;
+
+    event NumberChanged(uint256 number);
+
+    constructor() Ownable(msg.sender) {}
+
+    function store(uint256 newNumber) public onlyOwner {
+        s_number = newNumber;
+        emit NumberChanged(newNumber);
+    }
+
+    function getNumber() external view returns (uint256) {
+        return s_number;
+    }
+}
+```
