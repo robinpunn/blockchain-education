@@ -285,6 +285,7 @@
 1. [Introduction to DAOs](#introduction-to-daos)
 2. [Project Setup](#project-setup)
 3. [Governance Token](#governance-token)
+4. [Creating the governor contract](#creating-the-governor-contract)
 
 </details>
 
@@ -5958,3 +5959,241 @@ abstract contract ERC20Votes is ERC20, Votes {
     }
 }
 ```
+
+#### Creating the governor contract
+We can again use the [OpenZeppelin Wizard](https://docs.openzeppelin.com/contracts/5.x/wizard) to create the governor contract.
+- Allows us to set a 'voting delay' which allows for a period before voting starts
+- Set a 'voting period' for how long the voting will last
+- Set a 'proposal threshold' to set the minimum amount of votes needed to create a proposal
+- Set a 'quorum' for a minimum amount of votes needed to pass the proposal
+
+```solidity
+// SPDX-License-Identifier: MIT
+// Compatible with OpenZeppelin Contracts ^5.0.0
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/governance/Governor.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
+
+contract MyGovernor is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
+    constructor(IVotes _token, TimelockController _timelock)
+        Governor("MyGovernor")
+        GovernorSettings(7200 /* 1 day */, 50400 /* 1 week */, 0)
+        GovernorVotes(_token)
+        GovernorVotesQuorumFraction(4)
+        GovernorTimelockControl(_timelock)
+    {}
+
+    // The following functions are overrides required by Solidity.
+    function votingDelay()
+        public
+        view
+        override(Governor, GovernorSettings)
+        returns (uint256)
+    {
+        return super.votingDelay();
+    }
+
+    function votingPeriod()
+        public
+        view
+        override(Governor, GovernorSettings)
+        returns (uint256)
+    {
+        return super.votingPeriod();
+    }
+
+    function quorum(uint256 blockNumber)
+        public
+        view
+        override(Governor, GovernorVotesQuorumFraction)
+        returns (uint256)
+    {
+        return super.quorum(blockNumber);
+    }
+
+    function state(uint256 proposalId)
+        public
+        view
+        override(Governor, GovernorTimelockControl)
+        returns (ProposalState)
+    {
+        return super.state(proposalId);
+    }
+
+    function proposalNeedsQueuing(uint256 proposalId)
+        public
+        view
+        override(Governor, GovernorTimelockControl)
+        returns (bool)
+    {
+        return super.proposalNeedsQueuing(proposalId);
+    }
+
+    function proposalThreshold()
+        public
+        view
+        override(Governor, GovernorSettings)
+        returns (uint256)
+    {
+        return super.proposalThreshold();
+    }
+
+    function _queueOperations(uint256 proposalId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
+        internal
+        override(Governor, GovernorTimelockControl)
+        returns (uint48)
+    {
+        return super._queueOperations(proposalId, targets, values, calldatas, descriptionHash);
+    }
+
+    function _executeOperations(uint256 proposalId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
+        internal
+        override(Governor, GovernorTimelockControl)
+    {
+        super._executeOperations(proposalId, targets, values, calldatas, descriptionHash);
+    }
+
+    function _cancel(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
+        internal
+        override(Governor, GovernorTimelockControl)
+        returns (uint256)
+    {
+        return super._cancel(targets, values, calldatas, descriptionHash);
+    }
+
+    function _executor()
+        internal
+        view
+        override(Governor, GovernorTimelockControl)
+        returns (address)
+    {
+        return super._executor();
+    }
+}
+```
+
+**`Governor.sol`**: 
+- Core of the governance system, designed to be extended through various modules.
+- keeps a mapping of proposals: 
+```solidity
+struct ProposalCore {
+	address proposer;
+	uint48 voteStart;
+	uint32 voteDuration;
+	bool executed;
+	bool canceled;
+	uint48 etaSeconds;
+}
+
+mapping(uint256 proposalId => ProposalCore) private _proposals;
+```
+- `propose` is one of the main functions
+```solidity
+/**
+ * @dev See {IGovernor-propose}. This function has opt-in frontrunning protection, described in {_isValidDescriptionForProposer}.
+ */
+function propose(
+	address[] memory targets,
+	uint256[] memory values,
+	bytes[] memory calldatas,
+	string memory description
+) public virtual returns (uint256) {
+	address proposer = _msgSender();
+
+	// check description restriction
+	if (!_isValidDescriptionForProposer(proposer, description)) {
+		revert GovernorRestrictedProposer(proposer);
+	}
+	
+	// check proposal threshold
+	uint256 votesThreshold = proposalThreshold();
+	if (votesThreshold > 0) {
+		uint256 proposerVotes = getVotes(proposer, clock() - 1);
+		if (proposerVotes < votesThreshold) {
+			revert GovernorInsufficientProposerVotes(proposer, proposerVotes, votesThreshold);
+		}
+	}
+
+	return _propose(targets, values, calldatas, description, proposer);
+}
+```
+- `castVote` is another important function
+```solidity
+/**
+* @dev See {IGovernor-castVote}.
+*/
+function castVote(uint256 proposalId, uint8 support) public virtual returns (uint256) {
+	address voter = _msgSender();
+	return _castVote(proposalId, voter, support, "");
+}
+```
+
+**`GovernerSettings.sol`**: 
+- Extension of {Governor} for settings updatable through governance.
+- adds some key features
+```solidity
+// amount of token
+uint256 private _proposalThreshold;
+// timepoint: limited to uint48 in core (same as clock() type)
+uint48 private _votingDelay;
+// duration: limited to uint32 in core
+uint32 private _votingPeriod;
+```
+
+**`GovernorCountingSimple`**: 
+- Extension of {Governor} for simple, 3 options, vote counting.
+```solidity
+/**
+ * @dev Supported vote types. Matches Governor Bravo ordering.
+ */
+
+enum VoteType {
+	Against,
+	For,
+	Abstain
+}
+
+struct ProposalVote {
+	uint256 againstVotes;
+	uint256 forVotes;
+	uint256 abstainVotes;
+	mapping(address voter => bool) hasVoted;
+}
+
+mapping(uint256 proposalId => ProposalVote) private _proposalVotes;
+```
+
+**`GovernorVotes`**: 
+- Extension of {Governor} for voting weight extraction from an {ERC20Votes} token, or since v4.5 an {ERC721Votes} token.
+
+**`GovernorVotesQuorumFraction`**: 
+- Extension of {Governor} for voting weight extraction from an {ERC20Votes} token and a quorum expressed as a fraction of the total supply.
+
+**`GovernorTimelockControl`**: 
+- Extension of {Governor} that binds the execution process to an instance of {TimelockController}. This adds a delay, enforced by the {TimelockController} to all successful proposal (in addition to the voting duration). The {Governor} needs the proposer (and ideally the executor and canceller) roles for the {Governor} to work properly.
+-  Using this model means the proposal will be operated by the {TimelockController} and not by the {Governor}. Thus, the assets and permissions must be attached to the {TimelockController}. Any asset sent to the {Governor} will be inaccessible from a proposal, unless executed via {Governor-relay}.
+-  WARNING: Setting up the TimelockController to have additional proposers or cancellers besides the governor is very risky, as it grants them the ability to: 1) execute operations as the timelock, and thus possibly performing operations or accessing funds that are expected to only be accessible through a vote, and 2) block governance proposals that have been approved by the voters, effectively executing a Denial of Service attack.
+
+**`TimeLock.sol`**
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
+
+
+import {TimelockController} from "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
+
+contract TimeLock is TimelockController {
+    // minDelay is how long you have to wait before executing
+    // proposers is the list of addresses that can propose
+    // executors is the list of addresses that can execute
+    constructor(uint256 minDelay, address[] memory proposers, address[] memory executors)
+        TimelockController(minDelay, proposers, executors, msg.sender)
+    {}
+}
+```
+- When we create a proposal, our `Governor` contract will be communicating with the `TimeLock` contract
