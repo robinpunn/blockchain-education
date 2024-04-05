@@ -286,6 +286,7 @@
 2. [Project Setup](#project-setup)
 3. [Governance Token](#governance-token)
 4. [Creating the governor contract](#creating-the-governor-contract)
+5. [Testing the governance smart contract](#testing-the-governance-smart-contract)
 
 </details>
 
@@ -6197,3 +6198,112 @@ contract TimeLock is TimelockController {
 }
 ```
 - When we create a proposal, our `Governor` contract will be communicating with the `TimeLock` contract
+
+#### Testing the governance smart contract
+Setup our test `MyGovernorTest.t.sol`
+```solidity
+// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+pragma solidity ^0.8.4;
+
+import {Test} from "forge-std/Test.sol";
+import {MyGovernor} from "../src/MyGovernor.sol";
+import {Box} from "../src/Box.sol";
+import {GovToken} from "../src/GovToken.sol";
+import {TimeLock} from "../src/TimeLock.sol";
+
+contract MyGovernorTest is Test {
+    function setUp() public {
+    }
+}
+```
+
+For this project, we're adding a mint function to our `GovToken` contract, but this isn't something we would want to do in a real project (allow anyone to mint)
+```solidity
+function mint(address to, uint256 amount) public {
+	_mint(to, amount);
+}
+```
+
+We continue with the `setUp` function:
+```solidity
+ function setUp() public {
+        govToken = new GovToken();
+        govToken.mint(USER, INITIAL_SUPPLY);
+
+        vm.startPrank(USER);
+        govToken.delegate(USER);
+        timelock = new TimeLock(MIN_DELAY, proposers, executors);
+        governor = new MyGovernor(govToken, timelock);
+
+        bytes32 proposerRole = timelock.PROPOSER_ROLE();
+        bytes32 executorRole = timelock.EXECUTOR_ROLE();
+        bytes32 adminRole = timelock.DEFAULT_ADMIN_ROLE();
+
+        timelock.grantRole(proposerRole, address(governor));
+        timelock.grantRole(executorRole, address(0));
+        timelock.revokeRole(adminRole, USER);
+        vm.stopPrank();
+        
+        box = new Box();
+        box.transferOwnership(address(timelock));
+    }
+```
+- we create a user and grant the user an initial supply, and delegate to the user
+- we deploy the various contracts with the necessary arguments
+- we set roles
+	- the governor is the proposer
+	- anyone can be executor
+	- revoke the admin role from the user
+- create a new `box` and transfer ownership to `timelock`
+
+Our first test to make sure everything compiles and ensuring we can't update the box unless it's through governance
+```solidity
+function testCantUpdateBoxWithoutGovernance() public {
+	vm.expectRevert();
+	box.store(1);
+}
+```
+
+
+```solidity
+function testGovernanceUpdatesBox() public {
+        uint256 valueToStore = 888;
+        string memory description = "store 1 in box";
+        bytes memory encodedFunctionCall = abi.encodeWithSignature("store(uint256)", valueToStore);
+
+        values.push(0);
+        calldatas.push(encodedFunctionCall);
+        targets.push(address(box));
+
+        // 1. Propose to DAO
+        uint256 proposalId = governor.propose(targets, values, calldatas, description);
+        // View the state, should be 0
+        console.log("Proposal state: ", uint256(governor.state(proposalId)));
+        vm.warp(block.timestamp + VOTING_DELAY + 1);
+        vm.roll(block.number + VOTING_DELAY + 1);
+        // State should now be active
+        console.log("Proposal state: ", uint256(governor.state(proposalId)));
+
+        // 2. Vote
+        string memory reason = "reasons";
+        uint8 voteWay = 1; // votting yes
+
+        vm.prank(USER);
+        governor.castVoteWithReason(proposalId, voteWay, reason);
+
+        vm.warp(block.timestamp + VOTING_PERIOD + 1);
+        vm.roll(block.number + VOTING_PERIOD + 1);
+
+        // 3. Queue the TX
+        bytes32 descriptionHash = keccak256(abi.encodePacked(description));
+        governor.queue(targets, values, calldatas, descriptionHash);
+
+        vm.warp(block.timestamp + MIN_DELAY + 1);
+        vm.roll(block.number + MIN_DELAY + 1);
+
+        // 4. Execute the tx
+        governor.execute(targets, values, calldatas, descriptionHash);
+        assert(box.getNumber() == valueToStore);
+    }
+```
+- shows us the exact process of how a DAO actually works
