@@ -290,6 +290,14 @@
 
 </details>
 
+<details>
+
+<summary> Lesson 15: Security and Auditing </summary>
+
+1. [Intro](#intro)
+
+</details>
+
 ---
 
 ### [Lesson 1: Blockchain Basics](https://www.youtube.com/watch?v=umepbfKp5rI&t=834s)
@@ -6307,3 +6315,11 @@ function testGovernanceUpdatesBox() public {
     }
 ```
 - shows us the exact process of how a DAO actually works
+
+### [Lesson 15 Security and Auditing](https://www.youtube.com/watch?v=wUjYK5gwNZs&t=26472s)
+#### Intro
+- [Readiness checklist](https://github.com/nascentxyz/simple-security-toolkit)
+- Total value stolen in crypto hacks for 2022 was 3.8 billion
+	- That is about 6% of the defi TVL
+- [rekt leaderboard](https://rekt.news/leaderboard/)
+	- as of April 2024, the top 3 were unaudited
