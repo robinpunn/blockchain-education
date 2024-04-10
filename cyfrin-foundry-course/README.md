@@ -295,6 +295,7 @@
 <summary> Lesson 15: Security and Auditing </summary>
 
 1. [Intro](#intro)
+2. [What is a smart contract audit](#what-is-a-smart-contract-audit)
 
 </details>
 
@@ -6323,3 +6324,62 @@ function testGovernanceUpdatesBox() public {
 	- That is about 6% of the defi TVL
 - [rekt leaderboard](https://rekt.news/leaderboard/)
 	- as of April 2024, the top 3 were unaudited
+
+#### What is a smart contract audit
+- A smart contract is time boxed, security based code review
+- An auditor's goal is to find as many security vulnerabilities as possible and educate the protocol on security best practices
+- Auditors use a combination of manual reviews and automated tools
+- Because smart contracts are immutable, once a smart contract is deployed, they can't be changed
+- Blockchains are adversarial by nature, so malicious actors will always be looking to exploit
+- Audits can
+	- improve developer teams understanding of code
+	- improve speed and effectiveness
+	- improve developer effectiveness
+	- teach the latest tooling
+- One audit usually isn't enough, there are many options
+	- Formal verification
+	- Competitive audits
+	- Bug Bounty Programs
+- There are many companies that perform audits as well as independent auditors
+- The Audit Process
+	1. Price and Timeline: protocols can reach out before or after code is finished
+		- will discuss how long audit will take based on: code complexity, scope, duration, timeline
+- Scope: The code that will be audited
+- Lines of code: duration
+	- 100: 2.5 days
+	- 500: 1 week
+	- 1000: 1-2 weeks
+	- 2500: 2-3 weeks
+	- 5000: 3-5 weeks
+	- 5000+: 5+ weeks
+- Commit hash, start date, down payment
+	- once we have a commit hash, we can finalize start date and final price
+	- commit hash is the unique id of the codebase
+	- some auditors ask for a down payment before audit begins
+- Audit begins
+	- auditors will use every tool in their arsenal to find vulnerabilities
+- Initial report
+	- After the time period ends, auditors will give an initial report
+	- all findings listed by severity: high, medium, low, informational/non critical, gas efficiencies
+	- High/medium/low represent the severity of impact and likelihood of each vulnerability
+	- Information/gas/non-critical are findings to improve efficiency of code 
+- Mitigation begins
+	- agreed upon time to fix vulnerabilities found in initial audit report
+- Final report
+	- another audit focused exclusively on changes after mitigation fixes
+- For developers
+	1. Have clear documentation
+	2. Robust test suite ideally including fuzz tests
+	3. Code should be commented and readable
+	4. Modern best practices followed
+	5. Established communication channel between auditors and developers
+	6. Do an initial video walkthrough of code before audit starts
+- Have a dedicated channel where auditors can ask developers questions
+- 80% of all bugs are business logic implementation bugs
+	- These bugs have nothing to do with a coding error, but somebody not knowing what the protocol should be doing
+- Post audit
+	- making changes after an audit makes it unaudited code
+- What an audit isn't
+	- An audit doesn't mean that code is bug free
+	- An audit is a security journey to find as many bugs as possible
+	- A continuous process that is always evolving
