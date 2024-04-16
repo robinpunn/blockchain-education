@@ -296,6 +296,7 @@
 
 1. [Intro](#intro)
 2. [What is a smart contract audit](#what-is-a-smart-contract-audit)
+3. [Top security tools](#top-security-tools)
 
 </details>
 
@@ -6383,3 +6384,65 @@ function testGovernanceUpdatesBox() public {
 	- An audit doesn't mean that code is bug free
 	- An audit is a security journey to find as many bugs as possible
 	- A continuous process that is always evolving
+
+#### Top security tools
+**Security is for both protocol devs and auditors**
+
+- Smart contract devs should know all the tools and use them before going to audit  
+
+- [Solcurity](https://www.alchemy.com/dapps/solcurity)
+	- A security-conscious list of standards compiled from the work by experts including Mudit Gupta, and organizations like ConsenSys Diligence, BoringCrypto, and Runtime Verification. 
+	- Smart contract developers can learn how to approach sensitive data handling code using best practice methods and checks. 
+	- Over a hundred such advice points ranging from event calls, contract structure, and DeFi-specific standards are available.
+
+- [Simple security toolkit](https://github.com/nascentxyz/simple-security-toolkit)
+	- This repo is a collection of practical security-focused guides and checklists for smart contract development, assembled by the [Nascent](https://www.nascent.xyz/) team to share with our portfolio companies and others in the ecosystem who might find it useful. 
+	- It is not intended to be comprehensive; it skews towards practical and opinionated recommendations that we find to be appropriate particularly for teams developing and managing early versions of a protocol.
+
+- The audit process
+	- There is no silver bullet, BUT...
+	- Manual review:
+		- go through code and docs
+		- understand what the protocol should do
+	- Using tools
+
+- Manual review, example code:
+```solidity
+contract CaughtWithTest {
+	uint256 public number;
+
+	function setNumber(uint256 newNumber) public {
+		number = newNumber + 1;
+	}
+}
+```
+- There is nothing wrong with this code
+- BUT, if we read the docs and it says this function should be doing something else, then this code is wrong
+- So we need to understand what the protocol should be doing
+
+- Using tools: 
+	- Test Suites:
+		- Hardhat
+		- Foundry
+		- etc
+	- Static analysis:
+		- automatically checking code for issues without executing anything... hence the debugging is static
+		- Slither
+		- 4nalyzer
+		- Mythril (also symbolic execution)
+		- most of these tools just "dumbly" look for keywords in specific orders
+	- Fuzz testing:
+		- provide random data as inputs during testing
+		- stateful fuzz testing: fuzz testing, but the system remembers the state of the last fuzz test and continues with the new fuzz test
+	- Differential test
+		- a way to write the same code multiple times
+	- Formal verification:
+		- A generic term for applying formal methods (FM) to verify the correctness of hardware
+		- applying FM means anything based on mathematical proofs, in software often used as a proof of correctness or proof of "bug"
+		- mathematically proving that something in your code can happen
+	- Symbolic execution:
+		- A form of FV where you convert software to a mathematical expression
+		- Take your solidity function and convert it to math, which can be solved and provide us a right and wrong context
+		- Very time intensive and a lot of protocols and audit firms don't go down this route
+	- AI Tools:
+		- They are not very good yet
