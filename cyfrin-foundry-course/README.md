@@ -297,6 +297,7 @@
 1. [Intro](#intro)
 2. [What is a smart contract audit](#what-is-a-smart-contract-audit)
 3. [Top security tools](#top-security-tools)
+4. [Introduction to manual review](#introduction-to-manual-review)
 
 </details>
 
@@ -6446,3 +6447,43 @@ contract CaughtWithTest {
 		- Very time intensive and a lot of protocols and audit firms don't go down this route
 	- AI Tools:
 		- They are not very good yet
+
+#### Introduction to manual review
+- Step 1:
+	- download the code
+	- read the docs
+
+- Step 2:
+	- bring and use the tools that you're most familiar with
+
+- `clock`: command line utility that helps count lines of code
+
+- Step 3:
+	- get an overview of what you're auditing
+	- rank contracts based on complexity (lines of code)
+	- when you start auditing contracts, label them as: `Not Started`, `In Progress`, `Done`
+
+- Step 4: 
+	- take notes
+	- leave notes in the code (questions, issues, checkpoints)
+	- have a dedicated file for notes where you can dump ideas
+
+- Step 5: 
+	- be aware of rabbit holes, and know when to jump
+	- we will have to research topics, but don't lose sight of the big picture
+
+- Step 6:
+	- use tools to validate issues that come up
+	- use fuzz tests to make sure functions do what they're supposed to do
+
+- Step 7:
+	- have communication with the developers and ask questions about doubts
+
+- Step 8:
+	- create time bounds
+	- you can go through code forever and keep thinking of attacks, so set a time limit
+
+- Step 9:
+	- wrap up by writing a good report
+	- 50% analysis and 50% readable report
+	- when fixes are made, we have to make sure new bugs haven't been introduced
