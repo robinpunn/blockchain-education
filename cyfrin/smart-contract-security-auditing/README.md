@@ -11,6 +11,8 @@
 1. [Tooling Prerquisites](#table-of-contents)
 2. [Solidity & Smart Contract Prerequisites](#solidity--smart-contract-prerequisites)
 3. [Fuzzing and Invariants](#fuzzing-and-invariants)
+4. [Install Libraries](#install-libraries)
+4. [What is an ERC20](#what-is-an-erc20)
 
 </details>
 
@@ -130,3 +132,60 @@ contract MyContractTest is StdInvariant, Test {
 - New tokens minted < inflation rate
 - Only possible to have 1 winner in a lottery
 - Only withdraw what you deposit
+
+#### Install Libraries
+- [OpenZeppelin Contracts](https://www.openzeppelin.com/contracts)
+	- popular library for smart contracts
+
+**Install OpenZeppelin Contracts**
+- `forge install OpenZeppelin/openzeppelin-contracts --no-commit`
+
+**Set remappings**
+- `foundry.toml`:
+```
+remappings = ['@openzeppelin/contracts=lib/openzepplin-contracts/contracts']
+```
+
+**Import**
+```solidity
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+```
+
+**Set constructor**
+```solidity
+contract MyToken is ERC20 {
+	constructor() ERC20("MyTokenName", "MTN"){}
+}
+```
+- Gives us a minimal ERC20
+
+#### What is an ERC20
+- ERC20s are tokens that are deployed on a chain using the [ERC20 token standard](https://ethereum.org/en/developers/docs/standards/tokens/erc-20/)
+	- And ERC20 is a smart contract (it's also a token)
+
+- Why make an ERC20?
+	- Governance tokens
+	- Secure an underlying network
+	- Create a synthetic asset
+	- Anything else
+
+- How do we create an ERC20?
+	- All we have to do is create a smart contract that follows the ERC20 standard
+
+- An ERC20 should have these methods:
+```solidity
+function name() public view returns (string) 
+function symbol() public view returns (string) 
+function decimals() public view returns (uint8) 
+function totalSupply() public view returns (uint256) 
+function balanceOf(address _owner) public view returns (uint256 balance) 
+function transfer(address _to, uint256 _value) public returns (bool success) 
+function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) 
+function approve(address _spender, uint256 _value) public returns (bool success) 
+function allowance(address _owner, address _spender) public view returns (uint256 remaining)
+```
+
+- [ERC677](https://github.com/ethereum/EIPs/issues/677) improves on ERC20 but is still ERC20 compatible
+	- Chainlink is an example
+
+- [ERC777](https://docs.openzeppelin.com/contracts/3.x/erc777) is another improvement of the ERC20 that is still ERC20 compatible
