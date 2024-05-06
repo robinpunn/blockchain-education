@@ -13,6 +13,8 @@
 3. [Fuzzing and Invariants](#fuzzing-and-invariants)
 4. [Install Libraries](#install-libraries)
 4. [What is an ERC20](#what-is-an-erc20)
+5. [What is an ERC721](#what-is-an-erc721)
+6. [Storage](#storage)
 
 </details>
 
@@ -189,3 +191,46 @@ function allowance(address _owner, address _spender) public view returns (uint25
 	- Chainlink is an example
 
 - [ERC777](https://docs.openzeppelin.com/contracts/3.x/erc777) is another improvement of the ERC20 that is still ERC20 compatible
+
+#### What is an ERC721
+- [ERC721](https://eips.ethereum.org/EIPS/eip-721) is a token standard for non fungible tokens.
+	- Each token from a class is unique from another
+	- As opposed to an ERC20 token where all the tokens from a class are all the same
+- Current use case for ERC721 is mainly art, but it has potential for more
+- Currently, artists can use ERC721 tokens for better compensation for their work
+- [ERC1155](https://ethereum.org/en/developers/docs/standards/tokens/erc-1155/) tokens represent "semi-fungible" assets
+
+**Differences between ERC20 and ERC721**
+- ERC20s have a mapping between an address and how much that address holds
+```solidity
+mapping (address => uint256) private _balances;
+```
+
+- ERC721s have unique token ids mapped to addresses of ownership
+```solidity
+mapping (uint256 => address) private _owners;
+```
+
+- A token [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier) is a unique indicator of the unique attributes of an ERC721 token
+```json
+{
+	"name": "Name",
+	"description": "Description",
+	"image":"URI",
+	"attributes": []
+}
+```
+- a typical token URI
+
+#### Storage
+- Global variables are found in something called [storage](https://docs.soliditylang.org/en/latest/internals/layout_in_storage.html)
+	- Storage is a giant array of all the variables that we create in a contract
+- Variables are allocated to storage slots
+	- Each slot is 32 bytes long and represents the bytes version of the object
+	- Each storage slot increments starting from 0
+- For dynamic values like mappings and dynamic arrays, the elements are stored using a hashing function
+	- For arrays, a sequential storage spot is taken up for the length of the array
+	- For mappings, a sequential storage spot is taken up, but left blank
+- constant variables aren't stored in slot, they're stored in the contract bytecode
+- Variables inside a function, only exist for the duration of the function
+- `forge inspect ContractName storage`: prints the storage information of the contract
