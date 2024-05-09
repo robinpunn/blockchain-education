@@ -15,6 +15,7 @@
 4. [What is an ERC20](#what-is-an-erc20)
 5. [What is an ERC721](#what-is-an-erc721)
 6. [Storage](#storage)
+7. [Fallback and Receive](#fallback-and-receive)
 
 </details>
 
@@ -234,3 +235,13 @@ mapping (uint256 => address) private _owners;
 - constant variables aren't stored in slot, they're stored in the contract bytecode
 - Variables inside a function, only exist for the duration of the function
 - `forge inspect ContractName storage`: prints the storage information of the contract
+
+#### Fallback and Receive
+- By default, solidity smart contracts reject eth 
+- A contract receiving ether must have either [fallback](https://solidity-by-example.org/fallback/) or [receive](https://solidity-by-example.org/sending-ether/)
+	- receive is called if `msg.data` is empty
+- When sending eth to a contract, the first check is whether or not `msg.data` is empty
+	- If there is `msg.data`, it will go to the fall back function
+	- if there is no `msg.data`, it will check if there is a `receive()` function
+	- if there is no `receive()` function it will go to the `fallback()`
+	- if there is no `fallback()` the contract can't receive eth
