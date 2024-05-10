@@ -16,6 +16,8 @@
 5. [What is an ERC721](#what-is-an-erc721)
 6. [Storage](#storage)
 7. [Fallback and Receive](#fallback-and-receive)
+8. [Abi encode](#abi-encode)
+9. [Encoding Functions](#encoding-functions)
 
 </details>
 
@@ -245,3 +247,71 @@ mapping (uint256 => address) private _owners;
 	- if there is no `msg.data`, it will check if there is a `receive()` function
 	- if there is no `receive()` function it will go to the `fallback()`
 	- if there is no `fallback()` the contract can't receive eth
+
+#### Abi encode
+- [Contract ABI Specification](https://docs.soliditylang.org/en/develop/abi-spec.html)
+- [Abi encoding and decoding functions](https://docs.soliditylang.org/en/v0.8.11/units-and-global-variables.html#abi-encoding-and-decoding-functions)
+
+- [Encoding.sol](https://github.com/Cyfrin/foundry-nft-f23/blob/main/src/sublesson/Encoding.sol)
+```solidity
+function combineStrings() public pure returns (string memory) {
+	return string(abi.encodePacked("Hi Mom! ", "Miss you."));
+}
+```
+- With this function, we're encoding the string into its bytes form
+- In `solidity ^0.8.12`, we can use `string.concat(stringA,stringB)`
+
+**EVM overview**
+- The EVM (ethereum virtual machine) is a computation engine that handles smart contract deployments and execution
+- When we compile our code, we get a `.abi` file and a `.bin` file
+	- When we send our contract to the blockchain, we're sending the binary (`.bin`)
+
+**Transactions - Fields**
+- nonce: tx count for the account
+- gas price: price per unit of gas (in wei)
+- gas limit: max gas that this tx can use
+- to: address that the tx is sent to
+- value: amount of wei to send
+- data: what to send to the to address
+- v,r,s: components of tx signature
+
+**Transactions - Contract creation**
+- nonce: tx count for the account
+- gas price: price per unit of gas (in wei)
+- gas limit: max gas that this tx can use
+- to: EMPTY
+- value: amount of wei to send
+- data: contract init code and contract bytecode
+- v,r,s: components of tx signature
+
+- [Opcodes](https://www.evm.codes/)
+	- The EVM uses opcodes to execute transactions
+	- Opcodes represent all the instructions a computer must be able to read in order for it to interact with Ethereum
+	- Solidity compiles down to opcodes
+
+- `abi.encode` abi-encodes the given argument
+	- we can encode anything we want into binary format
+	- so what we're doing is making whatever data we encode, machine readable
+- `abi.encodepacked` is a non standard way to encode into binary, performing [packed](https://docs.soliditylang.org/en/v0.8.11/abi-spec.html#abi-packed-mode) encoding
+- [difference between abi.encodePacked(string) and bytes(string)](https://forum.openzeppelin.com/t/difference-between-abi-encodepacked-string-and-bytes-string/11837)
+
+- `abi.decode` ABI-decodes the given data while the types are given in parentheses as the second argument
+
+- we can use `abi.encode` and combine something like two strings... then we could `abi.decode` and return both of those original strings
+	- we can't do that with `abi.encodepacked`
+
+#### Encoding Functions
+- We can populate the `data` value of transactions with information 
+- In a function call, the `data` is what to send to the address
+	- So, in a transaction call, we can send the data field ourselves
+	- This allows us to make function calls without having to interact with the actual function/contract???
+
+- call: how we call functions to change the state of a blockchain
+- staticcall: how we access "view" or "pure" functions
+	- [Staticcall](https://www.rareskills.io/post/solidity-staticcall)
+
+```solidity
+(bool success, ) = recentWinner.call{value: address(this).balance}("");
+```
+- In the curly braces, we pass specific fields of a transaction such as value
+- In parentheses, we can pass data such as a call to a specific function
