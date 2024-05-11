@@ -18,6 +18,9 @@
 7. [Fallback and Receive](#fallback-and-receive)
 8. [Abi encode](#abi-encode)
 9. [Encoding Functions](#encoding-functions)
+10. [Upgradeable Contracts](#upgradeable-contracts)
+11. [Selfdestruct](#selfdestruct)
+12. [Fork Tests](#fork-tests)
 
 </details>
 
@@ -315,3 +318,24 @@ function combineStrings() public pure returns (string memory) {
 ```
 - In the curly braces, we pass specific fields of a transaction such as value
 - In parentheses, we can pass data such as a call to a specific function
+
+#### Upgradeable Contracts
+- [Proxy upgrade pattern](https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies)
+- [delegatecall](https://solidity-by-example.org/delegatecall/)
+
+#### Selfdestruct 
+- [Selfdestruct](https://solidity-by-example.org/hacks/self-destruct/) will be removed in an upcoming hard fork
+	- Contracts can be deleted from the blockchain by calling `selfdestruct`.
+	- `selfdestruct` sends all remaining Ether stored in the contract to a designated address.
+- If a contract doesn't have `receive` or `fallback`, it can't receive ETH. However, you could create another contract and `selfdestruct` sending ETH to a contract without `receive` or `fallback`
+
+#### Fork Tests
+- `forge test --fork-url <URL>`
+	- You would use something like your alchemy URL for something like main net
+	- This would allow us to work with main net/ test net contracts locally
+- [`vm.createSelectFork`](https://book.getfoundry.sh/cheatcodes/create-select-fork)
+	- Creates _and_ selects a new fork from the given endpoint and returns the identifier of the fork. If a block number is passed as an argument, the fork will begin on that block, otherwise it will begin on the _latest_ block.
+	- If a transaction hash is provided, it will roll the fork to the block the transaction was mined in and replays all previously executed transactions.
+```solidity
+uint256 forkId = vm.createSelectFork(MAINNET_RPC_URL);
+```
