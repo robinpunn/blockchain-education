@@ -24,7 +24,15 @@
 
 </details>
 
-### [Review](https://www.youtube.com/watch?v=pUWmJ86X_do&t=15s)
+<details>
+
+<summary> Lesson 2: What is a Smart Contract Audit </summary>
+
+1. [What is a smart contract audit](#what-is-a-smart-contract-audit)
+
+</details>
+
+### [Review](https://youtu.be/pUWmJ86X_do?t=1361)
 #### Tooling Prerequisites
 [Foundry](https://book.getfoundry.sh/)
     - chisel
@@ -339,3 +347,58 @@ function combineStrings() public pure returns (string memory) {
 ```solidity
 uint256 forkId = vm.createSelectFork(MAINNET_RPC_URL);
 ```
+
+### [What is a smart contract audit](https://youtu.be/pUWmJ86X_do?t=6748)
+#### What is a smart contract audit?
+- A time boxed, security based code review 
+	- It's not an audit that guarantees a codebase is bug free
+	- It is a security focused review
+- 3 phases of a security review
+    - Initial Review
+        - 0. Scoping
+        - 1. Reconnaissance
+        - 2. Vulnerability identification
+        - 3. Reporting
+    - Protocol fixes
+        - 1. Fixes issues
+        - 2. Retests and adds tests
+    - Mitigation Review
+        - 1. Reconnaissance
+        - 2. Vulnerability identification
+        - 3. Reporting
+
+- An auditor's goal is to find as many vulnerabilities as possible and educate the protocol on security and coding best practices
+	- Auditors use a combination of manual review and automated tools to find vulnerabilities
+
+- Scope: the code that will be audited
+- Lines of code: duration
+	- 100: 2.5 days
+	- 500: 1 week
+	- 1000: 1-2 weeks
+	- 2500: 2-3 weeks
+	- 5000: 3-5 weeks
+	- 5000+: 5+ weeks
+
+- Findings are listed by severity
+	- Highs
+	- Mediums
+	- Lows
+	- Informational/ Non-critical
+	- Gas Efficiencies
+- High/medium/low represent the severity of impact and likelihood of each vulnerability
+- Informational/Gas/Non-critical are findings to improve the efficiency of your code and code structure
+	- best practice improvement suggestions are not vulnerabilities but ways to improve code
+
+- To get the most out of an audit:
+	1. Have clear documentation
+	2. Robust test suite ideally including fuzz tests
+	3. Code should be commented and readable
+	4. Modern best practices followed
+	5. Communication channel between auditors and developers
+	6. Do an initial video walkthrough of code
+
+- Security is a continuous process... and audit is not a silver bullet
+
+- Competitive vs Private audit mindset
+	- Competitive: Find as many high impact bugs as possible
+	- Private: Find as many high impact bugs as possible, and do whatever you can to make the client safer
