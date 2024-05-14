@@ -28,7 +28,9 @@
 
 <summary> Lesson 2: What is a Smart Contract Audit </summary>
 
-1. [What is a smart contract audit](#what-is-a-smart-contract-audit)
+1. [What is a smart contract audit?](#what-is-a-smart-contract-audit)
+2. [The audit process](#the-audit-process)
+3. [Rekt test](#rekt-test)
 
 </details>
 
@@ -402,3 +404,50 @@ uint256 forkId = vm.createSelectFork(MAINNET_RPC_URL);
 - Competitive vs Private audit mindset
 	- Competitive: Find as many high impact bugs as possible
 	- Private: Find as many high impact bugs as possible, and do whatever you can to make the client safer
+
+#### The audit process
+- High level overview
+	1. Get context
+	2. Tools and Manual Review
+	3. Write Report
+
+- Audit process in depth (3 phases)
+    1. Initial Review
+        a. Scoping
+        b. Reconnaissance
+        c. Vulnerability identification
+	    d. Reporting
+    2. Protocol fixes
+        a. Fixes issues
+        b. Retests and adds tests
+	3. Mitigation Review
+        a. Repeat (#1)
+
+- The report is to do whatever it takes to make the protocol more secure (for a private audit)
+
+- [Smart Contract Development Life Cycle](https://aws.amazon.com/what-is/sdlc/)
+	- Plan & Design
+	- Develop & Test
+	- Smart Contract Audit & Post Deploy Planning
+	    - [Is this just one step?](https://aws.amazon.com/what-is/sdlc/)
+	- Deploy
+	- Monitor & Maintain
+
+- Doing a smart contract audit to check a box is the wrong mentatlity
+	- Security is ongoing throughout the life of the protocol
+
+#### Rekt test
+- [simple security toolkit](https://github.com/nascentxyz/simple-security-toolkit)
+- [the rekt test](https://blog.trailofbits.com/2023/08/14/can-you-pass-the-rekt-test/)
+	1. _Do you have all actors, roles, and privileges documented?_
+	2. _Do you keep documentation of all the external services, contracts, and oracles you rely on?_
+	3. _Do you have a written and tested incident response plan?_
+	4. _Do you document the best ways to attack your system?_
+	5. _Do you perform identity verification and background checks on all employees?_
+	6. _Do you have a team member with security defined in their role?_
+	7. _Do you require hardware security keys for production systems?_
+	8. _Does your key management system require multiple humans and physical steps?_
+	9. _Do you define key invariants for your system and test them on every commit?_
+	10. _Do you use the best automated tools to discover security issues in your code?_
+	11. _Do you undergo external audits and maintain a vulnerability disclosure or bug bounty program?_
+	12. _Have you considered and mitigated avenues for abusing users of your system?_
