@@ -31,6 +31,9 @@
 1. [What is a smart contract audit?](#what-is-a-smart-contract-audit)
 2. [The audit process](#the-audit-process)
 3. [Rekt test](#rekt-test)
+4. [Security Tools](#security-tools)
+5. [What if a protocol I audit gets hacked?](#what-if-a-protocol-i-audit-gets-hacked)
+6. [Top Web3 Attacks](#top-web3-attacks)
 
 </details>
 
@@ -451,3 +454,50 @@ uint256 forkId = vm.createSelectFork(MAINNET_RPC_URL);
 	10. _Do you use the best automated tools to discover security issues in your code?_
 	11. _Do you undergo external audits and maintain a vulnerability disclosure or bug bounty program?_
 	12. _Have you considered and mitigated avenues for abusing users of your system?_
+
+#### Security Tools
+- Test suites
+	- Foundry
+	- Hardhat
+	- Brownie
+- Static analysis: Automatically checking code for issues without executing anything (the debugging is static)
+	- Slither
+	- Aderyn
+	- Mythril
+- Fuzz Testing: Also known as fuzzing, involves providing random data inputs during testing
+- Stateful Fuzz testing: Fuzz testing, but the system remembers the state of the last fuzz test and continues with the new fuzz test
+- Differential Tests (not covered)
+- Formal Verification
+	- A generic term for applying formal methods to verify the correctness of hardware
+	- Applying FM means anything based on mathematical proofs, in software often used as a proof of correctness or proof of bug
+- Symbolic Execution: A form of FV where you convert software to a mathematical expression
+	- MAT
+	- Manticore
+	- Certora
+	- Z3
+- [Web3 Bugs](https://github.com/ZhangZhuoSJTU/Web3Bugs)
+	- Currently, ~80% of bugs are not machine auditable 
+
+#### What if a protocol I audit gets hacked?
+- An audit should be valuable on its own merit beyond finding critical issues
+	- Provide some value other than finding issues
+	- The less critical issues you miss, the better
+	- But auditors won't find all the issues
+- Just because an auditor missed something, doesn't mean the protocol can use that as a scapegoat
+	- So it is a good idea to have a private audit, run it through contests, and have a bug bounty program
+	- The more audits done, the better off the protocol will be
+- As an auditor, when a hack does happen, you can help contain the vulnerability or mitigate the attack
+	- Your responsibility is limited to the agreement you signed with the client, but you should provide support for the clients that hired you when a hack occurs
+
+#### Top Web3 Attacks
+- Defi attack vectors (2023) - Top 10 by risk
+	- price oracle manipulation - $146,000,000 - 52
+	- reward manipulation - $200,000,000 - 27
+	- stolen private keys - $243,000,000 - 16
+	- insufficient function access control - $17,000,000 - 25
+	- logic error - $17,000,000 - 9
+	- function parameter validation - $15,000,000 - 9
+	- read only reentrancy - $13,000,000 - 7
+	- reentrancy - $7,500,000 - 10
+	- governance - $7,000,000 - 8
+	- misconfiguration - $17,600,000 - 3
