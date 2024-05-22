@@ -100,7 +100,7 @@ cast to-dec <result from previous command>
 ```
 
 ### [Challenge 8](https://sepolia.etherscan.io/address/0xf215a0b6DD88d6029b5385D6fab51968337E963D)
-This challenge was very confusing. I would not have figured this out if I didn't check discord.
+This challenge was very confusing. I wouldn't have figured this out if I hadn't check discord.
 - The challenge starts with an IPFS link.
 	- If we use dev tools with our browser (press f12), we can go to the sources
 	- We can also look at the console to see what's going on when we try to interact with the send button
@@ -130,4 +130,19 @@ const transactionResponse = await contract.solveChallenge(secretValue, twitterHa
 	- We should be able to call this function using `cast`:
 ```
 cast send 0xf215a0b6DD88d6029b5385D6fab51968337E963D "solveChallenge(uint256,string)" "123456789" "@yourhandle" --rpc-url <YOUR_RPC_URL> --private-key <YOUR_PRIVATE_KEY>
+```
+
+### [Challenge 9](https://sepolia.etherscan.io/address/0x33e1fD270599188BB1489a169dF1f0be08b83509#code)
+For this challenge, I think you can call the solve function and calculate what the answer will be, if you time it correctly. 
+- `block.prevrandao` is found in the previous block, it's not a random number. 
+- So we should be able to do this calculation: `uint256(keccak256(abi.encodePacked(msg.sender, block.prevrandao, block.timestamp))) % 100000` based on a future timestamp and try to time it correctly???
+
+Instead, I just used an [attack contract](https://github.com/robinpunn/blockchain-education/tree/main/cyfrin/cyfrin-foundry-course/ff-nft-challenges/Lesson9Attack.sol).
+- The contract needs to be able to receive nfts, we can use OpenZeppelin and use the IERC721Receiver library: [oz](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/IERC721Receiver.sol)
+- We need to use `address(this)` in the exploit contract guess calculation as the `msg.sender` when calling the solve function will be the exploit contract
+- Create a withdraw function so you can grab your nft
+- We'll also need the address of the challenge 9 contract and the address of the foundry nft contract
+```solidity
+address targetContract = 0x33e1fD270599188BB1489a169dF1f0be08b83509;
+address nftContract = 0x76B50696B8EFFCA6Ee6Da7F6471110F334536321;
 ```
