@@ -146,3 +146,17 @@ Instead, I just used an [attack contract](https://github.com/robinpunn/blockchai
 address targetContract = 0x33e1fD270599188BB1489a169dF1f0be08b83509;
 address nftContract = 0x76B50696B8EFFCA6Ee6Da7F6471110F334536321;
 ```
+
+### [Challenge 10](https://sepolia.etherscan.io/address/0xE0aE410a16776BCcb04A8d4B0151Bb3F25035994#code)
+```solidity
+function solveChallenge(string memory yourTwitterHandle) external {
+	bool success = i_erc20.transferFrom(msg.sender, address(this), COST_TO_SOLVE);
+	if (!success) {
+		revert LessonTen__FailedToSolve();
+	}
+	_updateAndRewardSolver(yourTwitterHandle);
+}
+```
+- In order to solve this, we need a `COST_TO_SOLVE` amount of the erc20.
+- We can mint what we need from [here](https://sepolia.etherscan.io/address/0xC5D0ab0E66fA10040D0f3A65c593612351bB4957#code)
+- Then we need to call the approve function so the transfer is successful when called from `solveChallenge`
