@@ -137,7 +137,7 @@ For this challenge, I think you can call the solve function and calculate what t
 - `block.prevrandao` is found in the previous block, it's not a random number. 
 - So we should be able to do this calculation: `uint256(keccak256(abi.encodePacked(msg.sender, block.prevrandao, block.timestamp))) % 100000` based on a future timestamp and try to time it correctly???
 
-Instead, I just used an [attack contract](https://github.com/robinpunn/blockchain-education/tree/main/cyfrin/cyfrin-foundry-course/ff-nft-challenges/Lesson9Attack.sol).
+Instead, I just used an [attack contract](https://github.com/robinpunn/blockchain-education/tree/main/cyfrin/cyfrin-foundry-course/ff-nft-challenges/lesson-09/Lesson9Attack.sol).
 - The contract needs to be able to receive nfts, we can use OpenZeppelin and use the IERC721Receiver library: [oz](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/IERC721Receiver.sol)
 - We need to use `address(this)` in the exploit contract guess calculation as the `msg.sender` when calling the solve function will be the exploit contract
 - Create a withdraw function so you can grab your nft
@@ -160,3 +160,40 @@ function solveChallenge(string memory yourTwitterHandle) external {
 - In order to solve this, we need a `COST_TO_SOLVE` amount of the erc20.
 - We can mint what we need from [here](https://sepolia.etherscan.io/address/0xC5D0ab0E66fA10040D0f3A65c593612351bB4957#code)
 - Then we need to call the approve function so the transfer is successful when called from `solveChallenge`
+
+### [Challenge 11](https://sepolia.etherscan.io/address/0x93c7A945af9c453a8c932bf47683B5eB8C2F8792#code)
+```solidity
+  /*
+     * CALL THIS FUNCTION!
+     * 
+     * @param the function selector of the first one you need to call
+     * @param the abi encoded data... hint! Use chisel to figure out what to use here...
+     * @param yourTwitterHandle - Your twitter handle. Can be a blank string.
+     */
+    function solveChallenge(bytes4 selectorOne, bytes memory inputData, string memory yourTwitterHandle) external {
+        (bool successOne, bytes memory responseDataOne) = i_helperContract.call(abi.encodeWithSelector(selectorOne));
+        if (!successOne || uint256(bytes32((responseDataOne))) != 1) {
+            revert LessonEleven__WrongSelector();
+        }
+
+        (bool successTwo, bytes memory responseDataTwo) = i_helperContract.call(inputData);
+        if (!successTwo || uint256(bytes32((responseDataTwo))) != 1) {
+            revert LessonEleven__WrongData();
+        }
+        _updateAndRewardSolver(yourTwitterHandle);
+    }
+```
+- This contract uses a [helper contract](https://sepolia.etherscan.io/address/0x28B4144Fe74b486a87e68074189Aa60f59577602#code) 
+- We need to get the function selector of "the first one you need to call" which seems to be `returnTrue()`
+- The challenge hints ate using chisel, but we can just use `cast sig "returnTrue()"` which will give us `0xf613a687`
+- The function doesn't take any arguments, so we use the same selector for both parameters of the challenge function
+- If instead we were working with the second function:
+```solidity
+function returnTrueWithGoodValues(uint256 nine, address contractAddress) public view returns (bool) {
+        if (nine == 9 && contractAddress == address(this)) {
+            return true;
+        }
+        return false;
+    }
+```
+- Then we would use `cast sig "returnTrueWithGoodValues(uint256, address)"` for the first parameter and `cast abi-encode "returnTrueWithGoodValues(uint256, address)" 9 0x28B4144Fe74b486a87e68074189Aa60f59577602` for the second parameter
