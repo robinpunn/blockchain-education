@@ -197,3 +197,36 @@ function returnTrueWithGoodValues(uint256 nine, address contractAddress) public 
     }
 ```
 - Then we would use `cast sig "returnTrueWithGoodValues(uint256, address)"` for the first parameter and `cast abi-encode "returnTrueWithGoodValues(uint256, address)" 9 0x28B4144Fe74b486a87e68074189Aa60f59577602` for the second parameter
+
+### [Challenge 12](https://sepolia.etherscan.io/address/0xe5760847db2f10A74Fc575B4803df5fe129811C1#code)
+```solidity
+function solveChallenge(address exploitContract, string memory yourTwitterHandle) external {
+        (bool successOne, bytes memory numberrBytes) = exploitContract.call(abi.encodeWithSignature("getNumberr()"));
+        (bool successTwo, bytes memory ownerBytes) = exploitContract.call(abi.encodeWithSignature("getOwner()"));
+
+        if (!successOne || !successTwo) {
+            revert LessonTwelve__AHAHAHAHAHA();
+        }
+
+        uint128 numberr = abi.decode(numberrBytes, (uint128));
+        address exploitOwner = abi.decode(ownerBytes, (address));
+
+        if (msg.sender != exploitOwner) {
+            revert LessonTwelve__AHAHAHAHAHA();
+        }
+
+        try i_hellContract.hellFunc(numberr) returns (uint256) {
+            revert LessonTwelve__AHAHAHAHAHA();
+        } catch {
+            _updateAndRewardSolver(yourTwitterHandle);
+        }
+    }
+```
+- We need to create an exploit contract that will input the correct number which will be derived from fuzz testing
+	- The correct number should cause the [hell contract](https://sepolia.etherscan.io/address/0x5Cbd7Feb522f3060985Ddb07929eB7ee12568a48#code) to revert
+- We need to use our exploit contract as an argument
+	- Our exploit contract should return a uint128 from a `getNumberr()` function
+	- Our exploit contract should return our address from a `getOwner()` function
+- So, we need to create a [fuzz test](https://github.com/robinpunn/blockchain-education/tree/main/cyfrin/cyfrin-foundry-course/ff-nft-challenges/lesson-12/Lesson12.t.sol) for the [logic](https://github.com/robinpunn/blockchain-education/tree/main/cyfrin/cyfrin-foundry-course/ff-nft-challenges/lesson-12/Lesson12.sol) in the hell contract
+- Then, we need to create an [exploit contract](https://github.com/robinpunn/blockchain-education/tree/main/cyfrin/cyfrin-foundry-course/ff-nft-challenges/lesson-12/Lesson12Attack.sol) that returns that number and our address
+
