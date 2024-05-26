@@ -104,6 +104,9 @@ We can store the amount in a variable:
 const amount = web3.utils.toWei("0.0005", "ether")
 ```
 We'll use .0005 to meet the <.001 requirements for ``contribute()``
+```js
+await contract.contribute({value: amount})
+```
 Next, we can send ether directly to the contract:
 ```js
 await contract.sendTransaction({value:amount})
