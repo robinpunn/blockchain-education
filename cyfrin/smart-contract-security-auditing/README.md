@@ -37,6 +37,17 @@
 
 </details>
 
+<details>
+
+<summary> Lesson 3: PasswordStore Audit </summary>
+
+1. [Your First Security Review](#your-first-security-review)
+2. [Scoping: Etherscan](#scoping-etherscan)
+3. [Scoping: Audit Details](#scoping-audit-details)
+4. [Scoping: cloc](#scoping-cloc)
+
+</details>
+
 ### [Review](https://youtu.be/pUWmJ86X_do?t=1361)
 #### Tooling Prerequisites
 [Foundry](https://book.getfoundry.sh/)
@@ -501,3 +512,102 @@ uint256 forkId = vm.createSelectFork(MAINNET_RPC_URL);
 	- reentrancy - $7,500,000 - 10
 	- governance - $7,000,000 - 8
 	- misconfiguration - $17,600,000 - 3
+
+
+### [PasswordStore Audit](https://youtu.be/pUWmJ86X_do?t=8571)
+#### Your First Security Review
+Remember the phases:
+- Initial Review
+    - 0. Scoping
+    - 1. Reconnaissance
+    - 2. Vulnerability identification
+    - 3. Reporting
+For this demo, we are ignoring the last 2 phases:
+- Protocol fixes
+    - 1. Fixes issues
+    - 2. Retests and adds tests
+- Mitigation Review
+    - 1. Reconnaissance
+    - 2. Vulnerability identification
+    - 3. Reporting
+
+#### Scoping: Etherscan
+The first step is the "scoping phase" where we get the contract and understand the scope of what we'll be reviewing
+- Security review code v1: https://sepolia.etherscan.io/address/0x2ecf6ad327776bf966893c96efb24c9747f6694b
+- Part of the job of a security researcher is to educate protocols. 
+	- So just just getting an etherscan link and nothing else is an opportunity for education
+	- Protocols should have test suites and deployment suites which help to assess code maturity
+
+If you were just given an etherscan link, where would you start auditing?
+- Check the contracts deployed along with this one and check the transactions? (my answer)
+- Actual answer: Rekt test
+	1. _Do you have all actors, roles, and privileges documented?_
+	2. _Do you keep documentation of all the external services, contracts, and oracles you rely on?_
+	3. _Do you have a written and tested incident response plan?_
+	4. _Do you document the best ways to attack your system?_
+	5. _Do you perform identity verification and background checks on all employees?_
+	6. _Do you have a team member with security defined in their role?_
+	7. _Do you require hardware security keys for production systems?_
+	8. _Does your key management system require multiple humans and physical steps?_
+	9. _Do you define key invariants for your system and test them on every commit?_
+	10. _Do you use the best automated tools to discover security issues in your code?_
+	11. _Do you undergo external audits and maintain a vulnerability disclosure or bug bounty program?_
+	12. _Have you considered and mitigated avenues for abusing users of your system?_
+
+If we're trying to do a proper audit, you can't pass a security review unless you can pass the Rekt test.
+
+#### Scoping: Audit Details
+Security Review code v2: https://github.com/Cyfrin/3-passwordstore-audit
+- This version is better than just getting an Etherscan link, but there are still problems
+	- The documentation is just generic foundry documentation
+	- There is no test folder
+	- We're not sure what we're supposed to be auditing
+
+[Minimal Smart Contract Secuirty Review Onboarding](https://github.com/Cyfrin/security-and-auditing-full-course-s23/blob/main/minimal-onboarding-questions.md): Questions to ask to get the minimum information before an audit
+- About the project/Documentation
+	- most bugs come from business logic, so we need to know exactly what the protocol is supposed to do
+- Stats
+	- How big is the protocol?
+	- How many lines of code are there?
+	- How complex is the code?
+- Setup
+	- We need to understand how to set up the project
+- Security review scope
+	- We need to nail down exactly what the protocol is deploying and how they're deploying it
+	- What is the exact commit hash
+
+Security review code v3: https://github.com/Cyfrin/3-passwordstore-audit/tree/onboarded
+[Minimal filled](https://github.com/Cyfrin/3-passwordstore-audit/blob/onboarded/minimal-onboarding-filled.md)
+- Roles give us insight into how the protocol works
+- Known issues are important to have 
+
+We clone the repo and move to our audit branch
+- `git clone https://github.com/Cyfrin/3-passwordstore-audit`
+- `cd 3-passwordstore-audit`
+- `git checkout 7d55682ddc4301a7b13ae9413095feffd9924566`
+- `git switch -c passwordstore-audit`
+
+
+#### Scoping: cloc
+- We want to get the stats of the protocol
+- [cloc](https://github.com/AlDanial/cloc): count lines of code
+	- cloc counts blank lines, comment lines, and physical lines of source code in many programming languages.
+```
+npm install -g cloc              # https://www.npmjs.com/package/cloc
+sudo apt install cloc            # Debian, Ubuntu
+sudo yum install cloc            # Red Hat, Fedora
+sudo dnf install cloc            # Fedora 22 or later
+sudo pacman -S cloc              # Arch
+sudo emerge -av dev-util/cloc    # Gentoo https://packages.gentoo.org/packages/dev-util/cloc
+sudo apk add cloc                # Alpine Linux
+doas pkg_add cloc                # OpenBSD
+sudo pkg install cloc            # FreeBSD
+sudo port install cloc           # macOS with MacPorts
+brew install cloc                # macOS with Homebrew
+winget install AlDanial.Cloc     # Windows with winget
+choco install cloc               # Windows with Chocolatey
+scoop install cloc               # Windows with Scoop
+```
+- to verify installation: `cloc --help`
+- enter the file or path: ` cloc ./src`
+- `nSLOC` = number of source lines of code
