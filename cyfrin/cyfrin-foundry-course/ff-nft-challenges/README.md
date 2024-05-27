@@ -230,3 +230,59 @@ function solveChallenge(address exploitContract, string memory yourTwitterHandle
 - So, we need to create a [fuzz test](https://github.com/robinpunn/blockchain-education/tree/main/cyfrin/cyfrin-foundry-course/ff-nft-challenges/lesson-12/Lesson12.t.sol) for the [logic](https://github.com/robinpunn/blockchain-education/tree/main/cyfrin/cyfrin-foundry-course/ff-nft-challenges/lesson-12/Lesson12.sol) in the hell contract
 - Then, we need to create an [exploit contract](https://github.com/robinpunn/blockchain-education/tree/main/cyfrin/cyfrin-foundry-course/ff-nft-challenges/lesson-12/Lesson12Attack.sol) that returns that number and our address
 
+### [Challenge 13](https://sepolia.etherscan.io/address/0xaFa4150818b7843345A5E54E430Bd0cAE31B5c0C)
+```solidity
+    function solveChallenge(address yourContract, string memory yourTwitterHandle) external {
+        YourContract yc = YourContract(yourContract);
+        int256 number = yc.getNumber();
+        address yourOwner = yc.owner();
+
+        if (yourOwner != msg.sender) {
+            revert LessonThirteen__NotSolved();
+        }
+        (bool success, bytes memory data) =
+            address(i_helperContract).delegatecall(abi.encodeWithSignature("addTen(int256)", number));
+
+        if (!success) {
+            revert LessonThirteen__NotSolved();
+        }
+        uint256 result = abi.decode(data, (uint256));
+
+        if (result != TARGET_NUMBER) {
+            revert LessonThirteen__NotSolved();
+        }
+        _updateAndRewardSolver(yourTwitterHandle);
+    }
+```
+- We need to create a contract that's going to return the correct number and an owner address
+- The number, when provided to the function in the helper contract should return 1337
+- The owner should be our address (we are the `msg.sender`)
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+
+contract LessonThirteenHelper {
+    int256 myValue = 100;
+
+    function addTen(int256 number) public view returns (int256) {
+        unchecked {
+            return number + myValue + int256(10);
+        }
+    }
+}
+```
+- A `delegatecall` is going to be made to this contract 
+- Whatever is at the first storage slot of the calling contract will be used as `myValue`
+
+- We can use `cast` to look at the storage slot of the challenge contract
+```
+cast storage 0xaFa4150818b7843345A5E54E430Bd0cAE31B5c0C 0 --rpc-url $SEPOLIA_RPC_URL
+```
+- It returns `0x000000000000000000000000643315c9be056cdea171f4e7b2222a4ddab9f88d`
+
+- Using cast, we can convert it to decimal
+`cast to-dec 0x000000000000000000000000643315c9be056cdea171f4e7b2222a4ddab9f88d`
+- We get `572038313094850821099624258919152072749626292365`
+- Adding 10 to that value, our contract needs to return:
+`−572038313094850821099624258919152072749626291038`
