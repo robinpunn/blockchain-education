@@ -45,6 +45,12 @@
 2. [Scoping: Etherscan](#scoping-etherscan)
 3. [Scoping: Audit Details](#scoping-audit-details)
 4. [Scoping: cloc](#scoping-cloc)
+5. [The Tincho](#the-tincho)
+6. [Recon: Context](#recon-context)
+7. [Recon: Understanding the code](#recon-understanding-the-code)
+8. [Exploit: Access Control](#exploit-access-control)
+9. [Exploit: Public Data](#exploit-public-data)
+10. [Protocol Tests](#protocol-tests)
 
 </details>
 
@@ -611,3 +617,41 @@ scoop install cloc               # Windows with Scoop
 - to verify installation: `cloc --help`
 - enter the file or path: ` cloc ./src`
 - `nSLOC` = number of source lines of code
+
+#### The Tincho
+- After scoping, we're ready to go into recon
+- He doesn't have a "formal process", but there are general steps to take
+**Audit Process**
+1. download the code/ read the docs (at least the intro)
+2. bring the tools you like best (if a project is using hardhat, use foundry if you want)
+3. build small building blocks, by briefly analyzing the code
+4. take notes, both in code and seperately
+5. when you end up in rabbit holes filling in knowledge gaps, remember to stay focused on the audit
+- [Tincho’s ENS Review](https://www.youtube.com/watch?app=desktop&v=A-T9F0anN1E)
+
+#### Recon: Context
+- Start by reading the docs
+- [Solidity Metrics](https://github.com/Consensys/solidity-metrics)
+	- For windows, I have to `Ctrl+Shift+P` and choose `Solidity Metrics: report for all open work spaces`
+	- after running, use the command pallet again to export report
+
+#### Recon: Understanding the code
+- Looking for bugs is a direct result of understanding the codebase
+- Run through the code line by line and take notes
+- Notes
+	- About the project, in my words
+	- Attack vector ideas
+- Well documented code makes things easier, but without it, an open line of communication with the devs is the only way to know intended effects
+
+#### Exploit: Access Control
+- Make sure functions that are meant to be restricted have proper access control
+	- One of the reasons documentation/nat spec is important is so 
+
+#### Exploit: Public Data
+- All information on a blockchain is public
+	- using the `private` keyword does not hide the variable
+
+#### Protocol Tests
+- For a private traditional audit, your goal is to do whatever you can to make the protocol more secure
+	- Look into improving the protocol's tests and engineering best practices
+- Tests can give you a hint into what the protcol is and isn't testing
