@@ -51,6 +51,12 @@
 8. [Exploit: Access Control](#exploit-access-control)
 9. [Exploit: Public Data](#exploit-public-data)
 10. [Protocol Tests](#protocol-tests)
+11. [Writing an amazing finding: Overview](#writing-an-amazing-finding-overview)
+12. [Writing an amazing finding: Title](#writing-an-amazing-finding-title)
+13. [Writing an amazing finding: Description](#writing-an-amazing-finding-description)
+14. [Writing an amazing finding: Proof of code](#writing-an-amazing-finding-proof-of-code)
+15. [Writing an amazing finding: Recommended Mitigation](#writing-an-amazing-finding-recommended-mitigation)
+16. [Finding Writeup](#finding-writeup)
 
 </details>
 
@@ -655,3 +661,139 @@ scoop install cloc               # Windows with Scoop
 - For a private traditional audit, your goal is to do whatever you can to make the protocol more secure
 	- Look into improving the protocol's tests and engineering best practices
 - Tests can give you a hint into what the protcol is and isn't testing
+
+#### Writing an amazing finding: Overview
+- After the recon phase, we move to the reporting phase
+- In a private audit, we need to convey information to the protocol to make it safer
+- In a competitive audit, we need to also prove to judges why this issue must be fixed
+
+**Finding Layout**
+```
+### [S-#] TITLE (Root Cause + Impact)
+
+**Description:**
+
+**Impact:**
+
+**Proof of Concept:**
+
+**Recommended Mitigation:**
+```
+
+**Our objective in reporting a finding**
+1. Convince the protocol there is an issue
+2. How bad the issue is
+3. How to fix the issue
+
+#### Writing an amazing finding: Title
+`### [S-#] TITLE (Root Cause + Impact)`
+- S = severity, # = number
+- The title should explain the root cause and the impact
+```
+Variables stored on chain are visible to anyone, no matter the solidity visibility keyword... the password is not kept private
+```
+OR
+```
+Storing the password on chain makes it visible to anyone and no longer private
+```
+
+#### Writing an amazing finding: Description
+- We want to be succinct with our information
+- The description should elaborate on the title
+```
+All data stored on chain is visible to anyone, and can be read directly from the blockchain. The `PasswordStore::s_password` variable is intended to be a private variable and only accessed through the `PasswordStore::getPassword` function, which is intended to be only called by the owner of the contract.
+
+We show one such method of reading any data off chain below.
+```
+- When we reference functions in markdown, we use backticks to make them standout and reference the file the function or variable is located in:
+	- `PasswordStore::s_password`
+	- `PasswordStore::getPassword`
+- For the Impact, describe what happens to the protocol as an effect of the vulnerability
+- Proof of concept (sometimes proof of code) is where we prove to the protocol that this is a real issue
+
+#### Writing an amazing finding: Proof of code
+- Some POCs can be defined with the help of `anvil`... just run `anvil` in the command line
+- Then we can deploy to the local anvil chain
+```
+deploy:
+    @forge script script/DeployPasswordStore.s.sol:DeployPasswordStore $(NETWORK_ARGS)
+```
+
+- With `cast`, we can pick the storage slot we want to read from
+```
+cast storage 0x5FbDB2315678afecb367f032d93F642f64180aa3 1 --rpc-url http://127.0.0.1:8545
+
+0x6d7950617373776f726400000000000000000000000000000000000000000014
+```
+
+- We can use `cast` to parse bytes data
+```
+cast parse-bytes32-string 0x6d7950617373776f726400000000000000000000000000000000000000000014
+
+my password
+```
+
+**Proof of Concept:**
+1. Create a locally running chain using anvil
+```bash
+make anvil
+```
+2. Deploy the contract to the chain
+```bash
+make deploy
+```
+3. Run the storage tool
+We use `1`because that's the storage slot of `s_password` in the contract
+```
+cast storage <ADDRESS_HERE> 1 --rpc-url http://127.0.0.1:8545
+```
+You'll get an output like this:
+`0x6d7950617373776f726400000000000000000000000000000000000000000014`
+You can then parse the hex to a string with:
+```bash
+cast parse-bytes32-string 0x6d7950617373776f726400000000000000000000000000000000000000000014
+```
+And get an output off:
+`myPassword`
+
+#### Writing an amazing finding: Recommended Mitigation
+- In the example protocol we're looking at, the whole protocol is useless because storing passwords on chain doesn't make sense
+	- Having a security mindset when creating a password can help mitigate problems like this
+- However, our goal is to help the protocol
+```
+Due to this, the overall architecture of the contract should be rethought. One could encrypt the password off-chain, and store the encrypted password on-chain. This would require the user to remember another password off-chain to decrypt the password. However, you'd also want to remove the view funtion as you wouldn't want the user to accidentally send a transaction with the password that decrypts your password.
+```
+
+#### Finding Writeup
+```
+### [S-#] Storing the password on chain makes it visible to anyone and no longer private
+
+**Description:**
+All data stored on chain is visible to anyone, and can be read directly from the blockchain. The `PasswordStore::s_password` variable is intended to be a private variable and only accessed through the `PasswordStore::getPassword` function, which is intended to be only called by the owner of the contract.
+
+We show one such method of reading any data off chain below.
+
+**Impact:**
+Anyone can read the private password, severly breaking the functionality of the protocol.
+
+**Proof of Concept:**
+The test below shows how anyone can read the password directly from the blockchain.
+
+1. Create a locally running chain using anvil
+make anvil
+2. Deploy the contract to the chain
+make deploy
+3. Run the storage tool
+We use `1`because that's the storage slot of `s_password` in the contract
+cast storage <ADDRESS_HERE> 1 --rpc-url http://127.0.0.1:8545
+You'll get an output like this:
+`0x6d7950617373776f726400000000000000000000000000000000000000000014`
+You can then parse the hex to a string with:
+cast parse-bytes32-string 0x6d7950617373776f726400000000000000000000000000000000000000000014
+And get an output off:
+`myPassword`
+
+**Recommended Mitigation:**
+Due to this, the overall architecture of the contract should be rethought. One could encrypt the password off-chain, and store the encrypted password on-chain. This would require the user to remember another password off-chain to decrypt the password. However, you'd also want to remove the view funtion as you wouldn't want the user to accidentally send a transaction with the password that decrypts your password.
+```
+
