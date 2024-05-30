@@ -57,6 +57,14 @@
 14. [Writing an amazing finding: Proof of code](#writing-an-amazing-finding-proof-of-code)
 15. [Writing an amazing finding: Recommended Mitigation](#writing-an-amazing-finding-recommended-mitigation)
 16. [Finding Writeup](#finding-writeup)
+17. [Access Control Write up](#access-control-write-up)
+18. [Missing Access Controls Proof of Code](#missing-access-controls-proof-of-code)
+19. [Finding Writeup Docs](#finding-writeup)
+20. [Severity Rating Introduction](#severity-rating-introduction)
+21. [Assessing Highs](#assessing-highs)
+22. [Severity Rating Informational](#severity-rating-informational)
+23. [Timeboxing](#timeboxing)
+24. [Making a pdf](#making-a-pdf)
 
 </details>
 
@@ -796,4 +804,254 @@ And get an output off:
 **Recommended Mitigation:**
 Due to this, the overall architecture of the contract should be rethought. One could encrypt the password off-chain, and store the encrypted password on-chain. This would require the user to remember another password off-chain to decrypt the password. However, you'd also want to remove the view funtion as you wouldn't want the user to accidentally send a transaction with the password that decrypts your password.
 ```
+
+#### Access Control Write up
+```
+### [S-#] `PasswordStore::setPassword` has no access controls, meaning a non owner could change the password
+
+**Description:** The `PasswordStore::setPassword` function is set to be `external`, however, the natspec of the function and the overall purpose of the fucntion is that `This function allows only the owner to set a new password.`
+
+`js
+function setPassword(string memory newPassword) external {
+@>	// @audit - There are no access controls
+	s_password = newPassword;
+	emit SetNetPassword();
+}
+`
+
+**Impact:** Anyone can set/change the password of the contract, breaking the intended functionality.
+
+**Proof of Concept:**
+
+**Recommended Mitigation:**
+```
+
+#### Missing Access Controls Proof of Code
+- Remember that our goal is to prove to the protocol that this can happen.
+- For this example, we can use the existing tests
+
+Added the following the the `PasswordStor.t.sol` test file:
+
+<details>
+
+<summary>code</summary>
+
+```js
+function test_anyone_can_set_password(address randomAddress) public {
+	vm.assume(randomAddress != owner);
+
+	vm.prank(randomAddress);
+	string memory expectedPassword = "myNewPassword";
+	passwordStore.setPassword(expectedPassword);
+
+	vm.prank(owner);
+	string memory actualPasswrod = passwordStore.getPassword();
+
+	assertEq(actualPasswrod,expectedPassword);
+}
+```
+
+</details>
+
+**Recommended Mitigation** Add an access control conditional to the `setPassword` function.
+```js
+if (msg.sender != s_owner) {
+	revert PasswordStore__NotOwner();
+}
+```
+
+#### Finding Writeup Docs
+- Gas and informational severities don't need as extensive write-ups as other severities
+```
+### [S-#] The `PasswordStore::getPassword` natspec indicates a parameter that doesn't exist, causing the natspec to be incorrect
+
+**Description:**
+`js
+	/*
+	 * @notice This allows only the owner to retrieve the password.
+	 * @param newPassword The new password to set.
+	 */
+	
+	function getPassword() external view returns (string memory) {
+`
+The `PasswordStore::getPassword` function signature is `getPassword()` while the natspec says it should be `getPassword(string)`.
+
+**Impact:** The natspec is incorrect.
+
+**Recommended Mitigation:** Remove the incorrect natspec line
+`diff
+- * @param newPassword The new password to set.
+`
+```
+- For a finding like this, we don't need a proof of concept (at least for this specific finding)
+- We can use the `diff` keyword in markdown to indicate lines to be added (+) or removed (-)
+
+####  Severity Rating Introduction
+- [Severity guide](https://docs.codehawks.com/hawks-auditors/how-to-evaluate-a-finding-severity)
+	- High 
+	- Medium
+	- Low
+	- Some like to add a "critical" rating
+- We figure out severity by looking at the likelihood of the attack vs the impact
+	- This can be subjective, but it is a path towards some standardization
+
+**Impact**
+- **High Impact**:
+    - Funds are directly or nearly directly at risk.
+    - There's a severe disruption of protocol functionality or availability.
+- **Medium Impact**:
+    - Funds are indirectly at risk.
+    - There's some level of disruption to the protocol's functionality or availability.
+- **Low Impact**:
+    - Funds are not at risk.
+    - However, a function might be incorrect, state might not be handled appropriately, etc.
+
+**Likelihood**
+- **High Likelihood**:
+    - Highly probable to happen. For instance, a hacker can call a function directly and extract money.
+- **Medium Likelihood**:
+    - It might occur under specific conditions. For example, a peculiar ERC20 token is used on the platform.
+- **Low Likelihood**:
+    - Unlikely to occur. An example might be if a hard-to-change variable is set to a unique value on a very specific block.
+
+**High Severity Findings Properties:**
+- Direct impact on the funds or the main functionality of the protocol. 
+- The attack path is straightforward.
+- The vulnerability is easily exploitable, leading to significant damage.
+**Example:** [See Detailed High Severity Finding](https://solodit.xyz/issues/boostsetlockstatus-should-update-the-callers-rewards-first-hans-none-meta-markdown_)
+
+**Medium Severity Findings Properties:**
+- Indirect impact on the funds or the protocol's functionality.
+- The attack path isn't straightforward and needs specific conditions to be met.
+- Though the vulnerability might cause harm, exploiting it is challenging.
+**Example:** [See Detailed Medium Severity Finding](https://solodit.xyz/issues/the-off-chain-mechanism-must-be-ensured-to-work-in-a-correct-order-strictly-cyfrin-none-cyfrin-stake-link-markdown)
+
+**Low Severity Findings Properties:**
+- Minimal to no impact on the funds or the protocol's main functionality.
+- The vulnerability doesn't lead to tangible real-world damage.
+- The path to exploit is either non-existent or highly improbable.
+**Example:** [See Detailed Low Severity Finding](https://solodit.xyz/issues/l-06-erc1155action-returns-false-on-supportsinterface-with-the-real-erc1155-interface-code4rena-notional-notional-contest-git)
+
+
+#### Assessing Highs
+- Assess the impact 
+	- Does it impact the funds?
+	- Does it disrupt the protocol?
+- Assess the likelihood
+	- What is the probability of the finding occurring?
+- Some would call a high impact and a high likelihood a critical
+
+- Rank findings from high to medium to low
+	- Rank each category starting with the worst offenders
+
+#### Severity Rating Informational
+- An informational finding can happen in a few ways
+	- If there is no impact, then the likelihood doesn't matter. It's informational
+	- If the likelihood is none, and the impact is high, it's still informational.
+- It's not exactly a bug, but the protocol should be aware
+- There can also be findings that are "gas improvements" and "non-crits"????
+
+#### Timeboxing
+- You can always review more lines of code, but you have to decide on a stopping point
+
+#### Making a pdf
+- [Template](https://github.com/Cyfrin/audit-report-templating)
+	1. Add all your findings to a markdown file like [`report-example.md`](https://github.com/Cyfrin/audit-report-templating/blob/main/report-example.md)
+	    1. Add the metadata you see at the top of that file
+	2. Install [pandoc](https://pandoc.org/installing.html) & [LaTeX](https://www.latex-project.org/get/)
+	    1. You might also have to install [one more package](https://github.com/Wandmalfarbe/pandoc-latex-template/issues/141) if you get `File 'footnotebackref.sty' not found.`
+	3. Download `eisvogel.latex` and add to your templates directory (should be `~/.pandoc/templates/`)
+	4. Add your logo to the directory as a pdf named `logo.pdf`
+	5. Run this command:
+```
+pandoc <name of .md file> -o <name you want for .pdf file> --from markdown --template=eisvogel --listings
+```
+
+```
+---
+title: Protocol Audit Report
+author: Cyfrin.io
+date: March 7, 2023
+header-includes:
+  - \usepackage{titling}
+  - \usepackage{graphicx}
+---
+
+\begin{titlepage}
+    \centering
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=0.5\textwidth]{logo.pdf} 
+    \end{figure}
+    \vspace*{2cm}
+    {\Huge\bfseries Protocol Audit Report\par}
+    \vspace{1cm}
+    {\Large Version 1.0\par}
+    \vspace{2cm}
+    {\Large\itshape Cyfrin.io\par}
+    \vfill
+    {\large \today\par}
+\end{titlepage}
+
+\maketitle
+
+<!-- Your report starts here! -->
+
+Prepared by: [Cyfrin](https://cyfrin.io)
+Lead Auditors: 
+- xxxxxxx
+
+# Table of Contents
+- [Table of Contents](#table-of-contents)
+- [Protocol Summary](#protocol-summary)
+- [Disclaimer](#disclaimer)
+- [Risk Classification](#risk-classification)
+- [Audit Details](#audit-details)
+  - [Scope](#scope)
+  - [Roles](#roles)
+- [Executive Summary](#executive-summary)
+  - [Issues found](#issues-found)
+- [Findings](#findings)
+- [High](#high)
+- [Medium](#medium)
+- [Low](#low)
+- [Informational](#informational)
+- [Gas](#gas)
+
+# Protocol Summary
+
+Protocol does X, Y, Z
+
+# Disclaimer
+
+The YOUR_NAME_HERE team makes all effort to find as many vulnerabilities in the code in the given time period, but holds no responsibilities for the findings provided in this document. A security audit by the team is not an endorsement of the underlying business or product. The audit was time-boxed and the review of the code was solely on the security aspects of the Solidity implementation of the contracts.
+
+# Risk Classification
+
+|            |        | Impact |        |     |
+| ---------- | ------ | ------ | ------ | --- |
+|            |        | High   | Medium | Low |
+|            | High   | H      | H/M    | M   |
+| Likelihood | Medium | H/M    | M      | M/L |
+|            | Low    | M      | M/L    | L   |
+
+We use the [CodeHawks](https://docs.codehawks.com/hawks-auditors/how-to-evaluate-a-finding-severity) severity matrix to determine severity. See the documentation for more details.
+
+# Audit Details 
+## Scope 
+## Roles
+# Executive Summary
+## Issues found
+# Findings
+# High
+# Medium
+# Low 
+# Informational
+# Gas
+```
+
+- [Alternative ways to generate a pdf](https://github.com/Cyfrin/audit-report-templating/blob/main/README.md#alternative-way-to-generate-a-pdf-audit-report)
+
+
+
 
