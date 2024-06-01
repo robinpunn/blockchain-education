@@ -2,7 +2,7 @@
 
 ---
 
-### Table of Contents
+## Table of Contents
 
 <details>
 
@@ -68,8 +68,22 @@
 
 </details>
 
-### [Review](https://youtu.be/pUWmJ86X_do?t=1361)
-#### Tooling Prerequisites
+<details>
+
+<summary> Lesson 4: PuppyRaffle Audit </summary>
+
+1. [Introduction](#introduction)
+2. [Phase 1: Scoping](#phase-1-scoping)
+3. [Tooling: Slither](#tooling-slither)
+4. [Tooling: Aderyn](#tooling-aderyn)
+5. [Tooling: Solidity Visual Developer](#tooling-solidity-visual-developer)
+6. [Recon: Reading the docs](#recon-reading-the-docs)
+7. [Recon: Reading the code](#recon-reading-the-docs)
+
+</details>
+
+## [Review](https://youtu.be/pUWmJ86X_do?t=1361)
+### Tooling Prerequisites
 [Foundry](https://book.getfoundry.sh/)
     - chisel
     - cast
@@ -83,7 +97,7 @@
     - Peeranha
     - Github Discussions
 
-#### Solidity & Smart Contract Prerequisites
+### Solidity & Smart Contract Prerequisites
 - Should be familiar with [Remix](https://remix.ethereum.org/)
 	- Compile
 	- Deploy locally and deploy to test net using inject provider
@@ -145,7 +159,7 @@ include_push_bytes = true
 - This is how we can change the number of fuzz runs, by adding it to `foundry.toml`
 - run a single test: `forge test --mt testName`
 
-#### Fuzzing and Invariants
+### Fuzzing and Invariants
 - [Video](https://www.youtube.com/watch?v=juyY-CTolac)
 
 **Fuzz testing**
@@ -185,7 +199,7 @@ contract MyContractTest is StdInvariant, Test {
 - Only possible to have 1 winner in a lottery
 - Only withdraw what you deposit
 
-#### Install Libraries
+### Install Libraries
 - [OpenZeppelin Contracts](https://www.openzeppelin.com/contracts)
 	- popular library for smart contracts
 
@@ -211,7 +225,7 @@ contract MyToken is ERC20 {
 ```
 - Gives us a minimal ERC20
 
-#### What is an ERC20
+### What is an ERC20
 - ERC20s are tokens that are deployed on a chain using the [ERC20 token standard](https://ethereum.org/en/developers/docs/standards/tokens/erc-20/)
 	- And ERC20 is a smart contract (it's also a token)
 
@@ -242,7 +256,7 @@ function allowance(address _owner, address _spender) public view returns (uint25
 
 - [ERC777](https://docs.openzeppelin.com/contracts/3.x/erc777) is another improvement of the ERC20 that is still ERC20 compatible
 
-#### What is an ERC721
+### What is an ERC721
 - [ERC721](https://eips.ethereum.org/EIPS/eip-721) is a token standard for non fungible tokens.
 	- Each token from a class is unique from another
 	- As opposed to an ERC20 token where all the tokens from a class are all the same
@@ -272,7 +286,7 @@ mapping (uint256 => address) private _owners;
 ```
 - a typical token URI
 
-#### Storage
+### Storage
 - Global variables are found in something called [storage](https://docs.soliditylang.org/en/latest/internals/layout_in_storage.html)
 	- Storage is a giant array of all the variables that we create in a contract
 - Variables are allocated to storage slots
@@ -285,7 +299,7 @@ mapping (uint256 => address) private _owners;
 - Variables inside a function, only exist for the duration of the function
 - `forge inspect ContractName storage`: prints the storage information of the contract
 
-#### Fallback and Receive
+### Fallback and Receive
 - By default, solidity smart contracts reject eth 
 - A contract receiving ether must have either [fallback](https://solidity-by-example.org/fallback/) or [receive](https://solidity-by-example.org/sending-ether/)
 	- receive is called if `msg.data` is empty
@@ -295,7 +309,7 @@ mapping (uint256 => address) private _owners;
 	- if there is no `receive()` function it will go to the `fallback()`
 	- if there is no `fallback()` the contract can't receive eth
 
-#### Abi encode
+### Abi encode
 - [Contract ABI Specification](https://docs.soliditylang.org/en/develop/abi-spec.html)
 - [Abi encoding and decoding functions](https://docs.soliditylang.org/en/v0.8.11/units-and-global-variables.html#abi-encoding-and-decoding-functions)
 
@@ -347,7 +361,7 @@ function combineStrings() public pure returns (string memory) {
 - we can use `abi.encode` and combine something like two strings... then we could `abi.decode` and return both of those original strings
 	- we can't do that with `abi.encodepacked`
 
-#### Encoding Functions
+### Encoding Functions
 - We can populate the `data` value of transactions with information 
 - In a function call, the `data` is what to send to the address
 	- So, in a transaction call, we can send the data field ourselves
@@ -363,17 +377,17 @@ function combineStrings() public pure returns (string memory) {
 - In the curly braces, we pass specific fields of a transaction such as value
 - In parentheses, we can pass data such as a call to a specific function
 
-#### Upgradeable Contracts
+### Upgradeable Contracts
 - [Proxy upgrade pattern](https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies)
 - [delegatecall](https://solidity-by-example.org/delegatecall/)
 
-#### Selfdestruct 
+### Selfdestruct 
 - [Selfdestruct](https://solidity-by-example.org/hacks/self-destruct/) will be removed in an upcoming hard fork
 	- Contracts can be deleted from the blockchain by calling `selfdestruct`.
 	- `selfdestruct` sends all remaining Ether stored in the contract to a designated address.
 - If a contract doesn't have `receive` or `fallback`, it can't receive ETH. However, you could create another contract and `selfdestruct` sending ETH to a contract without `receive` or `fallback`
 
-#### Fork Tests
+### Fork Tests
 - `forge test --fork-url <URL>`
 	- You would use something like your alchemy URL for something like main net
 	- This would allow us to work with main net/ test net contracts locally
@@ -384,8 +398,8 @@ function combineStrings() public pure returns (string memory) {
 uint256 forkId = vm.createSelectFork(MAINNET_RPC_URL);
 ```
 
-### [What is a smart contract audit](https://youtu.be/pUWmJ86X_do?t=6748)
-#### What is a smart contract audit?
+## [What is a smart contract audit](https://youtu.be/pUWmJ86X_do?t=6748)
+### What is a smart contract audit?
 - A time boxed, security based code review 
 	- It's not an audit that guarantees a codebase is bug free
 	- It is a security focused review
@@ -439,7 +453,7 @@ uint256 forkId = vm.createSelectFork(MAINNET_RPC_URL);
 	- Competitive: Find as many high impact bugs as possible
 	- Private: Find as many high impact bugs as possible, and do whatever you can to make the client safer
 
-#### The audit process
+### The audit process
 - High level overview
 	1. Get context
 	2. Tools and Manual Review
@@ -470,7 +484,7 @@ uint256 forkId = vm.createSelectFork(MAINNET_RPC_URL);
 - Doing a smart contract audit to check a box is the wrong mentatlity
 	- Security is ongoing throughout the life of the protocol
 
-#### Rekt test
+### Rekt test
 - [simple security toolkit](https://github.com/nascentxyz/simple-security-toolkit)
 - [the rekt test](https://blog.trailofbits.com/2023/08/14/can-you-pass-the-rekt-test/)
 	1. _Do you have all actors, roles, and privileges documented?_
@@ -486,7 +500,7 @@ uint256 forkId = vm.createSelectFork(MAINNET_RPC_URL);
 	11. _Do you undergo external audits and maintain a vulnerability disclosure or bug bounty program?_
 	12. _Have you considered and mitigated avenues for abusing users of your system?_
 
-#### Security Tools
+### Security Tools
 - Test suites
 	- Foundry
 	- Hardhat
@@ -509,7 +523,7 @@ uint256 forkId = vm.createSelectFork(MAINNET_RPC_URL);
 - [Web3 Bugs](https://github.com/ZhangZhuoSJTU/Web3Bugs)
 	- Currently, ~80% of bugs are not machine auditable 
 
-#### What if a protocol I audit gets hacked?
+### What if a protocol I audit gets hacked?
 - An audit should be valuable on its own merit beyond finding critical issues
 	- Provide some value other than finding issues
 	- The less critical issues you miss, the better
@@ -520,7 +534,7 @@ uint256 forkId = vm.createSelectFork(MAINNET_RPC_URL);
 - As an auditor, when a hack does happen, you can help contain the vulnerability or mitigate the attack
 	- Your responsibility is limited to the agreement you signed with the client, but you should provide support for the clients that hired you when a hack occurs
 
-#### Top Web3 Attacks
+### Top Web3 Attacks
 - Defi attack vectors (2023) - Top 10 by risk
 	- price oracle manipulation - $146,000,000 - 52
 	- reward manipulation - $200,000,000 - 27
@@ -534,8 +548,8 @@ uint256 forkId = vm.createSelectFork(MAINNET_RPC_URL);
 	- misconfiguration - $17,600,000 - 3
 
 
-### [PasswordStore Audit](https://youtu.be/pUWmJ86X_do?t=8571)
-#### Your First Security Review
+## [PasswordStore Audit](https://youtu.be/pUWmJ86X_do?t=8571)
+### Your First Security Review
 Remember the phases:
 - Initial Review
     - 0. Scoping
@@ -551,7 +565,7 @@ For this demo, we are ignoring the last 2 phases:
     - 2. Vulnerability identification
     - 3. Reporting
 
-#### Scoping: Etherscan
+### Scoping: Etherscan
 The first step is the "scoping phase" where we get the contract and understand the scope of what we'll be reviewing
 - Security review code v1: https://sepolia.etherscan.io/address/0x2ecf6ad327776bf966893c96efb24c9747f6694b
 - Part of the job of a security researcher is to educate protocols. 
@@ -576,7 +590,7 @@ If you were just given an etherscan link, where would you start auditing?
 
 If we're trying to do a proper audit, you can't pass a security review unless you can pass the Rekt test.
 
-#### Scoping: Audit Details
+### Scoping: Audit Details
 Security Review code v2: https://github.com/Cyfrin/3-passwordstore-audit
 - This version is better than just getting an Etherscan link, but there are still problems
 	- The documentation is just generic foundry documentation
@@ -608,7 +622,7 @@ We clone the repo and move to our audit branch
 - `git switch -c passwordstore-audit`
 
 
-#### Scoping: cloc
+### Scoping: cloc
 - We want to get the stats of the protocol
 - [cloc](https://github.com/AlDanial/cloc): count lines of code
 	- cloc counts blank lines, comment lines, and physical lines of source code in many programming languages.
@@ -632,7 +646,7 @@ scoop install cloc               # Windows with Scoop
 - enter the file or path: ` cloc ./src`
 - `nSLOC` = number of source lines of code
 
-#### The Tincho
+### The Tincho
 - After scoping, we're ready to go into recon
 - He doesn't have a "formal process", but there are general steps to take
 **Audit Process**
@@ -643,13 +657,13 @@ scoop install cloc               # Windows with Scoop
 5. when you end up in rabbit holes filling in knowledge gaps, remember to stay focused on the audit
 - [Tincho’s ENS Review](https://www.youtube.com/watch?app=desktop&v=A-T9F0anN1E)
 
-#### Recon: Context
+### Recon: Context
 - Start by reading the docs
 - [Solidity Metrics](https://github.com/Consensys/solidity-metrics)
 	- For windows, I have to `Ctrl+Shift+P` and choose `Solidity Metrics: report for all open work spaces`
 	- after running, use the command pallet again to export report
 
-#### Recon: Understanding the code
+### Recon: Understanding the code
 - Looking for bugs is a direct result of understanding the codebase
 - Run through the code line by line and take notes
 - Notes
@@ -657,20 +671,20 @@ scoop install cloc               # Windows with Scoop
 	- Attack vector ideas
 - Well documented code makes things easier, but without it, an open line of communication with the devs is the only way to know intended effects
 
-#### Exploit: Access Control
+### Exploit: Access Control
 - Make sure functions that are meant to be restricted have proper access control
 	- One of the reasons documentation/nat spec is important is so 
 
-#### Exploit: Public Data
+### Exploit: Public Data
 - All information on a blockchain is public
 	- using the `private` keyword does not hide the variable
 
-#### Protocol Tests
+### Protocol Tests
 - For a private traditional audit, your goal is to do whatever you can to make the protocol more secure
 	- Look into improving the protocol's tests and engineering best practices
 - Tests can give you a hint into what the protcol is and isn't testing
 
-#### Writing an amazing finding: Overview
+### Writing an amazing finding: Overview
 - After the recon phase, we move to the reporting phase
 - In a private audit, we need to convey information to the protocol to make it safer
 - In a competitive audit, we need to also prove to judges why this issue must be fixed
@@ -693,7 +707,7 @@ scoop install cloc               # Windows with Scoop
 2. How bad the issue is
 3. How to fix the issue
 
-#### Writing an amazing finding: Title
+### Writing an amazing finding: Title
 `### [S-#] TITLE (Root Cause + Impact)`
 - S = severity, # = number
 - The title should explain the root cause and the impact
@@ -705,7 +719,7 @@ OR
 Storing the password on chain makes it visible to anyone and no longer private
 ```
 
-#### Writing an amazing finding: Description
+### Writing an amazing finding: Description
 - We want to be succinct with our information
 - The description should elaborate on the title
 ```
@@ -719,7 +733,7 @@ We show one such method of reading any data off chain below.
 - For the Impact, describe what happens to the protocol as an effect of the vulnerability
 - Proof of concept (sometimes proof of code) is where we prove to the protocol that this is a real issue
 
-#### Writing an amazing finding: Proof of code
+### Writing an amazing finding: Proof of code
 - Some POCs can be defined with the help of `anvil`... just run `anvil` in the command line
 - Then we can deploy to the local anvil chain
 ```
@@ -764,7 +778,7 @@ cast parse-bytes32-string 0x6d7950617373776f726400000000000000000000000000000000
 And get an output off:
 `myPassword`
 
-#### Writing an amazing finding: Recommended Mitigation
+### Writing an amazing finding: Recommended Mitigation
 - In the example protocol we're looking at, the whole protocol is useless because storing passwords on chain doesn't make sense
 	- Having a security mindset when creating a password can help mitigate problems like this
 - However, our goal is to help the protocol
@@ -772,7 +786,7 @@ And get an output off:
 Due to this, the overall architecture of the contract should be rethought. One could encrypt the password off-chain, and store the encrypted password on-chain. This would require the user to remember another password off-chain to decrypt the password. However, you'd also want to remove the view funtion as you wouldn't want the user to accidentally send a transaction with the password that decrypts your password.
 ```
 
-#### Finding Writeup
+### Finding Writeup
 ```
 ### [S-#] Storing the password on chain makes it visible to anyone and no longer private
 
@@ -805,7 +819,7 @@ And get an output off:
 Due to this, the overall architecture of the contract should be rethought. One could encrypt the password off-chain, and store the encrypted password on-chain. This would require the user to remember another password off-chain to decrypt the password. However, you'd also want to remove the view funtion as you wouldn't want the user to accidentally send a transaction with the password that decrypts your password.
 ```
 
-#### Access Control Write up
+### Access Control Write up
 ```
 ### [S-#] `PasswordStore::setPassword` has no access controls, meaning a non owner could change the password
 
@@ -826,7 +840,7 @@ function setPassword(string memory newPassword) external {
 **Recommended Mitigation:**
 ```
 
-#### Missing Access Controls Proof of Code
+### Missing Access Controls Proof of Code
 - Remember that our goal is to prove to the protocol that this can happen.
 - For this example, we can use the existing tests
 
@@ -860,7 +874,7 @@ if (msg.sender != s_owner) {
 }
 ```
 
-#### Finding Writeup Docs
+### Finding Writeup Docs
 - Gas and informational severities don't need as extensive write-ups as other severities
 ```
 ### [S-#] The `PasswordStore::getPassword` natspec indicates a parameter that doesn't exist, causing the natspec to be incorrect
@@ -886,7 +900,7 @@ The `PasswordStore::getPassword` function signature is `getPassword()` while the
 - For a finding like this, we don't need a proof of concept (at least for this specific finding)
 - We can use the `diff` keyword in markdown to indicate lines to be added (+) or removed (-)
 
-####  Severity Rating Introduction
+###  Severity Rating Introduction
 - [Severity guide](https://docs.codehawks.com/hawks-auditors/how-to-evaluate-a-finding-severity)
 	- High 
 	- Medium
@@ -933,7 +947,7 @@ The `PasswordStore::getPassword` function signature is `getPassword()` while the
 **Example:** [See Detailed Low Severity Finding](https://solodit.xyz/issues/l-06-erc1155action-returns-false-on-supportsinterface-with-the-real-erc1155-interface-code4rena-notional-notional-contest-git)
 
 
-#### Assessing Highs
+### Assessing Highs
 - Assess the impact 
 	- Does it impact the funds?
 	- Does it disrupt the protocol?
@@ -944,17 +958,17 @@ The `PasswordStore::getPassword` function signature is `getPassword()` while the
 - Rank findings from high to medium to low
 	- Rank each category starting with the worst offenders
 
-#### Severity Rating Informational
+### Severity Rating Informational
 - An informational finding can happen in a few ways
 	- If there is no impact, then the likelihood doesn't matter. It's informational
 	- If the likelihood is none, and the impact is high, it's still informational.
 - It's not exactly a bug, but the protocol should be aware
 - There can also be findings that are "gas improvements" and "non-crits"????
 
-#### Timeboxing
+### Timeboxing
 - You can always review more lines of code, but you have to decide on a stopping point
 
-#### Making a pdf
+### Making a pdf
 - [Template](https://github.com/Cyfrin/audit-report-templating)
 	1. Add all your findings to a markdown file like [`report-example.md`](https://github.com/Cyfrin/audit-report-templating/blob/main/report-example.md)
 	    1. Add the metadata you see at the top of that file
@@ -1052,6 +1066,56 @@ We use the [CodeHawks](https://docs.codehawks.com/hawks-auditors/how-to-evaluate
 
 - [Alternative ways to generate a pdf](https://github.com/Cyfrin/audit-report-templating/blob/main/README.md#alternative-way-to-generate-a-pdf-audit-report)
 
+
+## [PuppyRaffle Audit](https://youtu.be/pUWmJ86X_do?t=15944)
+
+### Introduction
+- [Puppy Raffle Audit](https://github.com/Cyfrin/4-puppy-raffle-audit)
+- Review static analysis
+- Cover various exploits
+- Write report for findings specifically for competitive audits
+- It's important to review historical attacks and how they happened
+
+### Phase 1: Scoping
+- Glance at the documentation to get a feel for the project.
+- Check what's in scope
+- Install as directed by the docs
+- `forge coverage`
+	- In a private audit, bad coverage is not good
+	- In a competitive audit, bad coverage is good as it increases your chances of finding bugs
+
+### Tooling: Slither
+- Static Analysis: Automatically checking code for issues without executing anything. Hence the debugging is static
+    - [Slither](https://github.com/crytic/slither)
+    - [Aderyn](https://github.com/Cyfrin/aderyn)
+- Most of the time, these tools should be run before an audit
+
+**Using Slither**
+- Need to have python in order to install
+- `slither --help`
+- `slither .`: to run slither 
+	- Output is color based: red = bad / yellow = not sure / green = might be fine
+
+### Tooling: Aderyn
+- Need to have rust installed
+- `cargo install aderyn`
+- run `aderyn` in project folder
+	- produces a `repot.md`
+
+### Tooling: Solidity Visual Developer
+- [Solidity Metrics (audit estimation)](https://github.com/Consensys/solidity-metrics)
+- [Solidity Visual Developer](https://marketplace.visualstudio.com/items?itemName=tintinweb.solidity-visual-auditor)
+	- Not all codebases use standard naming conventions, this extension highlights variables with different colors based on their type
+
+### Recon: Reading the docs
+- Read the docs and in your notes, try to explain in your own words what the protocol should be doing
+
+### Recon: Reading the code
+- Try to start with the main entry point of the protocol
+	- Look for public/external functions that modify state
+- `forge inspect <NAME> methods`
+	- prints out a list of all the methods
+- [Vscode keyboard shortcuts](https://code.visualstudio.com/shortcuts/keyboard-shortcuts-windows.pdf)
 
 
 
