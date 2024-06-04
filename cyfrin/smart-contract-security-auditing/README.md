@@ -95,6 +95,15 @@
 21. [Weak Randomness: Multiple issues](#weak-randomness-multiple-issues)
 22. [Case Study: Weak Randomness](#case-study-weak-randomness)
 23. [Weak Randomness: Mitigation](#weak-randomness-mitigation)
+24. [Exploit: Integer Overflow](#exploit-integer-overflow)
+25. [Integer Overflow Mitigation](#integer-overflow-mitigation)
+26. [Exploit: Unsafe casting](#exploit-unsafe-casting)
+27. [Recon II](#recon-ii)
+28. [Exploit: Mishandling of Eth](#exploit-mishandling-of-eth)
+29. [Recon III](#recon-iii)
+30. [Info and gas findings](#info-and-gas-findings)
+31. [Slither walkthrough](#slither-walkthrough)
+32. [Aderyn Walkthrough](#aderyn-walkthrough)
 
 </details>
 
@@ -1674,3 +1683,209 @@ Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#weak-PR
 
 ### Weak Randomness: Mitigation
 - Some ways to mitigate would be to use Chainlink VRF, commit reveal scheme???, blockhash
+
+### Exploit: Integer Overflow
+- [Overflow/underflow remix](https://remix.ethereum.org/#url=https://github.com/Cyfrin/sc-exploits-minimized/blob/main/src/arithmetic/OverflowAndUnderflow.sol&lang=en&optimize=false&runs=200&evmVersion=null&version=soljson-v0.8.20+commit.a1b79de6.js)
+- [sc exploits overflow/underflow](https://github.com/Cyfrin/sc-exploits-minimized/tree/main/src/arithmetic)
+- Ints and Uints have "max values"
+	- The max value for a `uint 8` is 255
+- If you go past the max value, it wraps around and starts again at 0
+	- This is only true for "unchecked" code in Solidity version 0.8.0 and above
+	- Versions prior to 0.8.0 will reset
+- Solidity experiences precision loss when dividing
+	- Numbers are rounded down
+
+**Example PoC**
+```js
+function testFeeOverflow() public {
+	uint64 totalFees = 18446744073709551615;
+	uint64 newFees = totalFees + 10;
+
+	console.log("firstTotal: ", totalFees);
+	console.log("newTotal: ", newFees);
+
+	assert(newFees < totalFees);
+}
+//  firstTotal:  18446744073709551615
+//  newTotal:  9
+```
+### Integer Overflow Mitigation
+- Use newer version of solidity
+- Use [safemath](https://docs.openzeppelin.com/contracts/2.x/api/math) library
+- Use `uint256`
+- We can use `chisel` to check max value
+	- `chisel`
+	- `type(uint64).max`
+
+### Exploit: Unsafe casting
+- Unsafe casting occurs here:
+```js
+uint256 fee = (totalAmountCollected * 20) / 100;
+totalFees = totalFees + uint64(fee);
+```
+- Casting the `uint256` to `uint64` will cause a loss of funds
+- We can use `chisel` to see this in action:
+```
+➜ uint64 myUint64 = type(uint64).max
+➜ myUint64
+Type: uint64
+├ Hex: 0xffffffffffffffff
+├ Hex (full word): 0x000000000000000000000000000000000000000000000000ffffffffffffffff
+└ Decimal: 18446744073709551615
+➜ uint256 twentyEth = 20e18
+➜ twentyEth
+Type: uint256
+├ Hex: 0x000000000000000000000000000000000000000000000001158e460913d00000
+├ Hex (full word): 0x000000000000000000000000000000000000000000000001158e460913d00000
+└ Decimal: 20000000000000000000
+➜ myUint64 = uint64(twentyEth)
+Type: uint64
+├ Hex: 0x158e460913d00000
+├ Hex (full word): 0x000000000000000000000000000000000000000000000000158e460913d00000
+└ Decimal: 1553255926290448384
+```
+- loss of eth
+```
+18.446744073709551615 eth
+20.000000000000000000 eth
+1.553255926290448384 eth
+```
+
+### Recon II
+- The more you hunt for bugs, the more you will recognize patterns
+- As you recognize more patterns, you can ask yourself questions about how a contract can be attacked
+- Build on your knowledge of current attacks and look for unique ways to attack based on that knowledge
+	- We know from the reentrancy contract, we can call the `withDraw` function in the fallback
+	- We can begin to ask ourselves questions like, what would happen if we had a `revert()` in our attack contract fallback?
+- While auditing the codebase, keep taking notes and use tags like `@followup` to make sure you come back to important questions
+
+### Exploit: Mishandling of Eth
+- [sc exploits mishandling of eth](https://github.com/Cyfrin/sc-exploits-minimized/tree/main/src/mishandling-of-eth)
+- [Remix (Vulnerable to selfdestruct)](https://remix.ethereum.org/#url=https://github.com/Cyfrin/sc-exploits-minimized/blob/main/src/mishandling-of-eth/SelfDestructMe.sol&lang=en&optimize=false&runs=200&evmVersion=null&version=soljson-v0.8.20+commit.a1b79de6.js)
+- If you don't want users to be able to directly send ether to a contract without interacting with any functions, don't have a `fallback()` or `receive()`... just make sure your deposit functionality is `payable`
+	- However, users can still work around this by using `selfdestruct`
+	- With `selfdestruct`, users can force a contract to accept ether even if `fallback()` or `receive()` aren't present
+```js
+function attack() external payable {
+	selfdestruct(payaable(address(target)));
+}
+```
+- This will delete the contract that has this function and send eth to the target contract
+
+- Mishandling of eth is a broad subject, there are many ways for it to happen
+	- Another example: [Remix (Not using push over pull)](https://remix.ethereum.org/#url=https://github.com/Cyfrin/sc-exploits-minimized/blob/main/src/mishandling-of-eth/MishandlingOfEth.sol&lang=en&optimize=false&runs=200&evmVersion=null&version=soljson-v0.8.20+commit.a1b79de6.js)
+
+- Case study: [Sushiswap](https://samczsun.com/two-rights-might-make-a-wrong/)
+```
+First, using `msg.value` in complex systems is hard. It’s a global variable that you can’t change and persists across delegate calls. If you use `msg.value` to check that payment was received, you absolutely cannot place that logic in a loop. As a codebase grows in complexity, it’s easy to lose track of where that happens and accidentally loop something in the wrong place. Although wrapping and unwrapping of ETH is annoying and introduces extra steps, the unified interface between WETH and other ERC20 tokens might be well worth the cost if it means avoiding something like this.
+
+Second, safe components can come together to make something unsafe. I’ve preached this before in the context of composability and DeFi protocols, but this incident shows that even safe contract-level components can be mixed in a way that produces unsafe contract-level behavior. There’s no catch-all advice to apply here like “check-effect-interaction,” so you just need to be cognizant of what additional interactions new components are introducing.
+```
+
+### Recon III
+```js
+function _isActivePlayer() internal view returns (bool) {
+	for (uint256 i = 0; i < players.length; i++) {
+		if (players[i] == msg.sender) {
+			return true;
+		}
+	}
+
+	return false;
+}
+```
+- This function isn't used anywhere
+	- IMPACT: none
+	- LIKELIHOOD: none
+	- …but it's a waste of gas
+	- Informational/gas severity
+
+- When you have questions, use the `//q` tag throughout the codebase so you can search for them later
+- One pass of the codebase will never be enough
+
+### Info and gas findings
+- floating pragma
+	- we want to use an exact version of solidity so when we run our tests, we're testing on the same version
+	- informational
+
+- magic numbers
+	- not a good idea to have numbers in the middle of a codebase
+	- use some type of variable descriptor
+	- 0 and 1 are okay to use as magic numbers, but the rest should be stored in descriptive variables
+
+- supply chain attacks
+	- check which version of libraries are being used and check the safety of those libraries
+	- [openzeppelin security tab](https://github.com/OpenZeppelin/openzeppelin-contracts/security)
+
+### Slither walkthrough
+- `slither . --exclude-dependencies`
+	- use this to have slither ignore libraries
+
+- It's a good idea to go through each slither finding, from most severe to least, to verify the validity
+```
+INFO:Detectors:
+PuppyRaffle.withdrawFees() (src/PuppyRaffle.sol#152-160) sends eth to arbitrary user
+        Dangerous calls:
+        - (success,None) = feeAddress.call{value: feesToWithdraw}() (src/PuppyRaffle.sol#158)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#functions-that-send-ether-to-arbitrary-destinations
+```
+- Search the repo for the finding in question: `PuppyRaffle.withdrawFees()`
+- [Reference](https://github.com/crytic/slither/wiki/Detector-Documentation#functions-that-send-ether-to-arbitrary-destinations): Unprotected call to a function sending Ether to an arbitrary address.
+	- Ensure that an arbitrary user cannot withdraw unauthorized funds.
+- In this case, we can ignore slither because we confirmed that the `feeAddress` isn't arbitrary, it's set in the constructor and can only be changed by the owner
+
+- [slither wiki](https://github.com/crytic/slither/wiki/Usage)
+	- Slither offers two ways to remove results:
+		- By adding `//slither-disable-next-line DETECTOR_NAME` before the issue
+		- By adding `// slither-disable-start [detector] ... // slither-disable-end [detector]` around the code to disable the detector on a large section
+		- By adding `@custom:security non-reentrant` before the variable declaration will indicate to Slither that the external calls from this variable are non-reentrant
+		- By running the triage mode (see below)
+```js
+ //slither-disable-next-line arbitrary-send-eth
+ (bool success,) = feeAddress.call{value: feesToWithdraw}("");
+```
+- This didn't work for me, need to look in it???
+
+
+```
+INFO:Detectors:
+Loop condition i < players.length (src/PuppyRaffle.sol#110) should use cached array length instead of referencing `length` member of the storage array.
+ Loop condition i < players.length (src/PuppyRaffle.sol#174) should use cached array length instead of referencing `length` member of the storage array.        
+ Loop condition j < players.length (src/PuppyRaffle.sol#86) should use cached array length instead of referencing `length` member of the storage array.
+ Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cache-array-length
+```
+- Any time we see `players.length`, that value is being read from storage.
+	- Instead, we should save it as a variable
+```js
+for (uint256 i = 0; i < players.length; i++) {
+	if (players[i] == player) {
+		return i;
+	}
+}
+```
+
+### Aderyn Walkthrough
+- `aderyn` to run aderyn... produces a readme
+- points out issues that we should review
+```
+- [High Issues](#high-issues)
+
+  - [H-1: `abi.encodePacked()` should not be used with dynamic types when passing the result to a hash function such as `keccak256()`](#h-1-abiencodepacked-should-not-be-used-with-dynamic-types-when-passing-the-result-to-a-hash-function-such-as-keccak256)
+
+- [Low Issues](#low-issues)
+
+  - [L-1: Centralization Risk for trusted owners](#l-1-centralization-risk-for-trusted-owners)
+
+  - [L-2: Solidity pragma should be specific, not wide](#l-2-solidity-pragma-should-be-specific-not-wide)
+
+  - [L-3: Missing checks for `address(0)` when assigning values to address state variables](#l-3-missing-checks-for-address0-when-assigning-values-to-address-state-variables)
+
+  - [L-4: `public` functions not used internally could be marked `external`](#l-4-public-functions-not-used-internally-could-be-marked-external)
+
+  - [L-5: Define and use `constant` variables instead of using literals](#l-5-define-and-use-constant-variables-instead-of-using-literals)
+
+  - [L-6: Event is missing `indexed` fields](#l-6-event-is-missing-indexed-fields)
+
+  - [L-7: Loop contains `require`/`revert` statements](#l-7-loop-contains-requirerevert-statements)
+```
+
