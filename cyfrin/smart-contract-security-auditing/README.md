@@ -104,6 +104,12 @@
 30. [Info and gas findings](#info-and-gas-findings)
 31. [Slither walkthrough](#slither-walkthrough)
 32. [Aderyn Walkthrough](#aderyn-walkthrough)
+33. [Test Coverage](#test-coverage)
+34. [Phase 4: Reporting primer](#phase-4-reporting-primer)
+35. [What is a competitive audit?](#what-is-a-competitive-audit)
+36. [Submitting a competitive audit finding](#submitting-a-competitive-audit-finding)
+37. [Reporting templates](#reporting-templates)
+38. [Issues to keep in mind](#issues-to-keep-in-mind)
 
 </details>
 
@@ -1889,3 +1895,92 @@ for (uint256 i = 0; i < players.length; i++) {
   - [L-7: Loop contains `require`/`revert` statements](#l-7-loop-contains-requirerevert-statements)
 ```
 
+### Test Coverage
+- For a competitive audit, test coverage doesn't matter???
+- For a private audit, use it as informational
+
+### Phase 4: Reporting primer
+- We can always look at one more line of code, but at some point, you have to write the report
+- Writing a report is almost a sales job... you have to sell the idea of your bug... if it isn't convincing, you may not get paid
+
+### What is a competitive audit?
+For competitive audits, the payouts are currently determined as:
+- **Medium Risk Shares**: `1 * (0.9^(findingCount - 1)) / findingCount`
+- **High Risk Shares**: `5 * (0.9^(findingCount - 1)) / findingCount`
+This calculation is subject to future adjustments to align with auditors needs.
+
+- The more people that report the same issue, the less the payout will be
+	- The idea is to reward unique bugs the most... if many people find the same bug, then it's not very hard to spot, so it doesn't pay as much.
+
+### Submitting a competitive audit finding
+- Submitting bugs varies based on the platform being used
+- Codehawks will have you choose a title, severity, and relevant github links
+- Codehawks also has the following suggesting format for the free write finding secton:
+```
+## Summary
+
+## Vulnerability Details
+
+## Impact
+
+## Tools Used
+
+## Recommendations
+```
+- For a competitive audit, PoC will almost always be mandatory
+- When many people report the same finding, the selected submission will get the bigger payout... so quality of finding reports is important
+
+### Reporting templates
+- [Audit Report Templating](https://github.com/Cyfrin/audit-report-templating/)
+- [Github Report Templating (Cyfrin)](https://github.com/Cyfrin/audit-repo-cloner)
+- [Github Report Templating (Spearbit)](https://github.com/spearbit-audits/report-generator-template)
+- [Github Report Templating (Spearbit Custom)](https://github.com/Cyfrin/report-generator-template)
+
+### Issues to keep in mind
+- Populate the files you audit with `//@audit` tags... search for them later as you review the codebase
+	- After you address these tags, you cant leave additional tags like `//report written` to keep track of the issues you have already dealt with
+
+- Use of floating pragma is bad
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+```
+- The floating pragma is the `^` symbol... don't use it and stick to a specific compiler version
+
+- Incorrect solc versions
+```
+// SPDX-License-Identifier: MIT
+pragma solidity 0.7.6;
+```
+- Look for older compiler versions, especially ones before `0.8.0`
+	- Best practice is to use the latest version and using versions older than `0.8.0` suffer from overflow/underflow
+
+- Unchanged state variables should be immutable or constant
+
+- Make sure relevant functions have `address(0)` checks
+
+- Storage variables in loops should be cached
+```diff
++ uint256 playerLength = players.length;
+ 
+function getActivePlayerIndex(address player) external view returns (uint256) {
+-	for (uint256 i = 0; i < players.length; i++) {
++	for (uint256 i = 0; i < playerLength; i++) {
+		if (players[i] == player) {
+			return i;
+		}
+	}
+	return 0;
+}
+```
+- `players.length` is constantly read from storage... if it's stored as a variable instead, it will save gas by reading from memory
+
+- In a competitive audit, a "duplicate" submission shares the same "root cause" as another submission
+
+- Magic numbers
+	- It can be confusing to see number literals in a codebase
+	- It is much more readable if numbers are given a name
+
+- Pull over Push
+	- Ideally, you want user to pull their money out rather than push it to them
+	- If you have to push the money, then you can run into intended consequences (no fallback, etc.)
