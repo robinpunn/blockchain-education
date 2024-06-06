@@ -1,6 +1,19 @@
 # Lesson Challenges
 
-### Challenge 1
+### [Challenge 0](https://arbiscan.io/address/0xf923431da74ecc873c4d641fbdfa2564baafca9f#code)
+```solidity
+ /*
+     * CALL THIS FUNCTION!
+     * 
+     * @param yourTwitterHandle - Your twitter handle. Can be a blank string.
+     */
+    function solveChallenge(string memory twitterHandle) external {
+        _updateAndRewardSolver(twitterHandle);
+    }
+```
+- Self explanatory, just enter a string
+
+### [Challenge 1](https://arbiscan.io/address/0x7a0f40757f6ba868b44ce959a1d4b8bc22c21d59)
 `S1.sol`
 ```solidity
     /*
@@ -57,3 +70,43 @@ $ cast keccak "returnTrue()"
 - The selector will be the first [4 bytes](https://solidity-by-example.org/function-selector/): `0xf613a687`
 - `cast sig "returnTrue()"` does all the work for us
 - Since the function doesn't require any arguments, we can use the selector for both parameters of the challenge
+
+### [Challenge 2](https://arbiscan.io/address/0xeab9c7ac697408fd1581494577c7c0716c3b75e6#code)
+```
+/*
+     * CALL THIS FUNCTION!
+     * 
+     * @param weCallItSecurityReview - Set "true" if you'll call it "security review" instead of "security audit".
+     * @param yourTwitterHandle - Your twitter handle. Can be a blank string.
+     */
+    function solveChallenge(bool weCallItSecurityReview, string memory yourTwitterHandle) external {
+        if (!weCallItSecurityReview) {
+            revert S2__WrongValue();
+        }
+        _updateAndRewardSolver(yourTwitterHandle);
+    }
+```
+- We want to bypass the if check, so use `true` for the first parameter.
+
+### [Challenge 3](https://arbiscan.io/address/0x89edc4c74810bedbd53d7da677eb420dc0154b0b#code)
+```
+ function solveChallenge(uint256 valueAtStorageLocationSevenSevenSeven, string memory yourTwitterHandle) external {
+        uint256 value;
+        assembly {
+            value := sload(STORAGE_LOCATION)
+        }
+        if (value != valueAtStorageLocationSevenSevenSeven) {
+            revert S3__WrongValue();
+        }
+        // slither-disable-next-line weak-prng
+        uint256 newValue =
+            uint256(keccak256(abi.encodePacked(msg.sender, block.prevrandao, block.timestamp))) % 1_000_000;
+        assembly {
+            sstore(STORAGE_LOCATION, newValue)
+        }
+        _updateAndRewardSolver(yourTwitterHandle);
+    }
+```
+- We know that our variable is going to be stored in storage location 777. 
+- We can use `cast`:
+`cast storage 0x89edc4c74810bedbd53d7dA677eB420DC0154B0b 777 --rpc-url $ARBITRUM_RPC_URL`
