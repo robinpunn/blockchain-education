@@ -113,6 +113,16 @@
 
 </details>
 
+<details>
+
+<summary> Lesson 5: TSwap </summary>
+
+1. [Introduction](#introduction-1)
+2. [Phase 1 Scoping](#phase-1-scoping)
+3. [### Phase 2: Recon](#phase-2-recon)
+
+</details>
+
 ## [Review](https://youtu.be/pUWmJ86X_do?t=1361)
 ### Tooling Prerequisites
 [Foundry](https://book.getfoundry.sh/)
@@ -1984,3 +1994,60 @@ function getActivePlayerIndex(address player) external view returns (uint256) {
 - Pull over Push
 	- Ideally, you want user to pull their money out rather than push it to them
 	- If you have to push the money, then you can run into intended consequences (no fallback, etc.)
+
+
+## [TSwap](https://youtu.be/pUWmJ86X_do?t=15924)
+[repo](https://github.com/Cyfrin/5-t-swap-audit)
+
+### Introduction
+- The objective in this section is to find bugs without looking at the code???
+- Concepts:
+	- Stateful fuzzing
+	- Fuzzing
+	- Invariants
+	- FREI-PI/CEII
+	- Advanced DeFi
+	- AMMs
+	- Uniswap
+	- Curve.fi
+	- Constant product formula
+- The codebase being reviewd, TSwap, is similar to Uniswap V1
+
+### Phase 1 Scoping
+- [Extensive onboarding](https://github.com/Cyfrin/security-and-auditing-full-course-s23/blob/main/extensive-onboarding-questions.md)
+- normally you want to: 
+	- `git checkout <commit hash>`
+	- `git branch`
+	- `git diff <hash from previous command> main` (check difference between branches)
+	- `git stash` ->`git checkout main` if you want to go back to main???
+- there are two make commands
+```make
+scope :; tree ./src/ | sed 's/└/#/g; s/──/--/g; s/├/#/g; s/│ /|/g; s/│/|/g'
+
+scopefile :; @tree ./src/ | sed 's/└/#/g' | awk -F '── ' '!/\.sol$$/ { path[int((length($$0) - length($$2))/2)] = $$2; next } { p = "src"; for(i=2; i<=int((length($$0) - length($$2))/2); i++) if (path[i] != "") p = p "/" path[i]; print p "/" $$2; }' > scope.txt
+```
+- to get this to work i had to `choco install tree`
+
+- [tswap onboarded](https://github.com/Cyfrin/5-t-swap-audit/blob/main/t-swap-onboarded.md):
+
+| Current Status                                                      |                                               |
+| ------------------------------------------------------------------- | --------------------------------------------- |
+| Is the project a fork of the existing protocol                      | Yes (but for the course we are pretending no) |
+| Specify protocol (only if Yes for prev question)                    | UniswapV1                                     |
+| Does the project use rollups?                                       | No                                            |
+| Will the protocol be multi-chain?                                   | No                                            |
+| Specify chain(s) on which protocol is/ would be deployed            | ETH                                           |
+| Does the protocol use external oracles?                             | No                                            |
+| Does the protocol use external AMMs?                                | No                                            |
+| Does the protocol use zero-knowledge proofs?                        | No                                            |
+| Which ERC20 tokens do you expect to interact with smart contracts   | All                                           |
+| Which ERC721 tokens do you expect to interact with smart contracts? | None                                          |
+| Are ERC777 tokens expected to interact with protocol?               | Any                                           |
+| Are there any off-chain processes (keeper bots etc.)                | No                                            |
+| If yes to the above, please explain                                 |                                               |
+
+- Whether in a private or competitive setting, always ask the developers questions
+
+### Phase 2: Recon
+- Start by reading the docs and diagramming
+	- Sometimes, you can help the protocol by creating a diagram
