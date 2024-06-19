@@ -119,7 +119,11 @@
 
 1. [Introduction](#introduction-1)
 2. [Phase 1 Scoping](#phase-1-scoping)
-3. [### Phase 2: Recon](#phase-2-recon)
+3. [Phase 2: Recon](#phase-2-recon)
+4. [What is a DEX?](#what-is-a-dex)
+5. [What is an AMM?](#what-is-an-amm)
+6. [Liquidity Providers](#liquidity-providers)
+7. [How AMMs work](#how-amms-work)
 
 </details>
 
@@ -2051,3 +2055,41 @@ scopefile :; @tree ./src/ | sed 's/└/#/g' | awk -F '── ' '!/\.sol$$/ { pat
 ### Phase 2: Recon
 - Start by reading the docs and diagramming
 	- Sometimes, you can help the protocol by creating a diagram
+
+### What is a DEX?
+- A DEX is a "decentralized exchange" which allows users to trade tokens for other tokens
+	- [WETH](https://etherscan.io/token/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2#code)
+- [Defillamma dexes](https://defillama.com/protocols/Dexes)
+- The TSwap protocol is an AMM (automated market maker)
+	- [AMM](https://chain.link/education-hub/what-is-an-automated-market-maker-amm)
+	- Different from the traditional "order book" style, instead uses "pools"
+- [What is uniswap](https://www.youtube.com/watch?v=DLu35sIqVTM)
+
+### What is an AMM?
+- Order book style exchanges
+	- This is what we're familiar with in traditional finance (etrade, robinhood, etc)
+	- Trades are placed in an "order book" and matched
+	- On the EVM, this method would be gas intensive (very expensive)
+- Automated Market Maker
+	- There are different styles of AMMs
+	- One way is to use "pools"
+	- The price of the asset my be dictated by the ratio of the pools
+	- Users can make exchanges and the ratio is updated (constant product formula)
+
+### Liquidity Providers
+- AMMS have "fees" for "liquidity providers"
+- Liquidity providers provide supply
+	- LPs provide the ratio of tokens (usually 50/50) and in return get an lp token that collects fees
+	- They collect fees based on their ownership of lp tokens (own 50% of lp tokens, get 50% of fees)
+	- When redeeming lp tokens, lps may get a different amount of tokens originally given based on the current ratio of the pools, but they will also get the fees that were accrued
+
+### How AMMs work
+- The "order book" method would require a lot of gas because it would implement many transactions
+	- User a creates an order
+	- User b creates an order
+	- The order books looks for matching orders that and clears orders
+	- Users need to wait for transactions
+- The AMM style is much better suited for the EVM and defi in general
+	- Trades occur through pooled assets
+	- Constant product formula/maker looks to maintain a ratio between pools when transactions are made
+	- The assets in pools are provided by Liquidity Providers and they receive a proportional amount of fees based on the liquidity provided (represented by liquidity tokens)
