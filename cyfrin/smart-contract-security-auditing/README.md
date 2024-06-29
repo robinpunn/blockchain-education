@@ -124,6 +124,10 @@
 5. [What is an AMM?](#what-is-an-amm)
 6. [Liquidity Providers](#liquidity-providers)
 7. [How AMMs work](#how-amms-work)
+8. [TSwap Recon Continued](#tswap-recon-continued)
+9. [Invariant and Properties Introduction](#invariant-and-properties-introduction)
+10. [Stateful and Stateless fuzzing](#stateful-and-stateless-fuzzing)
+111. [Where Stateless Fuzzing Fails](#where-stateless-fuzzing-fails)
 
 </details>
 
@@ -2093,3 +2097,122 @@ scopefile :; @tree ./src/ | sed 's/└/#/g' | awk -F '── ' '!/\.sol$$/ { pat
 	- Trades occur through pooled assets
 	- Constant product formula/maker looks to maintain a ratio between pools when transactions are made
 	- The assets in pools are provided by Liquidity Providers and they receive a proportional amount of fees based on the liquidity provided (represented by liquidity tokens)
+
+### TSwap Recon Continued
+- The protocol starts as simply a `PoolFactory` contract. 
+	- This contract is used to create new "pools" of tokens. 
+	- It helps make sure every pool token uses the correct logic. 
+	- But all the magic is in each `TSwapPool` contract.
+- You can think of each `TSwapPool` contract as it's own exchange between exactly 2 assets. 
+	- Any ERC20 and the [WETH](https://etherscan.io/token/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2) token. 
+	- These pools allow users to permissionlessly swap between an ERC20 that has a pool and WETH. 
+	- Once enough pools are created, users can easily "hop" between supported ERC20s.
+
+### Invariant and Properties Introduction
+- Invariant: The property or condition of a system that must hold true
+- Every protocol is going to have a property or something in the system that cannot be broken
+- Invariants of different types of tokens from [crytic](https://github.com/crytic/properties):
+	- [ERC20](https://ethereum.org/en/developers/docs/standards/tokens/erc-20/) token: mintable, burnable, pausable and transferable invariants ([25 properties](https://github.com/crytic/properties/blob/main/PROPERTIES.md#erc20)).
+	- [ERC721](https://ethereum.org/en/developers/docs/standards/tokens/erc-721/) token: mintable, burnable, and transferable invariants ([19 properties](https://github.com/crytic/properties/blob/main/PROPERTIES.md#erc721)).
+	- [ERC4626](https://ethereum.org/en/developers/docs/standards/tokens/erc-4626/) vaults: strict specification and additional security invariants ([37 properties](https://github.com/crytic/properties/blob/main/PROPERTIES.md#erc4626)).
+	- [ABDKMath64x64](https://github.com/abdk-consulting/abdk-libraries-solidity/blob/master/ABDKMath64x64.md) fixed-point library invariants ([106 properties](https://github.com/crytic/properties/blob/main/PROPERTIES.md#abdkmath64x64)).
+
+### Stateful and Stateless fuzzing
+- Fuzz testing: supply random data to your system in an attempt to break it
+- Invarianit: property of system that should always hold
+
+**Example unit test:**
+```js
+function testAlwaysGetZero() public {
+	uint256 data = 0;
+	exampleContract.doStuff(data);
+	assert(exampleContract.shouldAlwaysBeZero() == 0);
+}
+```
+- We hardcode the value for `data`
+
+**Example fuzz Test**
+```js
+function testAlwaysGetZeroFuzz(uint256 data) public {
+	exampleContract.doStuff(data);
+	assert(exampleContract.shouldAlwaysBeZero() == 0);
+}
+```
+- Foundry will automatically randomize `data`
+
+- An advanced concept to learn is how a fuzzer picks its data
+
+- We can change the number of runs in foundry:
+```
+[profile.default]
+src = 'src'
+out = 'out'
+libs = ['lib']
+
+[fuzz]
+runs = 1000;
+```
+- The more runs we use, the more random inputs we will use in the fuzz test
+
+- A breakdown of what we need to do 
+1. Understand the invariants
+2. Write a fuzz test for invariant
+
+- Stateless fuzzing: where the state of the previous run is discarded for every new run
+- Stateful fuzzing: Fuzzing where the final state of your previous run is the starting state of your next run
+- Foundry "invariant" tests == stateful fuzzing
+
+**Write a stateful fuzz test in foundry**
+- we need the `invariant_` keyword
+- `import {StdInvariant} from "forge-std/StdInvariant.sol";`
+- `contract MyContractTest is StdInvariant, Test {}`
+```js
+function setUp() public {
+	exampleContact = new MyContract();
+	targetContract(address(exampleContract));
+}
+
+function invariant_testAlwaysIsZero() public {
+	assert(exampleContract.shouldAlwaysBeZero() == 0);
+}
+```
+- With this setup, the fuzz test should run random data in all the contract in our functions holding values for each call
+
+- In Foundry:
+	- Fuzz tests = random data to one function call (stateless)
+	- Invariant tests = random data and random function calls (stateful)
+
+- Fuzz testing tools:
+	- [Echidna](https://github.com/crytic/echidna)
+	- [Foundry](https://getfoundry.sh/)
+	- [Consensys](https://fuzzing.diligence.tools/login)
+
+- Invariant Break (Other exploits can cause this)
+	- [Euler](https://www.coinbase.com/blog/euler-compromise-investigation-part-1-the-exploit)
+
+- Now, "Invariant Breaks" isn't exactly a class of bug, however it's important to know about and use when it comes to hacks. We look at 3 different methods for attempting to break invariants.
+	1. Stateless Fuzzing (Easiest)
+	2. Stateful Fuzzing - Open / Unguided (A little harder)
+	3. Stateful Fuzzing - Handler method / Guided (Harder)
+	4. Formal Verification w/ [Halmos](https://github.com/a16z/halmos/tree/main) (Hardest)
+ - See more in [./src/invariant-break/README.md](https://github.com/Cyfrin/sc-exploits-minimized/blob/main/src/invariant-break/README.md)
+
+### Where Stateless Fuzzing Fails
+- Stateless fuzzing (often known as just "fuzzing") is when you provide random data to a function to get some invariant or property to break.
+- It is "stateless" because after every fuzz run, it resets the state, or it starts over.
+
+**Written Example**
+- You can think of it like testing what methods pop a balloon.
+1. Fuzz run 1:
+    1. Get a new balloon
+        1. Do 1 thing to try to pop it (ie: punch it, kick it, drop it)
+        2. Record whether or not it is popped
+2. Fuzz run 2:
+    1. Get a new balloon
+        1. Do 1 thing to try to pop it (ie: punch it, kick it, drop it)
+        2. Record whether or not it is popped
+3. _Repeat..._
+
+- Stateful fuzzing uses a new "state" for each test, so it can miss bugs that would have occurred had the state remained the same
+- Sometimes we need to set `fail_on_revert = false` in `foundry.toml`
+	- We need to do this to sometimes ignore reverts that don't have to do with what we're actually testing
