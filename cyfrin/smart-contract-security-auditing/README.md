@@ -127,7 +127,9 @@
 8. [TSwap Recon Continued](#tswap-recon-continued)
 9. [Invariant and Properties Introduction](#invariant-and-properties-introduction)
 10. [Stateful and Stateless fuzzing](#stateful-and-stateless-fuzzing)
-111. [Where Stateless Fuzzing Fails](#where-stateless-fuzzing-fails)
+11. [Where Stateless Fuzzing Fails](#where-stateless-fuzzing-fails)
+12. [Stateful Fuzzing where method 1 fails](#stateful-fuzzing-where-method-1-fails)
+13. [Stateful Fuzzing method 2](#stateful-fuzzing-method-2)
 
 </details>
 
@@ -2151,8 +2153,10 @@ libs = ['lib']
 
 [fuzz]
 runs = 1000;
+seed = "0x2"
 ```
 - The more runs we use, the more random inputs we will use in the fuzz test
+- The `seed` helps input randomness
 
 - A breakdown of what we need to do 
 1. Understand the invariants
@@ -2163,6 +2167,13 @@ runs = 1000;
 - Foundry "invariant" tests == stateful fuzzing
 
 **Write a stateful fuzz test in foundry**
+- `foundry.toml` has a `depth` field for invariants
+```
+[invariant]
+runs = 1000
+depth = 32
+```
+- `depth` is the number of function calls per command
 - we need the `invariant_` keyword
 - `import {StdInvariant} from "forge-std/StdInvariant.sol";`
 - `contract MyContractTest is StdInvariant, Test {}`
@@ -2197,6 +2208,30 @@ function invariant_testAlwaysIsZero() public {
 	4. Formal Verification w/ [Halmos](https://github.com/a16z/halmos/tree/main) (Hardest)
  - See more in [./src/invariant-break/README.md](https://github.com/Cyfrin/sc-exploits-minimized/blob/main/src/invariant-break/README.md)
 
+ **Stateless Pros & Cons**
+Pros:
+- Fast to write
+- Fast to test
+Cons:
+- It's stateless, so if a property is broken by calling different functions, it won't find the issue
+- You can never be 100% sure it works, as it's random input
+
+**Stateful Open Pros & Cons**
+Pros:
+- Fast to write (not as fast as stateless fuzzing)
+- Can find bugs that are from calling functions in a specific order.
+Cons:
+- You can run into "path explosion" where there are too many possible paths, and the fuzzer finds nothing
+- You can never be 100% sure it works, as it's random input
+
+**Stateful Handler Pros & Cons**
+Pros:
+- Can find bugs that are from calling functions in a specific order.
+- Restricts the "path explosion" problem where there are too many possible paths, so the fuzzer is more likely to find issues
+Cons:
+- Much longer to write correctly
+- It's easier to restrict too much so that you miss potential bugs
+
 ### Where Stateless Fuzzing Fails
 - Stateless fuzzing (often known as just "fuzzing") is when you provide random data to a function to get some invariant or property to break.
 - It is "stateless" because after every fuzz run, it resets the state, or it starts over.
@@ -2216,3 +2251,218 @@ function invariant_testAlwaysIsZero() public {
 - Stateful fuzzing uses a new "state" for each test, so it can miss bugs that would have occurred had the state remained the same
 - Sometimes we need to set `fail_on_revert = false` in `foundry.toml`
 	- We need to do this to sometimes ignore reverts that don't have to do with what we're actually testing
+
+### Stateful Fuzzing where method 1 fails
+- It is often better to use `vm.assume` or `vm.bound`??? to set parameter boundries
+- Setting `fail_on_revert` to false can cause you to think your fuzz tests are doing more than they are
+
+Example test for a token swap contract:
+```js
+// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+pragma solidity ^0.8.4;
+
+import {Test} from "forge-std/Test.sol";
+import {StdInvariant} from "forge-std/StdInvariant.sol";
+import {HandlerStatefulFuzzCatches} from "../../../src/invariant-break/HandlerStatefulFuzzCatches.sol";
+import {MockUSDC} from "../../mocks/MockUSDC.sol";
+import {YeildERC20} from "../../mocks/YeildERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract AttemptedBreak is StdInvariant, Test {
+    HandlerStatefulFuzzCatches handlerStatefulFuzzCatches;
+    YeildERC20 yeildERC20;
+    MockUSDC mockUSDC;
+    IERC20[] supportedTokens;
+    uint256 startingAmount;
+
+    address USER = makeAddr("USER");
+
+    function setUp() public {
+        vm.startPrank(USER);
+        yeildERC20 = new YeildERC20();
+        mockUSDC = new MockUSDC();
+        startingAmount = yeildERC20.INITIAL_SUPPLY();
+        mockUSDC.mint(USER, startingAmount);
+        vm.stopPrank();
+
+        supportedTokens.push(mockUSDC);
+        supportedTokens.push(yeildERC20);
+
+        handlerStatefulFuzzCatches = new HandlerStatefulFuzzCatches(supportedTokens);
+
+        targetContract(address(handlerStatefulFuzzCatches));
+    }
+
+    function testHandlerFuzzSetUp() public view {
+        assert(startingAmount == yeildERC20.balanceOf(USER));
+        assert(startingAmount == mockUSDC.balanceOf(USER));
+    }
+
+    function statefulFuzz_testHandlerBreaks() public {
+        vm.startPrank(USER);
+        handlerStatefulFuzzCatches.withdrawToken(mockUSDC);
+        handlerStatefulFuzzCatches.withdrawToken(yeildERC20);
+
+        assert(mockUSDC.balanceOf(address(handlerStatefulFuzzCatches)) == 0);
+        assert(yeildERC20.balanceOf(address(handlerStatefulFuzzCatches)) == 0);
+
+        assert(mockUSDC.balanceOf(USER) == startingAmount);
+        assert(yeildERC20.balanceOf(USER) == startingAmount);
+    }
+}
+```
+
+When our `foundry.toml` looks like this:
+```
+[invariant]
+runs = 1000
+depth = 32
+fail_on_revert = false
+```
+
+Our test run looks like this:
+```
+Ran 1 test for test/invariant-break/handler/AttemptedBreakTest.t.sol:AttemptedBreak
+[PASS] statefulFuzz_testHandlerBreaks() (runs: 1000, calls: 32000, reverts: 31991)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 6.30s (6.28s CPU time)
+```
+- The test basically reverted on every call (except 1), but that doesn't mean our invariant broke... there may have been overflows/underflows, but the invariant held
+- BUT, what we don't see with `fail_on_revert = false` is that the test isn't depositing the tokens we set... it's reverting because its depositing random tokens
+
+- With stateful fuzzing open: 
+	- You can run into "path explosion" where there are too many possible paths, and the fuzzer finds nothing
+- We also have to keep in mind:
+	- It's easier to restrict too much so that you miss potential bugs
+- Fuzzers will also call with random users, so we have to be precise in our settings
+
+### Stateful Fuzzing method 2
+- We use a handler to cut down the potential limitless inputs a fuzzer can give
+	- This increases our chances of finding bugs by creating more realistic scenarios
+- We will us a `Handler.t.sol` to restrict our test function and we want `fail_on_revert = true`
+- We can create specific functions in our handler that will be called by our actual test... the handler acts as a wrapper or guide for the test
+- we can use [`bound`](https://book.getfoundry.sh/reference/forge-std/bound)to set boundaries for variables
+
+Our handler looks like this:
+```js
+// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+pragma solidity ^0.8.4;
+
+import {Test} from "forge-std/Test.sol";
+import {HandlerStatefulFuzzCatches} from "../../../src/invariant-break/HandlerStatefulFuzzCatches.sol";
+import {YeildERC20} from "../../mocks/YeildERC20.sol";
+import {MockUSDC} from "../../mocks/MockUSDC.sol";
+
+contract Handler is Test {
+    HandlerStatefulFuzzCatches handlerStatefulFuzzCatches;
+    MockUSDC mockUSDC;
+    YeildERC20 yeildERC20;
+    address user;
+
+    constructor(
+        HandlerStatefulFuzzCatches _handlerStatefulFuzzCatches,
+        MockUSDC _mockUSDC,
+        YeildERC20 _yeildERC20,
+        address _user
+    ) {
+        handlerStatefulFuzzCatches = _handlerStatefulFuzzCatches;
+        mockUSDC = _mockUSDC;
+        yeildERC20 = _yeildERC20;
+        user = _user;
+    }
+
+    function depositYieldERC20(uint256 amount) public {
+        amount = bound(amount, 0, yeildERC20.balanceOf(user));
+        
+        vm.startPrank(user);
+        yeildERC20.approve(address(handlerStatefulFuzzCatches), amount);
+        handlerStatefulFuzzCatches.depositToken(yeildERC20, amount);
+        vm.stopPrank();
+    }
+
+    function depositMockUSDC(uint256 amount) public {
+        amount = bound(amount, 0, mockUSDC.balanceOf(user));
+
+        vm.startPrank(user);
+        mockUSDC.approve(address(handlerStatefulFuzzCatches), amount);
+        handlerStatefulFuzzCatches.depositToken(mockUSDC, amount);
+        vm.stopPrank();
+    }
+
+    function withdrawYieldERC20() public {
+        vm.startPrank(user);
+        handlerStatefulFuzzCatches.withdrawToken(yeildERC20);
+        vm.stopPrank();
+    }
+
+    function withdrawMockUSDC() public {
+        vm.startPrank(user);
+        handlerStatefulFuzzCatches.withdrawToken(mockUSDC);
+        vm.stopPrank();
+    }
+}
+```
+- This handler will be used by our test and it makes sure that deposit and withdraw are called in the specific ways that we want them to be called... the amount will still be random, but we ensure that it's called by the same user and the same tokens
+
+We can set up a new test that uses the handler:
+```js
+// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+pragma solidity ^0.8.4;
+
+import {Test} from "forge-std/Test.sol";
+import {StdInvariant} from "forge-std/StdInvariant.sol";
+import {HandlerStatefulFuzzCatches} from "../../../src/invariant-break/HandlerStatefulFuzzCatches.sol";
+import {MockUSDC} from "../../mocks/MockUSDC.sol";
+import {YeildERC20} from "../../mocks/YeildERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {Handler} from "./Handler.t.sol";
+
+contract AttemptedBreakInvariant is StdInvariant, Test {
+    HandlerStatefulFuzzCatches handlerStatefulFuzzCatches;
+    YeildERC20 yeildERC20;
+    MockUSDC mockUSDC;
+    IERC20[] supportedTokens;
+    uint256 startingAmount;
+
+    address USER = makeAddr("USER");
+
+    Handler handler;
+    function setUp() public {
+        vm.startPrank(USER);
+        yeildERC20 = new YeildERC20();
+        mockUSDC = new MockUSDC();
+        startingAmount = yeildERC20.INITIAL_SUPPLY();
+        mockUSDC.mint(USER, startingAmount);
+        vm.stopPrank();
+
+        supportedTokens.push(mockUSDC);
+        supportedTokens.push(yeildERC20);
+
+        handlerStatefulFuzzCatches = new HandlerStatefulFuzzCatches(supportedTokens);
+        handler = new Handler(handlerStatefulFuzzCatches, mockUSDC, yeildERC20, USER);
+
+        bytes4[] memory selectors = new bytes4[](4);
+        selectors[0] = handler.depositYieldERC20.selector;
+        selectors[1] = handler.depositMockUSDC.selector;
+        selectors[2] = handler.withdrawYieldERC20.selector;
+        selectors[3] = handler.withdrawMockUSDC.selector;
+
+        targetSelector(FuzzSelector({addr: address(handler), selectors: selectors}));
+    }
+
+    function statefulFuzz_testInvariantHandlerBreaks() public {
+        vm.startPrank(USER);
+        handlerStatefulFuzzCatches.withdrawToken(mockUSDC);
+		handlerStatefulFuzzCatches.withdrawToken(yeildERC20);
+	    vm.stopPrank();
+
+        assert(mockUSDC.balanceOf(address(handlerStatefulFuzzCatches)) == 0);
+        assert(yeildERC20.balanceOf(address(handlerStatefulFuzzCatches)) == 0);
+        assert(mockUSDC.balanceOf(USER) == startingAmount);
+        assert(yeildERC20.balanceOf(USER) == startingAmount);
+    }
+}
+```
+
+**Summary**
+- We want to use a `Handler` method when we have a sufficiently complicated contract
+- The handler works as a proxy to call the functions in our protocol so we can do down paths that make more sense
