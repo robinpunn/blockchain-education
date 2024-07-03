@@ -130,6 +130,13 @@
 11. [Where Stateless Fuzzing Fails](#where-stateless-fuzzing-fails)
 12. [Stateful Fuzzing where method 1 fails](#stateful-fuzzing-where-method-1-fails)
 13. [Stateful Fuzzing method 2](#stateful-fuzzing-method-2)
+14. [Weird ERC20](#weird-erc20)
+15. [Writing T-Swap Stateful Fuzz Test Suite](#writing-t-swap-stateful-fuzz-test-suite)
+16. [`Invariant.t.sol`](#invarianttsol)
+17. [`Handler.t.sol`](#handlertsol)
+18. [Handler Swap Function](#handler-swap-function)
+19. [Final Invariant and Tweaks](#final-invariant-and-tweaks)
+20. [Debugging the Fuzzer](#debugging-the-fuzzer)
 
 </details>
 
@@ -2466,3 +2473,458 @@ contract AttemptedBreakInvariant is StdInvariant, Test {
 **Summary**
 - We want to use a `Handler` method when we have a sufficiently complicated contract
 - The handler works as a proxy to call the functions in our protocol so we can do down paths that make more sense
+
+### Weird ERC20
+- The issue that our test found was the we were dealing with a weird erc20... every 10 transactions, there was a fee
+- [Weird ERC20 List](https://github.com/d-xo/weird-erc20)
+	- ERC20s with unexpected behavior can be used to exploit contracts... some weird behavior includes: 
+		- Reentrant Calls
+		- Missing Return Values
+		- Fee on Transfer
+		- Balance Modifications Outside of Transfers (rebasing/airdrops)
+		- Upgradable Tokens
+		- Flash Mintable Tokens
+		- Tokens with Blocklists
+		- Pausable Tokens
+		- Approval Race Protections
+		- Revert on Approval to Zero Address
+		- Revert on Zero Value Approvals
+		- Revert on Zero Value Transfers
+		- Multiple Token Addresses
+		- Low Decimals
+		- High Decimals
+		- `transferFrom` with `src == msg.sender`
+		- Non `string` metadata
+		- Revert on Transfer to the Zero Address
+		- No Revert on Failure
+		- Revert on Large Approvals and Transfers
+		- Code Injection via Token Name
+		- Unusual Permit Function
+		- Transfer of less than amount
+
+- The best prevention is to know what tokens you're working with and place limits
+- [Token integration checklist](https://secure-contracts.com/development-guidelines/token_integration.html)
+
+### Writing T-Swap Stateful Fuzz Test Suite
+**Core Invariant**
+- Our system works because the ratio of Token A & WETH will always stay the same. Well, for the most part. Since we add fees, our invariant technially increases.
+`x * y = k`
+- x = Token Balance X
+- y = Token Balance Y
+- k = The constant ratio between X & Y
+- The product should always be the same... `x*y` should always equal `k`
+
+This could be a hard invariant to test for, but we can test that the change in a token balance follows this formula:
+```
+y = Token Balance Y
+x = Token Balance X
+x * y = k
+x * y = (x + ∆x) * (y − ∆y)
+∆x = Change of token balance X
+∆y = Change of token balance Y
+β = (∆y / y)
+α = (∆x / x)
+
+Final invariant equation without fees:
+∆x = (β/(1-β)) * x
+∆y = (α/(1+α)) * y
+
+Invariant with fees
+ρ = fee (between 0 & 1, aka a percentage)
+γ = (1 - p) (pronounced gamma)
+∆x = (β/(1-β)) * (1/γ) * x
+∆y = (αγ/1+αγ) * y
+```
+
+### `Invariant.t.sol`
+In `PoolFactory.sol`, we're interested in the `createPool()`:
+```js
+function createPool(address tokenAddress) external returns (address) {
+        if (s_pools[tokenAddress] != address(0)) {
+            revert PoolFactory__PoolAlreadyExists(tokenAddress);
+        }
+        string memory liquidityTokenName = string.concat("T-Swap ", IERC20(tokenAddress).name());
+        string memory liquidityTokenSymbol = string.concat("ts", IERC20(tokenAddress).name());
+        TSwapPool tPool = new TSwapPool(tokenAddress, i_wethToken, liquidityTokenName, liquidityTokenSymbol);
+        s_pools[tokenAddress] = address(tPool);
+        s_tokens[address(tPool)] = tokenAddress;
+        emit PoolCreated(tokenAddress, address(tPool));
+        return address(tPool);
+    }
+```
+
+In `TSwapPool.sol`, we're interested in `deposit()`:
+```js
+/// @notice Adds liquidity to the pool
+    /// @dev The invariant of this function is that the ratio of WETH, PoolTokens, and LiquidityTokens is the same
+    /// before and after the transaction
+    /// @param wethToDeposit Amount of WETH the user is going to deposit
+    /// @param minimumLiquidityTokensToMint We derive the amount of liquidity tokens to mint from the amount of WETH the
+    /// user is going to deposit, but set a minimum so they know approx what they will accept
+    /// @param maximumPoolTokensToDeposit The maximum amount of pool tokens the user is willing to deposit, again it's
+    /// derived from the amount of WETH the user is going to deposit
+    /// @param deadline The deadline for the transaction to be completed by
+    function deposit(
+        uint256 wethToDeposit,
+        uint256 minimumLiquidityTokensToMint,
+        uint256 maximumPoolTokensToDeposit,
+        uint64 deadline
+    )
+        external
+        revertIfZero(wethToDeposit)
+        returns (uint256 liquidityTokensToMint)
+    {
+        if (wethToDeposit < MINIMUM_WETH_LIQUIDITY) {
+            revert TSwapPool__WethDepositAmountTooLow(
+                MINIMUM_WETH_LIQUIDITY,
+                wethToDeposit
+            );
+        }
+        if (totalLiquidityTokenSupply() > 0) {
+            uint256 wethReserves = i_wethToken.balanceOf(address(this));
+            uint256 poolTokenReserves = i_poolToken.balanceOf(address(this));
+            // Our invariant says weth, poolTokens, and liquidity tokens must always have the same ratio after the
+            // initial deposit
+            // poolTokens / constant(k) = weth
+            // weth / constant(k) = liquidityTokens
+            // aka...
+            // weth / poolTokens = constant(k)
+            // To make sure this holds, we can make sure the new balance will match the old balance
+            // (wethReserves + wethToDeposit) / (poolTokenReserves + poolTokensToDeposit) = constant(k)
+            // (wethReserves + wethToDeposit) / (poolTokenReserves + poolTokensToDeposit) =
+            // (wethReserves / poolTokenReserves)
+            //
+            // So we can do some elementary math now to figure out poolTokensToDeposit...
+            // (wethReserves + wethToDeposit) = (poolTokenReserves + poolTokensToDeposit) * (wethReserves / poolTokenReserves)
+            // wethReserves + wethToDeposit  = poolTokenReserves * (wethReserves / poolTokenReserves) + poolTokensToDeposit * (wethReserves / poolTokenReserves)
+            // wethReserves + wethToDeposit = wethReserves + poolTokensToDeposit * (wethReserves / poolTokenReserves)
+            // wethToDeposit / (wethReserves / poolTokenReserves) = poolTokensToDeposit
+            // (wethToDeposit * poolTokenReserves) / wethReserves = poolTokensToDeposit
+            uint256 poolTokensToDeposit = getPoolTokensToDepositBasedOnWeth(
+                wethToDeposit
+            );
+            if (maximumPoolTokensToDeposit < poolTokensToDeposit) {
+                revert TSwapPool__MaxPoolTokenDepositTooHigh(
+                    maximumPoolTokensToDeposit,
+                    poolTokensToDeposit
+                );
+            }
+            // We do the same thing for liquidity tokens. Similar math.
+            liquidityTokensToMint =
+                (wethToDeposit * totalLiquidityTokenSupply()) /
+                wethReserves;
+            if (liquidityTokensToMint < minimumLiquidityTokensToMint) {
+                revert TSwapPool__MinLiquidityTokensToMintTooLow(
+                    minimumLiquidityTokensToMint,
+                    liquidityTokensToMint
+                );
+            }
+            _addLiquidityMintAndTransfer(
+                wethToDeposit,
+                poolTokensToDeposit,
+                liquidityTokensToMint
+            );
+        } else {
+            // This will be the "initial" funding of the protocol. We are starting from blank here!
+            // We just have them send the tokens in, and we mint liquidity tokens based on the weth
+            _addLiquidityMintAndTransfer(
+                wethToDeposit,
+                maximumPoolTokensToDeposit,
+                wethToDeposit
+            );
+            liquidityTokensToMint = wethToDeposit;
+        }
+    }
+```
+
+- `forge inspect TSwapPool methods`:
+```
+{
+  "allowance(address,address)": "dd62ed3e",
+  "approve(address,uint256)": "095ea7b3",
+  "balanceOf(address)": "70a08231",
+  "decimals()": "313ce567",
+  "deposit(uint256,uint256,uint256,uint64)": "4b785efe",
+  "getInputAmountBasedOnOutput(uint256,uint256,uint256)": "ff792c96",
+  "getMinimumWethDepositAmount()": "3f163cdf",
+  "getOutputAmountBasedOnInput(uint256,uint256,uint256)": "6b3c4779",
+  "getPoolToken()": "dc0374d1",
+  "getPoolTokensToDepositBasedOnWeth(uint256)": "e29e0378",
+  "getPriceOfOnePoolTokenInWeth()": "b7e7fdcc",
+  "getPriceOfOneWethInPoolTokens()": "8fd78242",
+  "getWeth()": "107c279f",
+  "name()": "06fdde03",
+  "sellPoolTokens(uint256)": "35e6bf53",
+  "swapExactInput(address,uint256,address,uint256,uint64)": "3dd5e20d",
+  "swapExactOutput(address,address,uint256,uint64)": "4e6d9df8",
+  "symbol()": "95d89b41",
+  "totalLiquidityTokenSupply()": "85b29438",
+  "totalSupply()": "18160ddd",
+  "transfer(address,uint256)": "a9059cbb",
+  "transferFrom(address,address,uint256)": "23b872dd",
+  "withdraw(uint256,uint256,uint256,uint64)": "8933da3a"
+}
+```
+- this command shows us all the functions in the `TSwapPool` contract
+
+The initial setup of our invariant test:
+```js
+// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+pragma solidity ^0.8.4;
+
+import {Test} from "forge-std/Test.sol";
+import {StdInvariant} from "forge-std/StdInvariant.sol";
+import {ERC20Mock} from "../mocks/ERC20Mock.sol";
+import {PoolFactory} from "../../src/PoolFactory.sol";
+import {TSwapPool} from "../../src/TSwapPool.sol";
+
+contract Invariant is StdInvariant, Test {
+    // these pools have two assets
+    ERC20Mock poolToken;
+    ERC20Mock weth;
+
+    // we need the contracts
+    PoolFactory factory;
+    TSwapPool pool; // poolToken/ WETH
+
+    int256 constant STARTING_X = 100e18; // Starting ERC20 / poolToken
+    int256 constant STARTING_Y = 50e18; // Startin weth
+
+    function setUp() public {
+        weth = new ERC20Mock();
+        poolToken = new ERC20Mock();
+        factory = new PoolFactory(address(weth));
+        pool = TSwapPool(factory.createPool(address(poolToken)));
+
+        // create initial x and y balances
+        poolToken.mint(address(this), uint256(STARTING_X));
+        weth.mint(address(this), uint256(STARTING_Y));
+
+        poolToken.approve(address(pool), type(uint256).max);
+        weth.approve(address(pool), type(uint256).max);
+
+        // deposit into pool, get starting x and y
+        pool.deposit(uint256(STARTING_Y), uint256(STARTING_Y), uint256(STARTING_X), uint64(block.timestamp));
+    }
+
+    function statefulFuzz_cpfStaysTheSame() public {
+        // assert() ????
+        // the change in the pool size of weth should follow this function:
+        // ∆x = (β/(1-β)) * x
+    }
+}
+```
+- To make a functioning test, we're going to need a handler
+
+### `Handler.t.sol`
+Our goal with the handler is to identify functions from the protocol that we can use for our test:
+- `TSwapPool::deposit`
+- `TSwapPool::withdraw`
+- `TSwapPool::swapExactInput`
+- `TSwapPool::swapExactOutput`
+
+`TSwapPool::getPoolTokensToDepositBasedOnWeth`
+```js
+function getPoolTokensToDepositBasedOnWeth(
+	uint256 wethToDeposit
+) public view returns (uint256) {
+	uint256 poolTokenReserves = i_poolToken.balanceOf(address(this));
+	uint256 wethReserves = i_wethToken.balanceOf(address(this));
+	return (wethToDeposit * poolTokenReserves) / wethReserves;
+}
+```
+- how the contract calculates the ratio of tokens
+
+We use `Ghost Variables` in our handler... variables that don't exist in the actual contract
+```js
+// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+pragma solidity ^0.8.4;
+
+import {Test, console2} from "forge-std/Test.sol";
+import {TSwapPool} from "../../src/TSwapPool.sol";
+import {ERC20Mock} from "../mocks/ERC20Mock.sol";
+
+contract Handler is Test {
+    TSwapPool pool;
+    ERC20Mock weth;
+    ERC20Mock poolToken;
+
+    address liquidityProvider = makeAddr("lp");
+
+    // Ghost Variables
+    int256 startingY;
+    int256 startingX;
+    int256 expectedDeltaY;
+    int256 expectedDeltaX;
+    int256 actualDeltaY;
+    int256 actualDeltaX;
+
+    constructor(TSwapPool _pool) {
+        pool = _pool;
+        weth = ERC20Mock(_pool.getWeth());
+        poolToken = ERC20Mock(_pool.getPoolToken());
+    }
+
+    // deposit, swapExactOutput
+    function deposit(uint256 wethAmount) public {
+        // let's make sure it's a reasonable amount
+        // avoid overflow errors
+        wethAmount = bound(wethAmount, 0, type(uint64).max); // 18446744073709551615
+        startingY = int256(weth.balanceOf(address(this)));
+        startingX = int256(poolToken.balanceOf(address(this)));
+        expectedDeltaY = int256(wethAmount);
+        expectedDeltaX = int256(pool.getPoolTokensToDepositBasedOnWeth(wethAmount));
+
+        // deposit
+        vm.startPrank(liquidityProvider);
+        weth.mint(liquidityProvider, wethAmount);
+        poolToken.mint(liquidityProvider, uint256(expectedDeltaX));
+        weth.approve(address(pool), type(uint256).max);
+        poolToken.approve(address(pool), type(uint256).max);
+        pool.deposit(wethAmount, 0, uint256(expectedDeltaX), uint64(block.timestamp));
+        vm.stopPrank();
+
+        // actual amount
+        uint256 endingY = weth.balanceOf(address(this));
+        uint256 endingX = poolToken.balanceOf(address(this));
+        actualDeltaY = int256(endingY) - int256(startingY);
+        actualDeltaX = int256(endingX) - int256(startingX);
+    }
+}
+```
+- This is the starting point... we still need to implement the swap function
+
+### Handler Swap Function
+```js
+function swapPoolTokenforWethBasedOnOutputWeth(uint256 outputWeth) public {
+        outputWeth = bound(outputWeth, 0, type(uint64).max);
+        if (outputWeth >= weth.balanceOf(address(pool))) {
+            return;
+        }
+        
+        // ∆x = (β/(1-β)) * x
+        uint256 poolTokenAmount = pool.getInputAmountBasedOnOutput(outputWeth, poolToken.balanceOf(address(pool)), weth.balanceOf(address(pool)));
+        if (poolTokenAmount > type(uint64).max) {
+            return;
+        }
+
+        startingY = int256(weth.balanceOf(address(this)));
+        startingX = int256(poolToken.balanceOf(address(this)));
+        expectedDeltaY = int256(-1) * int256(outputWeth);
+        expectedDeltaX = int256(pool.getPoolTokensToDepositBasedOnWeth(poolTokenAmount));
+        if (poolToken.balanceOf(swapper) < poolTokenAmount) {
+            poolToken.mint(swapper, poolTokenAmount - poolToken.balanceOf(swapper) + 1);
+        }
+
+        vm.startPrank(swapper);
+        poolToken.approve(address(pool), type(uint256).max);
+        pool.swapExactOutput(poolToken, weth, outputWeth, uint64(block.timestamp));
+        vm.stopPrank();
+
+        // actual
+        uint256 endingY = weth.balanceOf(address(this));
+        uint256 endingX = poolToken.balanceOf(address(this));
+        actualDeltaY = int256(endingY) - int256(startingY);
+        actualDeltaX = int256(endingX) - int256(startingX);
+    }
+```
+- Our goal is to make sure that this hold: `// ∆x = (β/(1-β)) * x`
+	- `∆x` = `poolTokenAmount`
+- Our handler calculates expected deltas and actual deltas
+
+### Final Invariant and Tweaks
+Import `Handler`
+```js
+import {Handler} from "../invariant/Handler.t.sol";
+```
+
+Deploy handler in `Invariant::setUp`
+```js
+handler = new Handler(pool);
+bytes4[] memory selectors = new bytes4[](2);
+selectors[0] = handler.deposit.selector;
+selectors[1] = handler.swapPoolTokenforWethBasedOnOutputWeth.selector;
+
+targetSelector(FuzzSelector({addr:address(handler), selectors: selectors}));
+targetContract(address(handler));
+```
+
+Compare the values
+```js
+function statefulFuzz_ConstantProductFormulaStaysTheSame() public view {
+	// assert() ????
+	// the change in the pool size of weth should follow this function:
+	// ∆x = (β/(1-β)) * x
+	assertEq(handler.actualDeltaX(), handler.expectedDeltaX());
+}
+```
+
+### Debugging the Fuzzer
+After making the changes, I wasn't able to reproduce the error with the fuzz test
+```js
+/**
+     * @notice Swaps a given amount of input for a given amount of output tokens.
+     * @dev Every 10 swaps, we give the caller an extra token as an extra incentive to keep trading on T-Swap.
+     * @param inputToken ERC20 token to pull from caller
+     * @param inputAmount Amount of tokens to pull from caller
+     * @param outputToken ERC20 token to send to caller
+     * @param outputAmount Amount of tokens to send to caller
+     */
+
+    function _swap(
+        IERC20 inputToken,
+        uint256 inputAmount,
+        IERC20 outputToken,
+        uint256 outputAmount
+    ) private {
+        if (
+            _isUnknown(inputToken) ||
+            _isUnknown(outputToken) ||
+            inputToken == outputToken
+        ) {
+            revert TSwapPool__InvalidToken();
+        }
+        
+        swap_count++;
+        
+        if (swap_count >= SWAP_COUNT_MAX) {
+            swap_count = 0;
+            outputToken.safeTransfer(msg.sender, 1_000_000_000_000_000_000);
+        }
+
+        emit Swap(
+            msg.sender,
+            inputToken,
+            inputAmount,
+            outputToken,
+            outputAmount
+        );
+
+        inputToken.safeTransferFrom(msg.sender, address(this), inputAmount);
+        outputToken.safeTransfer(msg.sender, outputAmount);
+    }
+
+    function _isUnknown(IERC20 token) private view returns (bool) {
+        if (token != i_wethToken && token != i_poolToken) {
+            return true;
+        }
+        return false;
+    }
+```
+- Our fuzz test should catch that the balances get messed up due to the increment that happens in the swap function
+
+In order to reproduce the same results, I had to add more runs to `foundry.toml`
+```
+[fuzz]
+seed = "0x1"
+
+[invariant]
+runs = 100000
+depth = 32
+fail_on_revert = true
+```
+
+- Case Study:
+    - Uniswap
+    - [Euler](https://www.youtube.com/watch?v=vleHZqDc48M)
+
