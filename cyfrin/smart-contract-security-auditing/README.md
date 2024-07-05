@@ -137,6 +137,7 @@
 18. [Handler Swap Function](#handler-swap-function)
 19. [Final Invariant and Tweaks](#final-invariant-and-tweaks)
 20. [Debugging the Fuzzer](#debugging-the-fuzzer)
+21. [TSwap Manual Review ](#tswap-manual-review)
 
 </details>
 
@@ -2928,3 +2929,23 @@ fail_on_revert = true
     - Uniswap
     - [Euler](https://www.youtube.com/watch?v=vleHZqDc48M)
 
+### TSwap Manual Review 
+Fuzz testing and tooling are important, but manual review can never be replaced
+- We can still use tools like slither and aderyn to give use ideas for our manual review
+
+**Using the Compiler as a Static Analysis Tool**
+- Running a simple command like `forge build` (compiling the contracts) can give us information like unused variables
+
+**Review each file**
+- Go through each function and check the logic in each function
+- Understand what the function is supposed to do
+
+**Magic Numbers**
+- Always be on the lookout for magic numbers
+- This can lead to easy errors
+- While reporting on this would be a low, an improperly used magic number could lead to a high
+
+**Solodit**
+- Use [solodit](https://solodit.xyz/)to find bugs related to the protocol you're auditing
+- For example, for a token swap protocol, make sure there is "slippage protection" in place
+	- Ensure that the swap has a minimum received mechanic

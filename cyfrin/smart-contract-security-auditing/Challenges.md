@@ -180,3 +180,109 @@ contract S4Attack is IERC721Receiver {
     ...
 }
 ```
+
+### [Challenge 5](https://arbiscan.io/address/0xbdaab68a462db80fb0052947bdadba7a87fcd0fb#code)
+```js
+function solveChallenge(string memory twitterHandle) external {
+        s_pool.redeem(uint64(block.timestamp));
+        if (s_tokenA.balanceOf(address(this)) + s_tokenB.balanceOf(address(this)) >= i_initialTotalTokens) {
+            revert S5__InvariantInTact();
+        }
+        _setupPoolAndTokens();
+        _updateAndRewardSolver(twitterHandle);
+    }
+```
+- We need to  break the invariant that the supply of `s_tokenA` + `s_tokenB` >= `i_initialTotalTokens`
+- `i_initialTotalTokens = s_tokenA.INITIAL_SUPPLY() + s_tokenB.INITIAL_SUPPLY();`
+
+The pool setup gives us the information we need:
+```js
+function _setupPoolAndTokens() private {
+        s_tokenA = new S5Token("A");
+        s_tokenB = new S5Token("B");
+        s_tokenC = new S5Token("C");
+        // For gas savings
+        S5Token tokenA = s_tokenA;
+        S5Token tokenB = s_tokenB;
+        S5Token tokenC = s_tokenC;
+
+        s_pool = new S5Pool(tokenA, tokenB, tokenC);
+        S5Pool pool = s_pool;
+        pool.transferOwnership(i_randomPoolOwner);
+
+        tokenA.approve(address(pool), type(uint256).max);
+        tokenB.approve(address(pool), type(uint256).max);
+        tokenC.approve(address(pool), type(uint256).max);
+        pool.deposit(tokenA.INITIAL_SUPPLY(), uint64(block.timestamp));
+    }
+```
+- A new pool is created taking three tokens (`tokenA`, `tokenB`, `tokenC`)
+- The `deposit` function is called on the pool using `INITIAL_SUPPLY` as the amount
+
+From the [token contract](https://arbiscan.io/address/0xC912ae030b16c606C2859206c0C096c0Dd952cEF#code), we can see the value of `INITIAL_SUPPLY`:
+```js
+uint256 public constant INITIAL_SUPPLY = PRECISION * 1000;
+```
+
+From the [pool contract](https://arbiscan.io/address/0x0Ab82E2e565A5B64988DCF6B60435829B46b9180#code), we can see that each token has an equal amount (1000) deposited:
+```js
+function deposit(uint256 amount, uint64 deadline) external revertIfDeadlinePassed(deadline) revertIfZero(amount) {
+	_mint(msg.sender, amount);
+	emit Deposited(msg.sender, amount);
+	i_tokenA.safeTransferFrom(msg.sender, address(this), amount);
+	i_tokenB.safeTransferFrom(msg.sender, address(this), amount);
+	i_tokenC.safeTransferFrom(msg.sender, address(this), amount);
+}
+```
+
+**Solving**
+When `S5::_setupPoolAndTokens()` is called, it creates a pool that contains three tokens with 1000 of each token. 
+ - Our goal is to break the invariant that relies on `S5::i_initialTotalTokens`
+ - The  constructor will set this value to 2000
+ - We need to manipulate the pool so that `tokenA + tokenB < INITIAL_SUPPLY`
+
+We can take advantage of `S5Pool::swapFrom`
+```js
+/* 
+     * @notice swap tokenA for tokenB or vice versa.
+     * @dev swapping has a 0.03% fee for LPs
+     */
+    function swapFrom(IERC20 tokenFrom, IERC20 tokenTo, uint256 amount)
+        external
+        revertIfUnknownToken(tokenFrom)
+        revertIfUnknownToken(tokenTo)
+    {
+        // Checks
+        if (tokenTo.balanceOf(address(this)) < amount) {
+            revert S5Pool__NotEnoughBalance(tokenTo, amount);
+        }
+
+        // Effects
+        // LP fees
+        uint256 lpFee = calculateFee(amount);
+        // Owner fees
+        uint256 ownerFee = calculateFee(amount);
+        s_totalOwnerFees = s_totalOwnerFees + ownerFee;
+        uint256 amountMinusFee = amount - (lpFee + ownerFee);
+        emit Swapped(msg.sender, tokenFrom, tokenTo, amountMinusFee);
+
+        // Interactions
+        tokenFrom.safeTransferFrom(msg.sender, address(this), amountMinusFee);
+        tokenTo.safeTransfer(msg.sender, amountMinusFee);
+    }
+```
+- `tokenFrom` is the token `msg.sender` will be swapping into the pool (approve this to mint)
+- `tokenTo` is the token that `msg.sender` will be taking from the pool (approve this to receive)
+- This should break the invariant as there should be less than 1000 of `tokenA` after the swap
+
+I approved `tokenA` and `tokenC` for my address, but was still facing issues.
+- I had to approve `tokenC` for the pool.
+- I'm not sure why this is the case because when the pool was deployed, there was a max approval:
+```js
+tokenA.approve(address(pool), type(uint256).max);
+tokenB.approve(address(pool), type(uint256).max);
+tokenC.approve(address(pool), type(uint256).max);
+```
+- After appoving `tokenC` for the pool, the invariant is successfully broken
+
+To check balances, go to each token contract and check the balance of the pool address
